@@ -10,6 +10,7 @@ _NOOP = actions.FUNCTIONS.no_op.id
 _BUILD_SUPPLYDEPOT = actions.FUNCTIONS.Build_SupplyDepot_screen.id
 _BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
 _BUILD_REFINERY = actions.FUNCTIONS.Build_Refinery_screen.id
+_MORPH_ORBITAL_COMMAND = actions.FUNCTIONS.Morph_OrbitalCommand_quick.id
 
 _SELECT_POINT = actions.FUNCTIONS.select_point.id
 _TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
@@ -40,13 +41,22 @@ class MMMTimingPushBuildOrder:
         base_location = BaseLocation(base_top_left)
         self.orders = [
             BuildSupplyDepot(base_location, 0, 20),
-            BuildRefinery(base_location),
             BuildBarracks(base_location, 20, 0),
+            BuildRefinery(base_location),
+            MorphOrbitalCommand(base_location),
             TrainMarine(base_location),
-            BuildSupplyDepot(base_location, 20, 20),
-            TrainMarine(base_location),
-            BuildSupplyDepot(base_location, -20, 20),
-            TrainMarine(base_location),
+            #BuildSupplyDepot(base_location, 20, 20),
+            #TrainMarine(base_location),
+            # Factory
+            # Barracks (2)
+            # Refinery (2)
+            # Barracks Morph Techlab
+            # Starport
+            # Reactor on Factory
+            # Constant Marauder and Marine
+            # Research Stimpack
+            # Switch Starport Reactor
+            # Build 2 Medivacs
             # NoOrder(base_location)
         ]
         self.current_order_index = 0
@@ -119,7 +129,6 @@ class BuildSupplyDepot(Order):
                 unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
                 target = [unit_x[0], unit_y[0]]
                 self.scv_selected = True
-
                 return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
             elif _BUILD_SUPPLYDEPOT in observations.available_actions():
                 unit_type = observations.screen().unit_type()
@@ -131,7 +140,6 @@ class BuildSupplyDepot(Order):
                     self.y_from_base
                 )
                 self.supply_depot_built = True
-
                 return actions.FunctionCall(_BUILD_SUPPLYDEPOT, [_NOT_QUEUED, target])
         return actions.FunctionCall(_NOOP, [])
 
@@ -197,40 +205,30 @@ class BuildBarracks(Order):
             if _BUILD_BARRACKS in observations.available_actions():
                 unit_type = observations.screen().unit_type()
                 unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
-
                 target = self.base_location.transform_location(
                     int(unit_x.mean()),
                     self.x_from_base,
                     int(unit_y.mean()),
                     self.y_from_base
                 )
-
                 self.barracks_built = True
-
                 return actions.FunctionCall(_BUILD_BARRACKS, [_NOT_QUEUED, target])
             elif not self.scv_selected:
                 unit_type = observations.screen().unit_type()
                 unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
-
                 target = [unit_x[0], unit_y[0]]
-
                 self.scv_selected = True
-
                 return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
         elif not self.barracks_rallied:
             if not self.barracks_selected:
                 unit_type = observations.screen().unit_type()
                 unit_y, unit_x = (unit_type == _TERRAN_BARRACKS).nonzero()
-
                 if unit_y.any():
                     target = [int(unit_x.mean()), int(unit_y.mean())]
-
                     self.barracks_selected = True
-
                     return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
             else:
                 self.barracks_rallied = True
-
                 if self.base_location.top_left():
                     return actions.FunctionCall(_RALLY_UNITS_MINIMAP, [_NOT_QUEUED, [29, 21]])
 
@@ -273,6 +271,32 @@ class TrainMarine(Order):
                 if self.base_location.top_left():
                     return actions.FunctionCall(_ATTACK_MINIMAP, [_NOT_QUEUED, [39, 45]])
                 return actions.FunctionCall(_ATTACK_MINIMAP, [_NOT_QUEUED, [21, 24]])
+        return actions.FunctionCall(_NOOP, [])
+
+
+class MorphOrbitalCommand(Order):
+
+    command_center_selected = False
+    orbital_command_built = False
+
+    def __init__(self, base_location):
+        Order.__init__(self, base_location)
+
+    def done(self, observations: Observations):
+        return self.orbital_command_built
+
+    def execute(self, observations: Observations):
+        if not self.command_center_selected:
+            unit_type = observations.screen().unit_type()
+            center_y, center_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
+            center_x = round(center_x.mean())
+            center_y = round(center_y.mean())
+            target = [center_x, center_y]
+            self.command_center_selected = True
+            return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+        elif self.command_center_selected and _MORPH_ORBITAL_COMMAND in observations.available_actions():
+            self.orbital_command_built = True
+            return actions.FunctionCall(_MORPH_ORBITAL_COMMAND, [_NOT_QUEUED])
         return actions.FunctionCall(_NOOP, [])
 
 
