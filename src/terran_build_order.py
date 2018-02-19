@@ -1,6 +1,7 @@
 
 from pysc2.lib import actions
 from pysc2.lib import features
+from observations import Observations
 
 # Functions
 _BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
@@ -86,10 +87,10 @@ class Order:
         self.base_location = base_location
 
     def done(self):
-        raise NotImplementedError( "Should be implemented by concrete order" )
+        raise NotImplementedError("Should be implemented by concrete order")
 
-    def execute(self, observations):
-        raise NotImplementedError( "Should be implemented by concrete order" )
+    def execute(self, observations: Observations):
+        raise NotImplementedError("Should be implemented by concrete order")
 
 
 class BuildSupplyDepot(Order):
@@ -107,7 +108,7 @@ class BuildSupplyDepot(Order):
     def done(self):
         return self.supply_depot_built
 
-    def execute(self, observations):
+    def execute(self, observations: Observations):
         if not self.supply_depot_built:
             if not self.scv_selected:
                 unit_type = observations.screen()[_UNIT_TYPE]
@@ -153,7 +154,7 @@ class BuildBarracks(Order):
     def done(self):
         return self.barracks_rallied
 
-    def execute(self, observations):
+    def execute(self, observations: Observations):
         if not self.barracks_built:
             if _BUILD_BARRACKS in observations.available_actions():
                 unit_type = observations.screen()[_UNIT_TYPE]
@@ -207,7 +208,7 @@ class TrainMarine(Order):
     def done(self):
         return self.army_rallied
 
-    def execute(self, observations):
+    def execute(self, observations: Observations):
         if observations.player()[_SUPPLY_USED] < observations.player()[_SUPPLY_MAX] and _TRAIN_MARINE in observations.available_actions():
             return actions.FunctionCall(_TRAIN_MARINE, [_QUEUED])
         elif not self.barracks_selected:
@@ -240,5 +241,5 @@ class NoOrder(Order):
     def done(self):
         return True
 
-    def execute(self, obs):
+    def execute(self, obs: Observations):
         return actions.FunctionCall(_NOOP, [])
