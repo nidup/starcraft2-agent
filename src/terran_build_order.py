@@ -1,6 +1,5 @@
 
 from pysc2.lib import actions
-from pysc2.lib import features
 from observations import Observations
 
 # Functions
@@ -13,9 +12,6 @@ _RALLY_UNITS_MINIMAP = actions.FUNCTIONS.Rally_Units_minimap.id
 _SELECT_ARMY = actions.FUNCTIONS.select_army.id
 _ATTACK_MINIMAP = actions.FUNCTIONS.Attack_minimap.id
 
-# Features
-_UNIT_TYPE = features.SCREEN_FEATURES.unit_type.index
-
 # Unit IDs
 _TERRAN_BARRACKS = 21
 _TERRAN_COMMANDCENTER = 18
@@ -23,10 +19,9 @@ _TERRAN_SUPPLYDEPOT = 19
 _TERRAN_SCV = 45
 
 # Parameters
-_SUPPLY_USED = 3
-_SUPPLY_MAX = 4
 _NOT_QUEUED = [0]
 _QUEUED = [1]
+
 
 # cf http://liquipedia.net/starcraft2/MMM_Timing_Push
 class MMMTimingPushBuildOrder:
@@ -97,13 +92,13 @@ class BuildSupplyDepot(Order):
 
     scv_selected = False
     supply_depot_built = False
-    xFromBase = None
-    yFromBase = None
+    x_from_base = None
+    y_from_base = None
 
-    def __init__(self, base_location, xFromBase, yFromBase):
+    def __init__(self, base_location, x_from_base, y_from_base):
         Order.__init__(self, base_location)
-        self.xFromBase = xFromBase
-        self.yFromBase = yFromBase
+        self.x_from_base = x_from_base
+        self.y_from_base = y_from_base
 
     def done(self):
         return self.supply_depot_built
@@ -111,7 +106,7 @@ class BuildSupplyDepot(Order):
     def execute(self, observations: Observations):
         if not self.supply_depot_built:
             if not self.scv_selected:
-                unit_type = observations.screen()[_UNIT_TYPE]
+                unit_type = observations.screen().unit_type()
                 unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
 
                 target = [unit_x[0], unit_y[0]]
@@ -120,14 +115,14 @@ class BuildSupplyDepot(Order):
 
                 return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
             elif _BUILD_SUPPLYDEPOT in observations.available_actions():
-                unit_type = observations.screen()[_UNIT_TYPE]
+                unit_type = observations.screen().unit_type()
                 unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
 
                 target = self.base_location.transform_location(
                     int(unit_x.mean()),
-                    self.xFromBase,
+                    self.x_from_base,
                     int(unit_y.mean()),
-                    self.yFromBase
+                    self.y_from_base
                 )
 
                 self.supply_depot_built = True
@@ -143,13 +138,13 @@ class BuildBarracks(Order):
     barracks_selected = False
     barracks_rallied = False
 
-    xFromBase = None
-    yFromBase = None
+    x_from_base = None
+    y_from_base = None
 
-    def __init__(self, base_location, xFromBase, yFromBase):
+    def __init__(self, base_location, x_from_base, y_from_base):
         Order.__init__(self, base_location)
-        self.xFromBase = xFromBase
-        self.yFromBase = yFromBase
+        self.x_from_base = x_from_base
+        self.y_from_base = y_from_base
 
     def done(self):
         return self.barracks_rallied
@@ -157,16 +152,21 @@ class BuildBarracks(Order):
     def execute(self, observations: Observations):
         if not self.barracks_built:
             if _BUILD_BARRACKS in observations.available_actions():
-                unit_type = observations.screen()[_UNIT_TYPE]
+                unit_type = observations.screen().unit_type()
                 unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
 
-                target = self.base_location.transform_location(int(unit_x.mean()), self.xFromBase, int(unit_y.mean()), self.yFromBase)
+                target = self.base_location.transform_location(
+                    int(unit_x.mean()),
+                    self.x_from_base,
+                    int(unit_y.mean()),
+                    self.y_from_base
+                )
 
                 self.barracks_built = True
 
                 return actions.FunctionCall(_BUILD_BARRACKS, [_NOT_QUEUED, target])
             elif not self.scv_selected:
-                unit_type = observations.screen()[_UNIT_TYPE]
+                unit_type = observations.screen().unit_type()
                 unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
 
                 target = [unit_x[0], unit_y[0]]
@@ -176,7 +176,7 @@ class BuildBarracks(Order):
                 return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
         elif not self.barracks_rallied:
             if not self.barracks_selected:
-                unit_type = observations.screen()[_UNIT_TYPE]
+                unit_type = observations.screen().unit_type()
                 unit_y, unit_x = (unit_type == _TERRAN_BARRACKS).nonzero()
 
                 if unit_y.any():
@@ -209,10 +209,10 @@ class TrainMarine(Order):
         return self.army_rallied
 
     def execute(self, observations: Observations):
-        if observations.player()[_SUPPLY_USED] < observations.player()[_SUPPLY_MAX] and _TRAIN_MARINE in observations.available_actions():
+        if observations.player().food_used() < observations.player().food_cap() and _TRAIN_MARINE in observations.available_actions():
             return actions.FunctionCall(_TRAIN_MARINE, [_QUEUED])
         elif not self.barracks_selected:
-            unit_type = observations.screen()[_UNIT_TYPE]
+            unit_type = observations.screen().unit_type()
             unit_y, unit_x = (unit_type == _TERRAN_BARRACKS).nonzero()
             if unit_y.any():
                 target = [int(unit_x.mean()), int(unit_y.mean())]
