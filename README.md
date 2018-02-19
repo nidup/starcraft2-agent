@@ -11,6 +11,8 @@ Install [PySC2 - StarCraft II Learning Environment](https://github.com/deepmind/
 ```
 $ python3.6 -m pip install setuptools
 $ python3.6 -m pip install pysc2
+$ sudo python3.6 -m pip install scipy
+$ sudo python3.6 -m pip install sklearn
 ```
 
 Download [Starcraft 2 Linux Package](https://github.com/Blizzard/s2client-proto#downloads) and extract into the expected default location:

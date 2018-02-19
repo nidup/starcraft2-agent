@@ -1,11 +1,16 @@
 
 from pysc2.lib import actions
 from observations import Observations
+from sklearn.cluster import KMeans
+import math
+
 
 # Functions
-_BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
-_BUILD_SUPPLYDEPOT = actions.FUNCTIONS.Build_SupplyDepot_screen.id
 _NOOP = actions.FUNCTIONS.no_op.id
+_BUILD_SUPPLYDEPOT = actions.FUNCTIONS.Build_SupplyDepot_screen.id
+_BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
+_BUILD_REFINERY = actions.FUNCTIONS.Build_Refinery_screen.id
+
 _SELECT_POINT = actions.FUNCTIONS.select_point.id
 _TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
 _RALLY_UNITS_MINIMAP = actions.FUNCTIONS.Rally_Units_minimap.id
@@ -17,6 +22,7 @@ _TERRAN_BARRACKS = 21
 _TERRAN_COMMANDCENTER = 18
 _TERRAN_SUPPLYDEPOT = 19
 _TERRAN_SCV = 45
+_NEUTRAL_VESPENE_GEYSER = 342
 
 # Parameters
 _NOT_QUEUED = [0]
@@ -34,17 +40,22 @@ class MMMTimingPushBuildOrder:
         base_location = BaseLocation(base_top_left)
         self.orders = [
             BuildSupplyDepot(base_location, 0, 20),
+            BuildRefinery(base_location),
             BuildBarracks(base_location, 20, 0),
             TrainMarine(base_location),
             BuildSupplyDepot(base_location, 20, 20),
-            TrainMarine(base_location)
-            #NoOrder(base_location)
+            TrainMarine(base_location),
+            BuildSupplyDepot(base_location, -20, 20),
+            TrainMarine(base_location),
+            # NoOrder(base_location)
         ]
         self.current_order_index = 0
         self.current_order = self.orders[0]
 
     def action(self, observations):
-        if self.current_order.done():
+        print("order" + str(self.current_order_index))
+        print(self.current_order)
+        if self.current_order.done(observations):
             self.next_order()
         return self.current_order.execute(observations)
 
@@ -52,8 +63,6 @@ class MMMTimingPushBuildOrder:
         self.current_order_index = self.current_order_index + 1
         if self.current_order_index < len(self.orders):
             self.current_order = self.orders[self.current_order_index]
-            print("order")
-            print(self.current_order)
         else:
             self.current_order = self.orders[len(self.orders) - 1]
 
@@ -81,7 +90,7 @@ class Order:
     def __init__(self, base_location):
         self.base_location = base_location
 
-    def done(self):
+    def done(self, observations: Observations):
         raise NotImplementedError("Should be implemented by concrete order")
 
     def execute(self, observations: Observations):
@@ -100,7 +109,7 @@ class BuildSupplyDepot(Order):
         self.x_from_base = x_from_base
         self.y_from_base = y_from_base
 
-    def done(self):
+    def done(self, observations: Observations):
         return self.supply_depot_built
 
     def execute(self, observations: Observations):
@@ -108,26 +117,60 @@ class BuildSupplyDepot(Order):
             if not self.scv_selected:
                 unit_type = observations.screen().unit_type()
                 unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
-
                 target = [unit_x[0], unit_y[0]]
-
                 self.scv_selected = True
 
                 return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
             elif _BUILD_SUPPLYDEPOT in observations.available_actions():
                 unit_type = observations.screen().unit_type()
                 unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
-
                 target = self.base_location.transform_location(
                     int(unit_x.mean()),
                     self.x_from_base,
                     int(unit_y.mean()),
                     self.y_from_base
                 )
-
                 self.supply_depot_built = True
 
                 return actions.FunctionCall(_BUILD_SUPPLYDEPOT, [_NOT_QUEUED, target])
+        return actions.FunctionCall(_NOOP, [])
+
+
+class BuildRefinery(Order):
+
+    scv_selected = False
+    refinery_built = False
+
+    def __init__(self, base_location):
+        Order.__init__(self, base_location)
+
+    def done(self, observations: Observations):
+        return self.refinery_built
+
+    def execute(self, observations: Observations):
+        if not self.refinery_built:
+            if not self.scv_selected:
+                unit_type = observations.screen().unit_type()
+                unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
+                target = [unit_x[0], unit_y[0]]
+                self.scv_selected = True
+                return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+
+            # https://itnext.io/how-to-locate-and-select-units-in-pysc2-2bb1c81f2ad3
+            elif _BUILD_REFINERY in observations.available_actions():
+                unit_type = observations.screen().unit_type()
+                vespene_y, vespene_x = (unit_type == _NEUTRAL_VESPENE_GEYSER).nonzero()
+                vespene_geyser_count = int(math.ceil(len(vespene_y) / 97))
+                units = []
+                for i in range(0, len(vespene_y)):
+                    units.append((vespene_x[i], vespene_y[i]))
+                kmeans = KMeans(vespene_geyser_count)
+                kmeans.fit(units)
+                vespene1_x = int(kmeans.cluster_centers_[0][0])
+                vespene1_y = int(kmeans.cluster_centers_[0][1])
+                target = [vespene1_x, vespene1_y]
+                self.refinery_built = True
+                return actions.FunctionCall(_BUILD_REFINERY, [_NOT_QUEUED, target])
         return actions.FunctionCall(_NOOP, [])
 
 
@@ -146,7 +189,7 @@ class BuildBarracks(Order):
         self.x_from_base = x_from_base
         self.y_from_base = y_from_base
 
-    def done(self):
+    def done(self, observations: Observations):
         return self.barracks_rallied
 
     def execute(self, observations: Observations):
@@ -205,11 +248,11 @@ class TrainMarine(Order):
     def __init__(self, base_location):
         Order.__init__(self, base_location)
 
-    def done(self):
-        return self.army_rallied
+    def done(self, observations: Observations):
+        return observations.player().food_used() == observations.player().food_cap()
 
     def execute(self, observations: Observations):
-        if observations.player().food_used() < observations.player().food_cap() and _TRAIN_MARINE in observations.available_actions():
+        if _TRAIN_MARINE in observations.available_actions():
             return actions.FunctionCall(_TRAIN_MARINE, [_QUEUED])
         elif not self.barracks_selected:
             unit_type = observations.screen().unit_type()
@@ -238,7 +281,7 @@ class NoOrder(Order):
     def __init__(self, base_location):
         Order.__init__(self, base_location)
 
-    def done(self):
+    def done(self, observations: Observations):
         return True
 
     def execute(self, obs: Observations):
