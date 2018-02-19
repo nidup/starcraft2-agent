@@ -9,6 +9,7 @@ import math
 _NOOP = actions.FUNCTIONS.no_op.id
 _BUILD_SUPPLYDEPOT = actions.FUNCTIONS.Build_SupplyDepot_screen.id
 _BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
+_BUILD_TECHLAB_BARRACKS = actions.FUNCTIONS.Build_TechLab_screen.id
 _BUILD_REFINERY = actions.FUNCTIONS.Build_Refinery_screen.id
 _MORPH_ORBITAL_COMMAND = actions.FUNCTIONS.Morph_OrbitalCommand_quick.id
 
@@ -44,16 +45,16 @@ class MMMTimingPushBuildOrder:
             BuildBarracks(base_location, 20, 0),
             BuildRefinery(base_location),
             MorphOrbitalCommand(base_location),
-            TrainMarine(base_location),
-            #BuildSupplyDepot(base_location, 20, 20),
-            #TrainMarine(base_location),
+            TrainMarine(base_location, 3),
+            BuildSupplyDepot(base_location, 20, 20),
             # Factory
             # Barracks (2)
             # Refinery (2)
-            # Barracks Morph Techlab
+            BuildTechLabBarracks(base_location),
             # Starport
             # Reactor on Factory
             # Constant Marauder and Marine
+            TrainMarine(base_location, 20),
             # Research Stimpack
             # Switch Starport Reactor
             # Build 2 Medivacs
@@ -238,19 +239,25 @@ class BuildBarracks(Order):
 
 class TrainMarine(Order):
 
+    amount_trainee = 0
+    already_trained = 0
+
     barracks_selected = False
     army_selected = False
     army_rallied = False
     done = False
 
-    def __init__(self, base_location):
+    def __init__(self, base_location, amount):
         Order.__init__(self, base_location)
+        self.amount_trainee = amount
 
     def done(self, observations: Observations):
-        return observations.player().food_used() == observations.player().food_cap()
+        return (self.already_trained >= self.amount_trainee)\
+               or (observations.player().food_used() == observations.player().food_cap())
 
     def execute(self, observations: Observations):
         if _TRAIN_MARINE in observations.available_actions():
+            self.already_trained = self.already_trained + 1
             return actions.FunctionCall(_TRAIN_MARINE, [_QUEUED])
         elif not self.barracks_selected:
             unit_type = observations.screen().unit_type()
@@ -297,6 +304,34 @@ class MorphOrbitalCommand(Order):
         elif self.command_center_selected and _MORPH_ORBITAL_COMMAND in observations.available_actions():
             self.orbital_command_built = True
             return actions.FunctionCall(_MORPH_ORBITAL_COMMAND, [_NOT_QUEUED])
+        return actions.FunctionCall(_NOOP, [])
+
+
+class BuildTechLabBarracks(Order):
+
+    barracks_selected = False
+    tech_lab_built = False
+
+    def __init__(self, base_location):
+        Order.__init__(self, base_location)
+
+    def done(self, observations: Observations):
+        return self.tech_lab_built
+
+    def execute(self, observations: Observations):
+        if not self.barracks_selected:
+            unit_type = observations.screen().unit_type()
+            unit_y, unit_x = (unit_type == _TERRAN_BARRACKS).nonzero()
+            target = [int(unit_x.mean()), int(unit_y.mean())]
+            self.barracks_selected = True
+            return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+        elif _BUILD_TECHLAB_BARRACKS in observations.available_actions():
+            self.tech_lab_built = True
+            unit_type = observations.screen().unit_type()
+            unit_y, unit_x = (unit_type == _TERRAN_BARRACKS).nonzero()
+            target = [int(unit_x.mean()), int(unit_y.mean())]
+            return actions.FunctionCall(_BUILD_TECHLAB_BARRACKS, [_NOT_QUEUED, target])
+
         return actions.FunctionCall(_NOOP, [])
 
 
