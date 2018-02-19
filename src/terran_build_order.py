@@ -37,28 +37,30 @@ class MMMTimingPushBuildOrder:
     def __init__(self, base_top_left):
         base_location = BaseLocation(base_top_left)
         self.orders = [
-            BuildSupplyDepot(base_location),
-            BuildBarracks(base_location),
+            BuildSupplyDepot(base_location, 0, 20),
+            BuildBarracks(base_location, 20, 0),
             TrainMarine(base_location),
-            NoOrder(base_location)
+            BuildSupplyDepot(base_location, 20, 20),
+            TrainMarine(base_location)
+            #NoOrder(base_location)
         ]
         self.current_order_index = 0
         self.current_order = self.orders[0]
 
-    def action(self, obs):
-
+    def action(self, observations):
         if self.current_order.done():
             self.next_order()
-
-        return self.current_order.execute(obs)
+        return self.current_order.execute(observations)
 
     def next_order(self):
         self.current_order_index = self.current_order_index + 1
         if self.current_order_index < len(self.orders):
             self.current_order = self.orders[self.current_order_index]
+            print("order")
             print(self.current_order)
         else:
             self.current_order = self.orders[len(self.orders) - 1]
+
 
 class BaseLocation:
 
@@ -86,7 +88,7 @@ class Order:
     def done(self):
         raise NotImplementedError( "Should be implemented by concrete order" )
 
-    def execute(self, obs):
+    def execute(self, observations):
         raise NotImplementedError( "Should be implemented by concrete order" )
 
 
@@ -94,17 +96,21 @@ class BuildSupplyDepot(Order):
 
     scv_selected = False
     supply_depot_built = False
+    xFromBase = None
+    yFromBase = None
 
-    def __init__(self, base_location):
+    def __init__(self, base_location, xFromBase, yFromBase):
         Order.__init__(self, base_location)
+        self.xFromBase = xFromBase
+        self.yFromBase = yFromBase
 
     def done(self):
         return self.supply_depot_built
 
-    def execute(self, obs):
+    def execute(self, observations):
         if not self.supply_depot_built:
             if not self.scv_selected:
-                unit_type = obs.observation["screen"][_UNIT_TYPE]
+                unit_type = observations.screen()[_UNIT_TYPE]
                 unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
 
                 target = [unit_x[0], unit_y[0]]
@@ -112,44 +118,64 @@ class BuildSupplyDepot(Order):
                 self.scv_selected = True
 
                 return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
-            elif _BUILD_SUPPLYDEPOT in obs.observation["available_actions"]:
-                unit_type = obs.observation["screen"][_UNIT_TYPE]
+            elif _BUILD_SUPPLYDEPOT in observations.available_actions():
+                unit_type = observations.screen()[_UNIT_TYPE]
                 unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
 
-                target = self.base_location.transform_location(int(unit_x.mean()), 0, int(unit_y.mean()), 20)
+                target = self.base_location.transform_location(
+                    int(unit_x.mean()),
+                    self.xFromBase,
+                    int(unit_y.mean()),
+                    self.yFromBase
+                )
 
                 self.supply_depot_built = True
 
                 return actions.FunctionCall(_BUILD_SUPPLYDEPOT, [_NOT_QUEUED, target])
         return actions.FunctionCall(_NOOP, [])
 
+
 class BuildBarracks(Order):
 
+    scv_selected = False
     barracks_built = False
     barracks_selected = False
     barracks_rallied = False
-    # TODO select vcs
 
-    def __init__(self, base_location):
+    xFromBase = None
+    yFromBase = None
+
+    def __init__(self, base_location, xFromBase, yFromBase):
         Order.__init__(self, base_location)
+        self.xFromBase = xFromBase
+        self.yFromBase = yFromBase
 
     def done(self):
         return self.barracks_rallied
 
-    def execute(self, obs):
+    def execute(self, observations):
         if not self.barracks_built:
-            if _BUILD_BARRACKS in obs.observation["available_actions"]:
-                unit_type = obs.observation["screen"][_UNIT_TYPE]
+            if _BUILD_BARRACKS in observations.available_actions():
+                unit_type = observations.screen()[_UNIT_TYPE]
                 unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
 
-                target = self.base_location.transform_location(int(unit_x.mean()), 20, int(unit_y.mean()), 0)
+                target = self.base_location.transform_location(int(unit_x.mean()), self.xFromBase, int(unit_y.mean()), self.yFromBase)
 
                 self.barracks_built = True
 
                 return actions.FunctionCall(_BUILD_BARRACKS, [_NOT_QUEUED, target])
+            elif not self.scv_selected:
+                unit_type = observations.screen()[_UNIT_TYPE]
+                unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
+
+                target = [unit_x[0], unit_y[0]]
+
+                self.scv_selected = True
+
+                return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
         elif not self.barracks_rallied:
             if not self.barracks_selected:
-                unit_type = obs.observation["screen"][_UNIT_TYPE]
+                unit_type = observations.screen()[_UNIT_TYPE]
                 unit_y, unit_x = (unit_type == _TERRAN_BARRACKS).nonzero()
 
                 if unit_y.any():
@@ -173,6 +199,7 @@ class TrainMarine(Order):
     barracks_selected = False
     army_selected = False
     army_rallied = False
+    done = False
 
     def __init__(self, base_location):
         Order.__init__(self, base_location)
@@ -180,23 +207,27 @@ class TrainMarine(Order):
     def done(self):
         return self.army_rallied
 
-    def execute(self, obs):
-        if obs.observation["player"][_SUPPLY_USED] < obs.observation["player"][_SUPPLY_MAX] and _TRAIN_MARINE in obs.observation["available_actions"]:
+    def execute(self, observations):
+        if observations.player()[_SUPPLY_USED] < observations.player()[_SUPPLY_MAX] and _TRAIN_MARINE in observations.available_actions():
             return actions.FunctionCall(_TRAIN_MARINE, [_QUEUED])
+        elif not self.barracks_selected:
+            unit_type = observations.screen()[_UNIT_TYPE]
+            unit_y, unit_x = (unit_type == _TERRAN_BARRACKS).nonzero()
+            if unit_y.any():
+                target = [int(unit_x.mean()), int(unit_y.mean())]
+                self.barracks_selected = True
+            return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
         elif not self.army_rallied:
             if not self.army_selected:
-                if _SELECT_ARMY in obs.observation["available_actions"]:
+                if _SELECT_ARMY in observations.available_actions():
                     self.army_selected = True
                     self.barracks_selected = False
-
                     return actions.FunctionCall(_SELECT_ARMY, [_NOT_QUEUED])
-            elif _ATTACK_MINIMAP in obs.observation["available_actions"]:
+            elif _ATTACK_MINIMAP in observations.available_actions():
                 self.army_rallied = True
                 self.army_selected = False
-
                 if self.base_location.top_left():
                     return actions.FunctionCall(_ATTACK_MINIMAP, [_NOT_QUEUED, [39, 45]])
-
                 return actions.FunctionCall(_ATTACK_MINIMAP, [_NOT_QUEUED, [21, 24]])
         return actions.FunctionCall(_NOOP, [])
 
