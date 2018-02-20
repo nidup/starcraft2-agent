@@ -14,9 +14,10 @@ _BUILD_REFINERY = actions.FUNCTIONS.Build_Refinery_screen.id
 _MORPH_ORBITAL_COMMAND = actions.FUNCTIONS.Morph_OrbitalCommand_quick.id
 
 _SELECT_POINT = actions.FUNCTIONS.select_point.id
-_TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
 _RALLY_UNITS_MINIMAP = actions.FUNCTIONS.Rally_Units_minimap.id
 _SELECT_ARMY = actions.FUNCTIONS.select_army.id
+_TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
+_TRAIN_MARAUDER = actions.FUNCTIONS.Train_Marauder_quick.id
 _ATTACK_MINIMAP = actions.FUNCTIONS.Attack_minimap.id
 
 # Unit IDs
@@ -54,6 +55,7 @@ class MMMTimingPushBuildOrder:
             # Starport
             # Reactor on Factory
             # Constant Marauder and Marine
+            TrainMarauder(base_location, 4),
             TrainMarine(base_location, 20),
             # Research Stimpack
             # Switch Starport Reactor
@@ -238,28 +240,28 @@ class BuildBarracks(Order):
         return actions.FunctionCall(_NOOP, [])
 
 
-class TrainMarine(Order):
+class TrainBarracksUnit(Order):
 
     amount_trainee = 0
     already_trained = 0
-
+    train_action = None
     barracks_selected = False
     army_selected = False
     army_rallied = False
-    done = False
 
-    def __init__(self, base_location, amount):
+    def __init__(self, base_location, amount, train_action):
         Order.__init__(self, base_location)
         self.amount_trainee = amount
+        self.train_action = train_action
 
     def done(self, observations: Observations):
         return (self.already_trained >= self.amount_trainee)\
                or (observations.player().food_used() == observations.player().food_cap())
 
     def execute(self, observations: Observations):
-        if _TRAIN_MARINE in observations.available_actions():
+        if self.train_action in observations.available_actions():
             self.already_trained = self.already_trained + 1
-            return actions.FunctionCall(_TRAIN_MARINE, [_QUEUED])
+            return actions.FunctionCall(self.train_action, [_QUEUED])
         elif not self.barracks_selected:
             unit_type = observations.screen().unit_type()
             unit_y, unit_x = (unit_type == _TERRAN_BARRACKS).nonzero()
@@ -268,6 +270,18 @@ class TrainMarine(Order):
                 self.barracks_selected = True
             return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
         return actions.FunctionCall(_NOOP, [])
+
+
+class TrainMarine(TrainBarracksUnit):
+
+    def __init__(self, base_location, amount):
+        TrainBarracksUnit.__init__(self, base_location, amount, _TRAIN_MARINE)
+
+
+class TrainMarauder(TrainBarracksUnit):
+
+    def __init__(self, base_location, amount):
+        TrainBarracksUnit.__init__(self, base_location, amount, _TRAIN_MARAUDER)
 
 
 class PushWithArmy(Order):
