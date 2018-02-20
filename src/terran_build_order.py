@@ -12,6 +12,7 @@ _BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
 _BUILD_TECHLAB_BARRACKS = actions.FUNCTIONS.Build_TechLab_screen.id
 _BUILD_REFINERY = actions.FUNCTIONS.Build_Refinery_screen.id
 _MORPH_ORBITAL_COMMAND = actions.FUNCTIONS.Morph_OrbitalCommand_quick.id
+_BUILD_FACTORY = actions.FUNCTIONS.Build_Factory_screen.id
 
 _SELECT_POINT = actions.FUNCTIONS.select_point.id
 _RALLY_UNITS_MINIMAP = actions.FUNCTIONS.Rally_Units_minimap.id
@@ -20,8 +21,9 @@ _TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
 _TRAIN_MARAUDER = actions.FUNCTIONS.Train_Marauder_quick.id
 _ATTACK_MINIMAP = actions.FUNCTIONS.Attack_minimap.id
 
-# Unit IDs
+# Unit IDs cf https://github.com/Blizzard/s2client-api/blob/master/include/sc2api/sc2_typeenums.h
 _TERRAN_BARRACKS = 21
+_TERRAN_FACTORY = 27
 _TERRAN_COMMANDCENTER = 18
 _TERRAN_SUPPLYDEPOT = 19
 _TERRAN_SCV = 45
@@ -42,13 +44,13 @@ class MMMTimingPushBuildOrder:
     def __init__(self, base_top_left):
         base_location = BaseLocation(base_top_left)
         self.orders = [
-            BuildSupplyDepot(base_location, 0, 20),
+            BuildSupplyDepot(base_location, 0, 15),
             BuildBarracks(base_location, 20, 0),
             BuildRefinery(base_location),
-            MorphOrbitalCommand(base_location),
+            # MorphOrbitalCommand(base_location), -> no more a command center?
             TrainMarine(base_location, 3),
-            BuildSupplyDepot(base_location, 20, 20),
-            # Factory
+            BuildSupplyDepot(base_location, 0, 30),
+            BuildFactory(base_location, 20, 20),
             # Barracks (2)
             # Refinery (2)
             BuildTechLabBarracks(base_location),
@@ -186,58 +188,74 @@ class BuildRefinery(Order):
         return actions.FunctionCall(_NOOP, [])
 
 
-class BuildBarracks(Order):
-
-    scv_selected = False
-    barracks_built = False
-    barracks_selected = False
-    barracks_rallied = False
+class BuildArmyBuilding(Order):
 
     x_from_base = None
     y_from_base = None
+    build_action = None
+    building_unit_type = None
+    scv_selected = False
+    building_built = False
+    building_selected = False
+    building_rallied = False
 
-    def __init__(self, base_location, x_from_base, y_from_base):
+    def __init__(self, base_location, x_from_base, y_from_base, build_action, building_unit_type):
         Order.__init__(self, base_location)
         self.x_from_base = x_from_base
         self.y_from_base = y_from_base
+        self.build_action = build_action
+        self.building_unit_type = building_unit_type
 
     def done(self, observations: Observations):
-        return self.barracks_rallied
+        return self.building_rallied
 
     def execute(self, observations: Observations):
-        if not self.barracks_built:
-            if _BUILD_BARRACKS in observations.available_actions():
+        if not self.building_built:
+            if self.build_action in observations.available_actions():
                 unit_type = observations.screen().unit_type()
                 unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
-                target = self.base_location.transform_location(
-                    int(unit_x.mean()),
-                    self.x_from_base,
-                    int(unit_y.mean()),
-                    self.y_from_base
-                )
-                self.barracks_built = True
-                return actions.FunctionCall(_BUILD_BARRACKS, [_NOT_QUEUED, target])
+                if unit_x.any():
+                    target = self.base_location.transform_location(
+                        int(unit_x.mean()),
+                        self.x_from_base,
+                        int(unit_y.mean()),
+                        self.y_from_base
+                    )
+                    self.building_built = True
+                    return actions.FunctionCall(self.build_action, [_NOT_QUEUED, target])
             elif not self.scv_selected:
                 unit_type = observations.screen().unit_type()
                 unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
                 target = [unit_x[0], unit_y[0]]
                 self.scv_selected = True
                 return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
-        elif not self.barracks_rallied:
-            if not self.barracks_selected:
+        elif not self.building_rallied:
+            if not self.building_selected:
                 unit_type = observations.screen().unit_type()
-                unit_y, unit_x = (unit_type == _TERRAN_BARRACKS).nonzero()
+                unit_y, unit_x = (unit_type == self.building_unit_type).nonzero()
                 if unit_y.any():
                     target = [int(unit_x.mean()), int(unit_y.mean())]
-                    self.barracks_selected = True
+                    self.building_selected = True
                     return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
             else:
-                self.barracks_rallied = True
+                self.building_rallied = True
                 if self.base_location.top_left():
                     return actions.FunctionCall(_RALLY_UNITS_MINIMAP, [_NOT_QUEUED, [29, 21]])
 
                 return actions.FunctionCall(_RALLY_UNITS_MINIMAP, [_NOT_QUEUED, [29, 46]])
         return actions.FunctionCall(_NOOP, [])
+
+
+class BuildBarracks(BuildArmyBuilding):
+
+    def __init__(self, base_location, x_from_base, y_from_base):
+        BuildArmyBuilding.__init__(self, base_location, x_from_base, y_from_base, _BUILD_BARRACKS, _TERRAN_BARRACKS)
+
+
+class BuildFactory(BuildArmyBuilding):
+
+    def __init__(self, base_location, x_from_base, y_from_base):
+        BuildArmyBuilding.__init__(self, base_location, x_from_base, y_from_base, _BUILD_FACTORY, _TERRAN_FACTORY)
 
 
 class TrainBarracksUnit(Order):
