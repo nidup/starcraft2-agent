@@ -59,6 +59,7 @@ class MMMTimingPushBuildOrder:
             # Switch Starport Reactor
             # Build 2 Medivacs
             # NoOrder(base_location)
+            PushWithArmy(base_location)
         ]
         self.current_order_index = 0
         self.current_order = self.orders[0]
@@ -266,18 +267,30 @@ class TrainMarine(Order):
                 target = [int(unit_x.mean()), int(unit_y.mean())]
                 self.barracks_selected = True
             return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
-        elif not self.army_rallied:
-            if not self.army_selected:
-                if _SELECT_ARMY in observations.available_actions():
-                    self.army_selected = True
-                    self.barracks_selected = False
-                    return actions.FunctionCall(_SELECT_ARMY, [_NOT_QUEUED])
-            elif _ATTACK_MINIMAP in observations.available_actions():
-                self.army_rallied = True
-                self.army_selected = False
-                if self.base_location.top_left():
-                    return actions.FunctionCall(_ATTACK_MINIMAP, [_NOT_QUEUED, [39, 45]])
-                return actions.FunctionCall(_ATTACK_MINIMAP, [_NOT_QUEUED, [21, 24]])
+        return actions.FunctionCall(_NOOP, [])
+
+
+class PushWithArmy(Order):
+
+    army_selected = False
+    push_ordered = False
+
+    def __init__(self, base_location):
+        Order.__init__(self, base_location)
+
+    def done(self, observations: Observations):
+        return self.push_ordered
+
+    def execute(self, observations: Observations):
+        if not self.army_selected:
+            if _SELECT_ARMY in observations.available_actions():
+                self.army_selected = True
+                return actions.FunctionCall(_SELECT_ARMY, [_NOT_QUEUED])
+        elif self.army_selected and _ATTACK_MINIMAP in observations.available_actions():
+            self.push_ordered = True
+            if self.base_location.top_left():
+                return actions.FunctionCall(_ATTACK_MINIMAP, [_NOT_QUEUED, [39, 45]])
+            return actions.FunctionCall(_ATTACK_MINIMAP, [_NOT_QUEUED, [21, 24]])
         return actions.FunctionCall(_NOOP, [])
 
 
