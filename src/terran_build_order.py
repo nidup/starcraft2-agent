@@ -1,6 +1,6 @@
 
 from pysc2.lib import actions
-from observations import Observations
+from observations import Observations, ScreenFeatures
 from sklearn.cluster import KMeans
 import math
 
@@ -25,6 +25,7 @@ _ATTACK_MINIMAP = actions.FUNCTIONS.Attack_minimap.id
 _TERRAN_BARRACKS = 21
 _TERRAN_FACTORY = 27
 _TERRAN_COMMANDCENTER = 18
+_TERRAN_ORBITALCOMMAND = 132
 _TERRAN_SUPPLYDEPOT = 19
 _TERRAN_SCV = 45
 _NEUTRAL_VESPENE_GEYSER = 342
@@ -47,7 +48,8 @@ class MMMTimingPushBuildOrder:
             BuildSupplyDepot(base_location, 0, 15),
             BuildBarracks(base_location, 20, 0),
             BuildRefinery(base_location),
-            # MorphOrbitalCommand(base_location), -> no more a command center?
+            # Fill refinery with VSC
+            MorphOrbitalCommand(base_location),
             TrainMarine(base_location, 3),
             BuildSupplyDepot(base_location, 0, 30),
             BuildFactory(base_location, 20, 20),
@@ -99,6 +101,12 @@ class BaseLocation:
 
         return [x + x_distance, y + y_distance]
 
+    def locate_command_center(self, screen: ScreenFeatures):
+        unit_type = screen.unit_type()
+        unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
+        if not unit_x.any():
+            unit_y, unit_x = (unit_type == _TERRAN_ORBITALCOMMAND).nonzero()
+        return unit_y, unit_x
 
 class Order:
     base_location = None
@@ -137,8 +145,7 @@ class BuildSupplyDepot(Order):
                 self.scv_selected = True
                 return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
             elif _BUILD_SUPPLYDEPOT in observations.available_actions():
-                unit_type = observations.screen().unit_type()
-                unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
+                unit_y, unit_x = self.base_location.locate_command_center(observations.screen())
                 target = self.base_location.transform_location(
                     int(unit_x.mean()),
                     self.x_from_base,
@@ -212,8 +219,7 @@ class BuildArmyBuilding(Order):
     def execute(self, observations: Observations):
         if not self.building_built:
             if self.build_action in observations.available_actions():
-                unit_type = observations.screen().unit_type()
-                unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
+                unit_y, unit_x = self.base_location.locate_command_center(observations.screen())
                 if unit_x.any():
                     target = self.base_location.transform_location(
                         int(unit_x.mean()),
