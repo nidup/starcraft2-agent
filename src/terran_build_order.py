@@ -38,51 +38,39 @@ _QUEUED = [1]
 # cf http://liquipedia.net/starcraft2/MMM_Timing_Push
 class MMMTimingPushBuildOrder:
 
-    orders = None
-    current_order = None
-    current_order_index = None
+    build_orders: None
 
     def __init__(self, base_top_left):
         base_location = BaseLocation(base_top_left)
-        self.orders = [
-            BuildSupplyDepot(base_location, 0, 15),
-            BuildBarracks(base_location, 20, 0),
-            BuildRefinery(base_location),
-            # Fill refinery with VSC
-            MorphOrbitalCommand(base_location),
-            TrainMarine(base_location, 3),
-            BuildSupplyDepot(base_location, 0, 30),
-            BuildFactory(base_location, 20, 20),
-            # Barracks (2)
-            # Refinery (2)
-            BuildTechLabBarracks(base_location),
-            # Starport
-            # Reactor on Factory
-            # Constant Marauder and Marine
-            TrainMarauder(base_location, 4),
-            TrainMarine(base_location, 20),
-            # Research Stimpack
-            # Switch Starport Reactor
-            # Build 2 Medivacs
-            # NoOrder(base_location)
-            PushWithArmy(base_location)
-        ]
-        self.current_order_index = 0
-        self.current_order = self.orders[0]
+        self.build_orders = Orders(
+            [
+                BuildSupplyDepot(base_location, 0, 15),
+                BuildBarracks(base_location, 20, 0),
+                BuildRefinery(base_location),
+                # Fill refinery with VSC
+                MorphOrbitalCommand(base_location),
+                TrainMarine(base_location, 3),
+                BuildSupplyDepot(base_location, 0, 30),
+                BuildFactory(base_location, 20, 20),
+                # Barracks (2)
+                # Refinery (2)
+                BuildTechLabBarracks(base_location),
+                # Starport
+                # Reactor on Factory
+                # Constant Marauder and Marine
+                TrainMarauder(base_location, 4),
+                TrainMarine(base_location, 20),
+                # Research Stimpack
+                # Switch Starport Reactor
+                # Build 2 Medivacs
+                # NoOrder(base_location)
+                PushWithArmy(base_location)
+            ]
+        )
 
     def action(self, observations):
-        print("order" + str(self.current_order_index))
-        print(self.current_order)
-        if self.current_order.done(observations):
-            self.next_order()
-        return self.current_order.execute(observations)
-
-    def next_order(self):
-        self.current_order_index = self.current_order_index + 1
-        if self.current_order_index < len(self.orders):
-            self.current_order = self.orders[self.current_order_index]
-        else:
-            self.current_order = self.orders[len(self.orders) - 1]
+        current_order = self.build_orders.current(observations)
+        return current_order.execute(observations)
 
 
 class BaseLocation:
@@ -108,6 +96,7 @@ class BaseLocation:
             unit_y, unit_x = (unit_type == _TERRAN_ORBITALCOMMAND).nonzero()
         return unit_y, unit_x
 
+
 class Order:
     base_location = None
 
@@ -119,6 +108,31 @@ class Order:
 
     def execute(self, observations: Observations):
         raise NotImplementedError("Should be implemented by concrete order")
+
+
+class Orders:
+    orders = None
+    current_order = None
+    current_order_index = None
+
+    def __init__(self, orders):
+        self.orders = orders
+        self.current_order_index = 0
+        self.current_order = self.orders[self.current_order_index]
+
+    def current(self, observations: Observations) -> Order:
+        print("order" + str(self.current_order_index))
+        print(self.current_order)
+        if self.current_order.done(observations):
+            self._next_order()
+        return self.current_order
+
+    def _next_order(self):
+        self.current_order_index = self.current_order_index + 1
+        if self.current_order_index < len(self.orders):
+            self.current_order = self.orders[self.current_order_index]
+        else:
+            self.current_order = self.orders[len(self.orders) - 1]
 
 
 class BuildSupplyDepot(Order):
