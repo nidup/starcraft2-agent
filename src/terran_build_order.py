@@ -39,10 +39,11 @@ _QUEUED = [1]
 class MMMTimingPushBuildOrder:
 
     build_orders: None
+    attack_orders: None
 
     def __init__(self, base_top_left):
         base_location = BaseLocation(base_top_left)
-        self.build_orders = Orders(
+        self.build_orders = OrdersSequence(
             [
                 BuildSupplyDepot(base_location, 0, 15),
                 BuildBarracks(base_location, 20, 0),
@@ -57,6 +58,10 @@ class MMMTimingPushBuildOrder:
                 BuildTechLabBarracks(base_location),
                 # Starport
                 # Reactor on Factory
+            ]
+        )
+        self.attack_orders = OrdersRepetition(
+            [
                 # Constant Marauder and Marine
                 TrainMarauder(base_location, 4),
                 TrainMarine(base_location, 20),
@@ -69,8 +74,12 @@ class MMMTimingPushBuildOrder:
         )
 
     def action(self, observations):
-        current_order = self.build_orders.current(observations)
-        return current_order.execute(observations)
+        if not self.build_orders.finished(observations):
+            current_order = self.build_orders.current(observations)
+            return current_order.execute(observations)
+        else:
+            current_order = self.attack_orders.current(observations)
+            return current_order.execute(observations)
 
 
 class BaseLocation:
@@ -110,7 +119,32 @@ class Order:
         raise NotImplementedError("Should be implemented by concrete order")
 
 
-class Orders:
+class OrdersSequence:
+    orders = None
+    current_order = None
+    current_order_index = None
+
+    def __init__(self, orders):
+        self.orders = orders
+        self.current_order_index = 0
+        self.current_order = self.orders[self.current_order_index]
+
+    def current(self, observations: Observations) -> Order:
+        print("order" + str(self.current_order_index))
+        print(self.current_order)
+        if self.current_order.done(observations):
+            self._next_order()
+        return self.current_order
+
+    def finished(self, observations: Observations) -> bool:
+        return self.current_order.done(observations) and self.current_order_index == len(self.orders) - 1
+
+    def _next_order(self):
+        self.current_order_index = self.current_order_index + 1
+        self.current_order = self.orders[self.current_order_index]
+
+
+class OrdersRepetition:
     orders = None
     current_order = None
     current_order_index = None
@@ -132,7 +166,8 @@ class Orders:
         if self.current_order_index < len(self.orders):
             self.current_order = self.orders[self.current_order_index]
         else:
-            self.current_order = self.orders[len(self.orders) - 1]
+            self.current_order_index = 0
+            self.current_order = self.orders[self.current_order_index]
 
 
 class BuildSupplyDepot(Order):
@@ -306,7 +341,7 @@ class TrainBarracksUnit(Order):
             if unit_y.any():
                 target = [int(unit_x.mean()), int(unit_y.mean())]
                 self.barracks_selected = True
-            return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+                return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
         return actions.FunctionCall(_NOOP, [])
 
 
