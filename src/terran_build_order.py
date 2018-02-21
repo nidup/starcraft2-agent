@@ -4,7 +4,6 @@ from observations import Observations, ScreenFeatures
 from sklearn.cluster import KMeans
 import math
 
-
 # Functions
 _NOOP = actions.FUNCTIONS.no_op.id
 _BUILD_SUPPLYDEPOT = actions.FUNCTIONS.Build_SupplyDepot_screen.id
@@ -15,6 +14,7 @@ _MORPH_ORBITAL_COMMAND = actions.FUNCTIONS.Morph_OrbitalCommand_quick.id
 _BUILD_FACTORY = actions.FUNCTIONS.Build_Factory_screen.id
 
 _SELECT_POINT = actions.FUNCTIONS.select_point.id
+_SELECT_IDLE_WORKER = actions.FUNCTIONS.select_idle_worker.id
 _RALLY_UNITS_MINIMAP = actions.FUNCTIONS.Rally_Units_minimap.id
 _SELECT_ARMY = actions.FUNCTIONS.select_army.id
 _TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
@@ -32,6 +32,7 @@ _TERRAN_SUPPLYDEPOT = 19
 _TERRAN_SCV = 45
 _TERRAN_REFINERY = 20
 _NEUTRAL_VESPENE_GEYSER = 342
+_NEUTRAL_MINERALFIELD = 341
 
 # Parameters
 _NOT_QUEUED = [0]
@@ -51,7 +52,7 @@ class MMMTimingPushBuildOrder:
                 BuildSupplyDepot(base_location, 0, 15),
                 BuildBarracks(base_location, 20, 0),
                 BuildRefinery(base_location),
-                #SendSCVToRefinery(base_location, 3), #Train from the orbital with rally point to refinery?
+                #SendSCVToRefinery(base_location),
                 MorphOrbitalCommand(base_location),
                 TrainMarine(base_location, 3),
                 BuildSupplyDepot(base_location, 0, 30),
@@ -75,6 +76,18 @@ class MMMTimingPushBuildOrder:
                 PushWithArmy(base_location)
             ]
         )
+
+        # TEST
+        #self.build_orders = OrdersSequence(
+        #    [
+        #        BuildRefinery(base_location),
+        #    ]
+        #)
+        #self.attack_orders = OrdersRepetition(
+        #    [
+        #        SendSCVToRefinery(base_location),
+        #    ]
+        #)
 
     def action(self, observations):
         if not self.build_orders.finished(observations):
@@ -173,9 +186,34 @@ class OrdersRepetition:
             self.current_order = self.orders[self.current_order_index]
 
 
-class BuildSupplyDepot(Order):
+class SelectSCV(Order):
 
     scv_selected = False
+
+    def __init__(self, base_location):
+        Order.__init__(self, base_location)
+
+    def done(self, observations: Observations):
+        return self.scv_selected
+
+    def execute(self, observations: Observations):
+        if not self.scv_selected:
+            if observations.player().idle_worker_count() > 0:
+                self.scv_selected = True
+                return actions.FunctionCall(_SELECT_IDLE_WORKER, [_NOT_QUEUED])
+            else:
+                unit_type = observations.screen().unit_type()
+                unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
+                target = [unit_x[0], unit_y[0]]
+                self.scv_selected = True
+                return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+
+        return actions.FunctionCall(_NOOP, [])
+
+
+class BuildSupplyDepot(Order):
+
+    select_scv_order = False
     supply_depot_built = False
     x_from_base = None
     y_from_base = None
@@ -184,18 +222,15 @@ class BuildSupplyDepot(Order):
         Order.__init__(self, base_location)
         self.x_from_base = x_from_base
         self.y_from_base = y_from_base
+        self.select_scv_order = SelectSCV(base_location)
 
     def done(self, observations: Observations):
         return self.supply_depot_built
 
     def execute(self, observations: Observations):
         if not self.supply_depot_built:
-            if not self.scv_selected:
-                unit_type = observations.screen().unit_type()
-                unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
-                target = [unit_x[0], unit_y[0]]
-                self.scv_selected = True
-                return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+            if not self.select_scv_order.done(observations):
+                return self.select_scv_order.execute(observations)
             elif _BUILD_SUPPLYDEPOT in observations.available_actions():
                 unit_y, unit_x = self.base_location.locate_command_center(observations.screen())
                 target = self.base_location.transform_location(
@@ -211,23 +246,20 @@ class BuildSupplyDepot(Order):
 
 class BuildRefinery(Order):
 
-    scv_selected = False
+    select_scv_order = None
     refinery_built = False
 
     def __init__(self, base_location):
         Order.__init__(self, base_location)
+        self.select_scv_order = SelectSCV(base_location)
 
     def done(self, observations: Observations):
         return self.refinery_built
 
     def execute(self, observations: Observations):
         if not self.refinery_built:
-            if not self.scv_selected:
-                unit_type = observations.screen().unit_type()
-                unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
-                target = [unit_x[0], unit_y[0]]
-                self.scv_selected = True
-                return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+            if not self.select_scv_order.done(observations):
+                return self.select_scv_order.execute(observations)
 
             # https://itnext.io/how-to-locate-and-select-units-in-pysc2-2bb1c81f2ad3
             elif _BUILD_REFINERY in observations.available_actions():
@@ -249,33 +281,25 @@ class BuildRefinery(Order):
 
 class SendSCVToRefinery(Order):
 
-    scv_selected = False
+    select_scv_order = False
     scv_sent_to_refinery = False
-    amount_scv = None
-    amount_scv_already_sent = False
 
-    def __init__(self, base_location, amount_scv):
+    def __init__(self, base_location):
         Order.__init__(self, base_location)
-        self.amount_scv = amount_scv
+        self.select_scv_order = SelectSCV(base_location)
 
     def done(self, observations: Observations):
-        return self.scv_sent_to_refinery and self.amount_scv == self.amount_scv_already_sent
+        return self.scv_sent_to_refinery
 
     def execute(self, observations: Observations):
-        if not self.scv_selected:
-            unit_type = observations.screen().unit_type()
-            unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
-            target = [unit_x[0], unit_y[0]]
-            self.scv_selected = True
-            return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
-        elif self.scv_selected and _MOVE_SCREEN in observations.available_actions():
+        if not self.select_scv_order.done(observations):
+            return self.select_scv_order.execute(observations)
+        elif _MOVE_SCREEN in observations.available_actions():
             unit_type = observations.screen().unit_type()
             unit_y, unit_x = (unit_type == _TERRAN_REFINERY).nonzero()
             if unit_y.any():
                 target = [int(unit_x.mean()), int(unit_y.mean())]
                 self.scv_sent_to_refinery = True
-                self.amount_scv_already_sent = self.amount_scv_already_sent + 1
-                self.scv_selected = False
                 return actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, target])
         return actions.FunctionCall(_NOOP, [])
 
@@ -286,7 +310,7 @@ class BuildArmyBuilding(Order):
     y_from_base = None
     build_action = None
     building_unit_type = None
-    scv_selected = False
+    select_scv_order = None
     building_built = False
     building_selected = False
     building_rallied = False
@@ -297,6 +321,7 @@ class BuildArmyBuilding(Order):
         self.y_from_base = y_from_base
         self.build_action = build_action
         self.building_unit_type = building_unit_type
+        self.select_scv_order = SelectSCV(base_location)
 
     def done(self, observations: Observations):
         return self.building_rallied
@@ -314,12 +339,8 @@ class BuildArmyBuilding(Order):
                     )
                     self.building_built = True
                     return actions.FunctionCall(self.build_action, [_NOT_QUEUED, target])
-            elif not self.scv_selected:
-                unit_type = observations.screen().unit_type()
-                unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
-                target = [unit_x[0], unit_y[0]]
-                self.scv_selected = True
-                return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+            elif not self.select_scv_order.done(observations):
+                return self.select_scv_order.execute(observations)
         elif not self.building_rallied:
             if not self.building_selected:
                 unit_type = observations.screen().unit_type()
