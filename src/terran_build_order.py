@@ -20,6 +20,8 @@ _SELECT_ARMY = actions.FUNCTIONS.select_army.id
 _TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
 _TRAIN_MARAUDER = actions.FUNCTIONS.Train_Marauder_quick.id
 _ATTACK_MINIMAP = actions.FUNCTIONS.Attack_minimap.id
+_ATTACK_SCREEN = actions.FUNCTIONS.Attack_screen.id
+_MOVE_SCREEN = actions.FUNCTIONS.Move_screen.id
 
 # Unit IDs cf https://github.com/Blizzard/s2client-api/blob/master/include/sc2api/sc2_typeenums.h
 _TERRAN_BARRACKS = 21
@@ -28,6 +30,7 @@ _TERRAN_COMMANDCENTER = 18
 _TERRAN_ORBITALCOMMAND = 132
 _TERRAN_SUPPLYDEPOT = 19
 _TERRAN_SCV = 45
+_TERRAN_REFINERY = 20
 _NEUTRAL_VESPENE_GEYSER = 342
 
 # Parameters
@@ -48,7 +51,7 @@ class MMMTimingPushBuildOrder:
                 BuildSupplyDepot(base_location, 0, 15),
                 BuildBarracks(base_location, 20, 0),
                 BuildRefinery(base_location),
-                # Fill refinery with VSC
+                #SendSCVToRefinery(base_location, 3), #Train from the orbital with rally point to refinery?
                 MorphOrbitalCommand(base_location),
                 TrainMarine(base_location, 3),
                 BuildSupplyDepot(base_location, 0, 30),
@@ -241,6 +244,39 @@ class BuildRefinery(Order):
                 target = [vespene1_x, vespene1_y]
                 self.refinery_built = True
                 return actions.FunctionCall(_BUILD_REFINERY, [_NOT_QUEUED, target])
+        return actions.FunctionCall(_NOOP, [])
+
+
+class SendSCVToRefinery(Order):
+
+    scv_selected = False
+    scv_sent_to_refinery = False
+    amount_scv = None
+    amount_scv_already_sent = False
+
+    def __init__(self, base_location, amount_scv):
+        Order.__init__(self, base_location)
+        self.amount_scv = amount_scv
+
+    def done(self, observations: Observations):
+        return self.scv_sent_to_refinery and self.amount_scv == self.amount_scv_already_sent
+
+    def execute(self, observations: Observations):
+        if not self.scv_selected:
+            unit_type = observations.screen().unit_type()
+            unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
+            target = [unit_x[0], unit_y[0]]
+            self.scv_selected = True
+            return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+        elif self.scv_selected and _MOVE_SCREEN in observations.available_actions():
+            unit_type = observations.screen().unit_type()
+            unit_y, unit_x = (unit_type == _TERRAN_REFINERY).nonzero()
+            if unit_y.any():
+                target = [int(unit_x.mean()), int(unit_y.mean())]
+                self.scv_sent_to_refinery = True
+                self.amount_scv_already_sent = self.amount_scv_already_sent + 1
+                self.scv_selected = False
+                return actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, target])
         return actions.FunctionCall(_NOOP, [])
 
 
