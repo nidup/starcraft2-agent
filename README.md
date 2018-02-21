@@ -46,6 +46,27 @@ python3.6 -m pysc2.bin.play --map Simple64
 
 More options and details can be found on [PySC2 - StarCraft II Learning Environment](https://github.com/deepmind/pysc2)
 
+Run the PySC2 demo agents
+-------------------------
+
+Collect Minerals Mini Game,
+
+```
+$ python3.6 -m pysc2.bin.agent --map CollectMineralShards --agent pysc2.agents.scripted_agent.CollectMineralShards
+```
+
+Move To Beacon Mini Game,
+
+```
+$ python3.6 -m pysc2.bin.agent --map MoveToBeacon --agent pysc2.agents.scripted_agent.MoveToBeacon
+```
+
+Defeat Roaches Mini Game,
+
+```
+$ python3.6 -m pysc2.bin.agent --map DefeatRoaches --agent pysc2.agents.scripted_agent.DefeatRoaches
+```
+
 Run the agent
 -------------
 
