@@ -1,7 +1,7 @@
 from pysc2.agents import base_agent
 
-from terran_build_order import MMMTimingPushBuildOrder
-from observations import Observations
+from nidup.pysc2.terran_build_order import MMMTimingPushBuildOrder
+from nidup.pysc2.observations import Observations
 
 import time
 

@@ -71,8 +71,8 @@ Run the agent
 -------------
 
 ```
-$ cd ~/git/starcraft2-agent/src/
-$ python3.6 -m pysc2.bin.agent --map Simple64 --agent simple_agent.SimpleAgent --agent_race T
+$ cd ~/git/starcraft2-agent/
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.simple_agent.SimpleAgent --agent_race T
 ```
 
 Credits

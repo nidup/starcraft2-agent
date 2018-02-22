@@ -1,6 +1,6 @@
 
 from pysc2.lib import actions
-from observations import Observations, ScreenFeatures
+from nidup.pysc2.observations import Observations, ScreenFeatures
 from sklearn.cluster import KMeans
 import math
 
