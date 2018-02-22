@@ -71,6 +71,8 @@ Run the agent
 -------------
 
 ```
+$ cd ~/git
+$ git clone git@github.com:nidup/starcraft2-agent.git
 $ cd ~/git/starcraft2-agent/
 $ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.simple_agent.SimpleAgent --agent_race T
 ```
