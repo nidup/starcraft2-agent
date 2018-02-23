@@ -76,7 +76,7 @@ class BaseLocation:
 
 
 # cf http://liquipedia.net/starcraft2/MMM_Timing_Push
-class MMMTimingPushBuildOrder:
+class TerranMMMTimingPushBuildOrder:
 
     build_orders: None
     attack_orders: None
