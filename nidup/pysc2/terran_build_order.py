@@ -37,6 +37,42 @@ _NEUTRAL_MINERALFIELD = 341
 # Parameters
 _NOT_QUEUED = [0]
 _QUEUED = [1]
+_PLAYER_SELF = 1
+
+
+class BaseLocation:
+
+    base_top_left = None
+
+    def __init__(self, observations: Observations):
+        player_y, player_x = (observations.minimap().player_relative() == _PLAYER_SELF).nonzero()
+        self.base_top_left = player_y.mean() <= 31
+
+    def top_left(self):
+        return self.base_top_left
+
+    def transform_location(self, x, x_distance, y, y_distance):
+        if not self.base_top_left:
+            return [x - x_distance, y - y_distance]
+
+        return [x + x_distance, y + y_distance]
+
+    def locate_command_center(self, screen: ScreenFeatures):
+        unit_type = screen.unit_type()
+        unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
+        if not unit_x.any():
+            unit_y, unit_x = (unit_type == _TERRAN_ORBITALCOMMAND).nonzero()
+        return unit_y, unit_x
+
+    def other_unknown_bases_locations_on_minimap(self):
+        locations = []
+        if self.base_top_left:
+            locations.append([45, 45])
+        else:
+            locations.append([21, 15])
+        locations.append([45, 15])
+        locations.append([21, 45])
+        return locations
 
 
 # cf http://liquipedia.net/starcraft2/MMM_Timing_Push
@@ -45,8 +81,7 @@ class MMMTimingPushBuildOrder:
     build_orders: None
     attack_orders: None
 
-    def __init__(self, base_top_left):
-        base_location = BaseLocation(base_top_left)
+    def __init__(self, base_location: BaseLocation):
         self.build_orders = OrdersSequence(
             [
                 BuildSupplyDepot(base_location, 0, 15),
@@ -98,34 +133,10 @@ class MMMTimingPushBuildOrder:
             return current_order.execute(observations)
 
 
-class BaseLocation:
-
-    base_top_left = None
-
-    def __init__(self, base_top_left):
-        self.base_top_left = base_top_left
-
-    def top_left(self):
-        return self.base_top_left
-
-    def transform_location(self, x, x_distance, y, y_distance):
-        if not self.base_top_left:
-            return [x - x_distance, y - y_distance]
-
-        return [x + x_distance, y + y_distance]
-
-    def locate_command_center(self, screen: ScreenFeatures):
-        unit_type = screen.unit_type()
-        unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
-        if not unit_x.any():
-            unit_y, unit_x = (unit_type == _TERRAN_ORBITALCOMMAND).nonzero()
-        return unit_y, unit_x
-
-
 class Order:
     base_location = None
 
-    def __init__(self, base_location):
+    def __init__(self, base_location: BaseLocation):
         self.base_location = base_location
 
     def done(self, observations: Observations):
@@ -190,7 +201,7 @@ class SelectSCV(Order):
 
     scv_selected = False
 
-    def __init__(self, base_location):
+    def __init__(self, base_location: BaseLocation):
         Order.__init__(self, base_location)
 
     def done(self, observations: Observations):
@@ -249,7 +260,7 @@ class BuildRefinery(Order):
     select_scv_order = None
     refinery_built = False
 
-    def __init__(self, base_location):
+    def __init__(self, base_location: BaseLocation):
         Order.__init__(self, base_location)
         self.select_scv_order = SelectSCV(base_location)
 
@@ -284,7 +295,7 @@ class SendSCVToRefinery(Order):
     select_scv_order = False
     scv_sent_to_refinery = False
 
-    def __init__(self, base_location):
+    def __init__(self, base_location: BaseLocation):
         Order.__init__(self, base_location)
         self.select_scv_order = SelectSCV(base_location)
 
@@ -419,7 +430,7 @@ class PushWithArmy(Order):
     army_selected = False
     push_ordered = False
 
-    def __init__(self, base_location):
+    def __init__(self, base_location: BaseLocation):
         Order.__init__(self, base_location)
 
     def done(self, observations: Observations):
@@ -443,7 +454,7 @@ class MorphOrbitalCommand(Order):
     command_center_selected = False
     orbital_command_built = False
 
-    def __init__(self, base_location):
+    def __init__(self, base_location: BaseLocation):
         Order.__init__(self, base_location)
 
     def done(self, observations: Observations):
@@ -469,7 +480,7 @@ class BuildTechLabBarracks(Order):
     barracks_selected = False
     tech_lab_built = False
 
-    def __init__(self, base_location):
+    def __init__(self, base_location: BaseLocation):
         Order.__init__(self, base_location)
 
     def done(self, observations: Observations):
@@ -494,7 +505,7 @@ class BuildTechLabBarracks(Order):
 
 class NoOrder(Order):
 
-    def __init__(self, base_location):
+    def __init__(self, base_location: BaseLocation):
         Order.__init__(self, base_location)
 
     def done(self, observations: Observations):

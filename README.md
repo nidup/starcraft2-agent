@@ -3,6 +3,15 @@ Starcraft 2 agent
 
 Discovering PySC2 - StarCraft II Learning Environment, playing with simple agent 🤖
 
+Clone the repository
+--------------------
+
+```
+$ cd ~/git
+$ git clone git@github.com:nidup/starcraft2-agent.git
+$ cd ~/git/starcraft2-agent/
+```
+
 Install with Python 3.6
 -----------------------
 
@@ -67,14 +76,19 @@ Defeat Roaches Mini Game,
 $ python3.6 -m pysc2.bin.agent --map DefeatRoaches --agent pysc2.agents.scripted_agent.DefeatRoaches
 ```
 
-Run the agent
--------------
+Run the nidup agents
+--------------------
 
+These agents have been built to work properly on the Simple64 map and are not robust enough to play elsewhere.
+
+Scouting Agent:
 ```
-$ cd ~/git
-$ git clone git@github.com:nidup/starcraft2-agent.git
-$ cd ~/git/starcraft2-agent/
-$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.simple_agent.SimpleAgent --agent_race T
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.ScoutingAgent --agent_race T
+```
+
+Build Order Agent:
+```
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.BuildOrderAgent --agent_race T
 ```
 
 Credits
