@@ -1,52 +1,24 @@
 
 from pysc2.lib import actions
+from nidup.pysc2.actions import TerranActions, TerranActionIds
 from nidup.pysc2.observations import Observations, ScreenFeatures
+from nidup.pysc2.unit_types import UnitTypeIds
 from sklearn.cluster import KMeans
 import math
 
-# Functions
-_NOOP = actions.FUNCTIONS.no_op.id
-_BUILD_SUPPLYDEPOT = actions.FUNCTIONS.Build_SupplyDepot_screen.id
-_BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
-_BUILD_TECHLAB_BARRACKS = actions.FUNCTIONS.Build_TechLab_screen.id
-_BUILD_REFINERY = actions.FUNCTIONS.Build_Refinery_screen.id
-_MORPH_ORBITAL_COMMAND = actions.FUNCTIONS.Morph_OrbitalCommand_quick.id
-_BUILD_FACTORY = actions.FUNCTIONS.Build_Factory_screen.id
-
-_SELECT_POINT = actions.FUNCTIONS.select_point.id
-_SELECT_IDLE_WORKER = actions.FUNCTIONS.select_idle_worker.id
-_RALLY_UNITS_MINIMAP = actions.FUNCTIONS.Rally_Units_minimap.id
-_SELECT_ARMY = actions.FUNCTIONS.select_army.id
-_TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
-_TRAIN_MARAUDER = actions.FUNCTIONS.Train_Marauder_quick.id
-_ATTACK_MINIMAP = actions.FUNCTIONS.Attack_minimap.id
-_ATTACK_SCREEN = actions.FUNCTIONS.Attack_screen.id
-_MOVE_SCREEN = actions.FUNCTIONS.Move_screen.id
-
-# Unit IDs cf https://github.com/Blizzard/s2client-api/blob/master/include/sc2api/sc2_typeenums.h
-_TERRAN_BARRACKS = 21
-_TERRAN_FACTORY = 27
-_TERRAN_COMMANDCENTER = 18
-_TERRAN_ORBITALCOMMAND = 132
-_TERRAN_SUPPLYDEPOT = 19
-_TERRAN_SCV = 45
-_TERRAN_REFINERY = 20
-_NEUTRAL_VESPENE_GEYSER = 342
-_NEUTRAL_MINERALFIELD = 341
-
 # Parameters
-_NOT_QUEUED = [0]
-_QUEUED = [1]
 _PLAYER_SELF = 1
 
 
 class BaseLocation:
 
     base_top_left = None
+    unit_type_ids = None
 
     def __init__(self, observations: Observations):
         player_y, player_x = (observations.minimap().player_relative() == _PLAYER_SELF).nonzero()
         self.base_top_left = player_y.mean() <= 31
+        self.unit_type_ids = UnitTypeIds()
 
     def top_left(self):
         return self.base_top_left
@@ -59,9 +31,9 @@ class BaseLocation:
 
     def locate_command_center(self, screen: ScreenFeatures):
         unit_type = screen.unit_type()
-        unit_y, unit_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
+        unit_y, unit_x = (unit_type == self.unit_type_ids.terran_command_center()).nonzero()
         if not unit_x.any():
-            unit_y, unit_x = (unit_type == _TERRAN_ORBITALCOMMAND).nonzero()
+            unit_y, unit_x = (unit_type == self.unit_type_ids.terran_orbital_command()).nonzero()
         return unit_y, unit_x
 
     def other_unknown_bases_locations_on_minimap(self):
@@ -135,9 +107,15 @@ class TerranMMMTimingPushBuildOrder:
 
 class Order:
     base_location = None
+    actions: None
+    action_ids: None
+    unit_type_ids: None
 
     def __init__(self, base_location: BaseLocation):
         self.base_location = base_location
+        self.actions = TerranActions()
+        self.action_ids = TerranActionIds()
+        self.unit_type_ids = UnitTypeIds()
 
     def done(self, observations: Observations):
         raise NotImplementedError("Should be implemented by concrete order")
@@ -211,15 +189,15 @@ class SelectSCV(Order):
         if not self.scv_selected:
             if observations.player().idle_worker_count() > 0:
                 self.scv_selected = True
-                return actions.FunctionCall(_SELECT_IDLE_WORKER, [_NOT_QUEUED])
+                return self.actions.select_idle_worker()
             else:
                 unit_type = observations.screen().unit_type()
-                unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
+                unit_y, unit_x = (unit_type == self.unit_type_ids.terran_scv()).nonzero()
                 target = [unit_x[0], unit_y[0]]
                 self.scv_selected = True
-                return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+                return self.actions.select_point(target)
 
-        return actions.FunctionCall(_NOOP, [])
+        return self.actions.no_op()
 
 
 class BuildSupplyDepot(Order):
@@ -242,7 +220,7 @@ class BuildSupplyDepot(Order):
         if not self.supply_depot_built:
             if not self.select_scv_order.done(observations):
                 return self.select_scv_order.execute(observations)
-            elif _BUILD_SUPPLYDEPOT in observations.available_actions():
+            elif self.action_ids.build_supply_depot() in observations.available_actions():
                 unit_y, unit_x = self.base_location.locate_command_center(observations.screen())
                 target = self.base_location.transform_location(
                     int(unit_x.mean()),
@@ -251,8 +229,8 @@ class BuildSupplyDepot(Order):
                     self.y_from_base
                 )
                 self.supply_depot_built = True
-                return actions.FunctionCall(_BUILD_SUPPLYDEPOT, [_NOT_QUEUED, target])
-        return actions.FunctionCall(_NOOP, [])
+                return self.actions.build_supply_depot(target)
+        return self.actions.no_op()
 
 
 class BuildRefinery(Order):
@@ -271,11 +249,10 @@ class BuildRefinery(Order):
         if not self.refinery_built:
             if not self.select_scv_order.done(observations):
                 return self.select_scv_order.execute(observations)
-
             # https://itnext.io/how-to-locate-and-select-units-in-pysc2-2bb1c81f2ad3
-            elif _BUILD_REFINERY in observations.available_actions():
+            elif self.action_ids.build_refinery() in observations.available_actions():
                 unit_type = observations.screen().unit_type()
-                vespene_y, vespene_x = (unit_type == _NEUTRAL_VESPENE_GEYSER).nonzero()
+                vespene_y, vespene_x = (unit_type == self.unit_type_ids.neutral_vespene_geyser()).nonzero()
                 vespene_geyser_count = int(math.ceil(len(vespene_y) / 97))
                 units = []
                 for i in range(0, len(vespene_y)):
@@ -286,8 +263,8 @@ class BuildRefinery(Order):
                 vespene1_y = int(kmeans.cluster_centers_[0][1])
                 target = [vespene1_x, vespene1_y]
                 self.refinery_built = True
-                return actions.FunctionCall(_BUILD_REFINERY, [_NOT_QUEUED, target])
-        return actions.FunctionCall(_NOOP, [])
+                return self.actions.build_refinery(target)
+        return self.actions.no_op()
 
 
 class SendSCVToRefinery(Order):
@@ -305,33 +282,29 @@ class SendSCVToRefinery(Order):
     def execute(self, observations: Observations):
         if not self.select_scv_order.done(observations):
             return self.select_scv_order.execute(observations)
-        elif _MOVE_SCREEN in observations.available_actions():
+        elif self.action_ids.move_screen() in observations.available_actions():
             unit_type = observations.screen().unit_type()
-            unit_y, unit_x = (unit_type == _TERRAN_REFINERY).nonzero()
+            unit_y, unit_x = (unit_type == self.unit_type_ids.terran_refinery()).nonzero()
             if unit_y.any():
                 target = [int(unit_x.mean()), int(unit_y.mean())]
                 self.scv_sent_to_refinery = True
-                return actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, target])
-        return actions.FunctionCall(_NOOP, [])
+                return self.actions.move_screen(target)
+        return self.actions.no_op()
 
 
 class BuildArmyBuilding(Order):
 
     x_from_base = None
     y_from_base = None
-    build_action = None
-    building_unit_type = None
     select_scv_order = None
     building_built = False
     building_selected = False
     building_rallied = False
 
-    def __init__(self, base_location, x_from_base, y_from_base, build_action, building_unit_type):
+    def __init__(self, base_location, x_from_base, y_from_base):
         Order.__init__(self, base_location)
         self.x_from_base = x_from_base
         self.y_from_base = y_from_base
-        self.build_action = build_action
-        self.building_unit_type = building_unit_type
         self.select_scv_order = SelectSCV(base_location)
 
     def done(self, observations: Observations):
@@ -339,7 +312,7 @@ class BuildArmyBuilding(Order):
 
     def execute(self, observations: Observations):
         if not self.building_built:
-            if self.build_action in observations.available_actions():
+            if self.build_action_id() in observations.available_actions():
                 unit_y, unit_x = self.base_location.locate_command_center(observations.screen())
                 if unit_x.any():
                     target = self.base_location.transform_location(
@@ -349,80 +322,122 @@ class BuildArmyBuilding(Order):
                         self.y_from_base
                     )
                     self.building_built = True
-                    return actions.FunctionCall(self.build_action, [_NOT_QUEUED, target])
+                    return self.build_action(target)
             elif not self.select_scv_order.done(observations):
                 return self.select_scv_order.execute(observations)
         elif not self.building_rallied:
             if not self.building_selected:
                 unit_type = observations.screen().unit_type()
-                unit_y, unit_x = (unit_type == self.building_unit_type).nonzero()
+                unit_y, unit_x = (unit_type == self.building_type()).nonzero()
                 if unit_y.any():
                     target = [int(unit_x.mean()), int(unit_y.mean())]
                     self.building_selected = True
-                    return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+                    return self.actions.select_point(target)
             else:
                 self.building_rallied = True
                 if self.base_location.top_left():
-                    return actions.FunctionCall(_RALLY_UNITS_MINIMAP, [_NOT_QUEUED, [29, 21]])
+                    return self.actions.rally_units_minimap([29, 21])
+                return self.actions.rally_units_minimap([29, 46])
+        return self.actions.no_op()
 
-                return actions.FunctionCall(_RALLY_UNITS_MINIMAP, [_NOT_QUEUED, [29, 46]])
-        return actions.FunctionCall(_NOOP, [])
+    def building_type(self) -> int:
+        raise NotImplementedError("Should be implemented by concrete order")
+
+    def build_action(self, target) -> actions.FunctionCall:
+        raise NotImplementedError("Should be implemented by concrete order")
+
+    def build_action_id(self) -> int:
+        raise NotImplementedError("Should be implemented by concrete order")
 
 
 class BuildBarracks(BuildArmyBuilding):
 
     def __init__(self, base_location, x_from_base, y_from_base):
-        BuildArmyBuilding.__init__(self, base_location, x_from_base, y_from_base, _BUILD_BARRACKS, _TERRAN_BARRACKS)
+        BuildArmyBuilding.__init__(self, base_location, x_from_base, y_from_base)
+
+    def building_type(self) -> int:
+        return self.unit_type_ids.terran_barracks()
+
+    def build_action(self, target) -> actions.FunctionCall:
+        return self.actions.build_barracks(target)
+
+    def build_action_id(self) -> int:
+        return self.action_ids.build_barracks()
 
 
 class BuildFactory(BuildArmyBuilding):
 
     def __init__(self, base_location, x_from_base, y_from_base):
-        BuildArmyBuilding.__init__(self, base_location, x_from_base, y_from_base, _BUILD_FACTORY, _TERRAN_FACTORY)
+        BuildArmyBuilding.__init__(self, base_location, x_from_base, y_from_base)
+
+    def building_type(self) -> int:
+        return self.unit_type_ids.terran_factory()
+
+    def build_action(self, target) -> actions.FunctionCall:
+        return self.actions.build_factory(target)
+
+    def build_action_id(self) -> int:
+        return self.action_ids.build_factory()
 
 
 class TrainBarracksUnit(Order):
 
     amount_trainee = 0
     already_trained = 0
-    train_action = None
     barracks_selected = False
     army_selected = False
     army_rallied = False
 
-    def __init__(self, base_location, amount, train_action):
+    def __init__(self, base_location, amount):
         Order.__init__(self, base_location)
         self.amount_trainee = amount
-        self.train_action = train_action
 
     def done(self, observations: Observations):
         return (self.already_trained >= self.amount_trainee)\
                or (observations.player().food_used() == observations.player().food_cap())
 
     def execute(self, observations: Observations):
-        if self.train_action in observations.available_actions():
+        if self.train_action_id() in observations.available_actions():
             self.already_trained = self.already_trained + 1
-            return actions.FunctionCall(self.train_action, [_QUEUED])
+            return self.train_action()
         elif not self.barracks_selected:
             unit_type = observations.screen().unit_type()
-            unit_y, unit_x = (unit_type == _TERRAN_BARRACKS).nonzero()
+            unit_y, unit_x = (unit_type == self.unit_type_ids.terran_barracks()).nonzero()
             if unit_y.any():
                 target = [int(unit_x.mean()), int(unit_y.mean())]
                 self.barracks_selected = True
-                return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
-        return actions.FunctionCall(_NOOP, [])
+                return self.actions.select_point(target)
+        return self.actions.no_op()
+
+    def train_action(self) -> actions.FunctionCall:
+        raise NotImplementedError("Should be implemented by concrete order")
+
+    def train_action_id(self) -> int:
+        raise NotImplementedError("Should be implemented by concrete order")
 
 
 class TrainMarine(TrainBarracksUnit):
 
     def __init__(self, base_location, amount):
-        TrainBarracksUnit.__init__(self, base_location, amount, _TRAIN_MARINE)
+        TrainBarracksUnit.__init__(self, base_location, amount)
+
+    def train_action(self) -> actions.FunctionCall:
+        return self.actions.train_marine()
+
+    def train_action_id(self) -> int:
+        return self.action_ids.train_marine()
 
 
 class TrainMarauder(TrainBarracksUnit):
 
     def __init__(self, base_location, amount):
-        TrainBarracksUnit.__init__(self, base_location, amount, _TRAIN_MARAUDER)
+        TrainBarracksUnit.__init__(self, base_location, amount)
+
+    def train_action(self) -> actions.FunctionCall:
+        return self.actions.train_marauder()
+
+    def train_action_id(self) -> int:
+        return self.action_ids.train_marauder()
 
 
 class PushWithArmy(Order):
@@ -438,15 +453,15 @@ class PushWithArmy(Order):
 
     def execute(self, observations: Observations):
         if not self.army_selected:
-            if _SELECT_ARMY in observations.available_actions():
+            if self.action_ids.select_army() in observations.available_actions():
                 self.army_selected = True
-                return actions.FunctionCall(_SELECT_ARMY, [_NOT_QUEUED])
-        elif self.army_selected and _ATTACK_MINIMAP in observations.available_actions():
+                return self.actions.select_army()
+        elif self.army_selected and self.action_ids.attack_minimap() in observations.available_actions():
             self.push_ordered = True
             if self.base_location.top_left():
-                return actions.FunctionCall(_ATTACK_MINIMAP, [_NOT_QUEUED, [39, 45]])
-            return actions.FunctionCall(_ATTACK_MINIMAP, [_NOT_QUEUED, [21, 24]])
-        return actions.FunctionCall(_NOOP, [])
+                return self.actions.attack_minimap([39, 45])
+            return self.actions.attack_minimap([21, 24])
+        return self.actions.no_op()
 
 
 class MorphOrbitalCommand(Order):
@@ -463,16 +478,16 @@ class MorphOrbitalCommand(Order):
     def execute(self, observations: Observations):
         if not self.command_center_selected:
             unit_type = observations.screen().unit_type()
-            center_y, center_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
+            center_y, center_x = (unit_type == self.unit_type_ids.terran_command_center()).nonzero()
             center_x = round(center_x.mean())
             center_y = round(center_y.mean())
             target = [center_x, center_y]
             self.command_center_selected = True
-            return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
-        elif self.command_center_selected and _MORPH_ORBITAL_COMMAND in observations.available_actions():
+            return self.actions.select_point(target)
+        elif self.command_center_selected and self.action_ids.morph_orbital_command() in observations.available_actions():
             self.orbital_command_built = True
-            return actions.FunctionCall(_MORPH_ORBITAL_COMMAND, [_NOT_QUEUED])
-        return actions.FunctionCall(_NOOP, [])
+            return self.actions.morph_orbital_command()
+        return self.actions.no_op()
 
 
 class BuildTechLabBarracks(Order):
@@ -489,18 +504,18 @@ class BuildTechLabBarracks(Order):
     def execute(self, observations: Observations):
         if not self.barracks_selected:
             unit_type = observations.screen().unit_type()
-            unit_y, unit_x = (unit_type == _TERRAN_BARRACKS).nonzero()
+            unit_y, unit_x = (unit_type == self.unit_type_ids.terran_barracks()).nonzero()
             target = [int(unit_x.mean()), int(unit_y.mean())]
             self.barracks_selected = True
-            return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
-        elif _BUILD_TECHLAB_BARRACKS in observations.available_actions():
+            return self.actions.select_point(target)
+        elif self.action_ids.build_techlab_barracks() in observations.available_actions():
             self.tech_lab_built = True
             unit_type = observations.screen().unit_type()
-            unit_y, unit_x = (unit_type == _TERRAN_BARRACKS).nonzero()
+            unit_y, unit_x = (unit_type == self.unit_type_ids.terran_barracks()).nonzero()
             target = [int(unit_x.mean()), int(unit_y.mean())]
-            return actions.FunctionCall(_BUILD_TECHLAB_BARRACKS, [_NOT_QUEUED, target])
+            return self.actions.build_techlab_barracks(target)
 
-        return actions.FunctionCall(_NOOP, [])
+        return self.actions.no_op()
 
 
 class NoOrder(Order):
@@ -512,4 +527,4 @@ class NoOrder(Order):
         return True
 
     def execute(self, obs: Observations):
-        return actions.FunctionCall(_NOOP, [])
+        return self.actions.no_op()
