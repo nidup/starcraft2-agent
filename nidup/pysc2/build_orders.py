@@ -124,6 +124,18 @@ class Order:
         raise NotImplementedError("Should be implemented by concrete order")
 
 
+class RepeatableOnceDoneOrder(Order):
+
+    def __init__(self, base_location: BaseLocation):
+        Order.__init__(self, base_location)
+
+    def done(self, observations: Observations):
+        raise NotImplementedError("Should be implemented by concrete order")
+
+    def execute(self, observations: Observations):
+        raise NotImplementedError("Should be implemented by concrete order")
+
+
 class OrdersSequence:
     orders = None
     current_order = None
@@ -158,6 +170,10 @@ class OrdersRepetition:
         self.orders = orders
         self.current_order_index = 0
         self.current_order = self.orders[self.current_order_index]
+        # TODO: can avoid this using a proper collection
+        for order in self.orders:
+            if not isinstance(order, RepeatableOnceDoneOrder):
+                raise ValueError("Expect an instance of RepeatableOnceDoneOrder")
 
     def current(self, observations: Observations) -> Order:
         print("order" + str(self.current_order_index))
@@ -380,7 +396,7 @@ class BuildFactory(BuildArmyBuilding):
         return self.action_ids.build_factory()
 
 
-class TrainBarracksUnit(Order):
+class TrainBarracksUnit(RepeatableOnceDoneOrder):
 
     amount_trainee = 0
     already_trained = 0
@@ -397,7 +413,9 @@ class TrainBarracksUnit(Order):
                or (observations.player().food_used() == observations.player().food_cap())
 
     def execute(self, observations: Observations):
-        if self.train_action_id() in observations.available_actions():
+        if self.done(observations):
+            self._reset()
+        elif self.train_action_id() in observations.available_actions():
             self.already_trained = self.already_trained + 1
             return self.train_action()
         elif not self.barracks_selected:
@@ -408,6 +426,12 @@ class TrainBarracksUnit(Order):
                 self.barracks_selected = True
                 return self.actions.select_point(target)
         return self.actions.no_op()
+
+    def _reset(self):
+        self.already_trained = 0
+        self.barracks_selected = False
+        self.army_selected = False
+        self.army_rallied = False
 
     def train_action(self) -> actions.FunctionCall:
         raise NotImplementedError("Should be implemented by concrete order")
@@ -440,7 +464,7 @@ class TrainMarauder(TrainBarracksUnit):
         return self.action_ids.train_marauder()
 
 
-class PushWithArmy(Order):
+class PushWithArmy(RepeatableOnceDoneOrder):
 
     army_selected = False
     push_ordered = False
@@ -452,7 +476,9 @@ class PushWithArmy(Order):
         return self.push_ordered
 
     def execute(self, observations: Observations):
-        if not self.army_selected:
+        if self.done(observations):
+            self._reset()
+        elif not self.army_selected:
             if self.action_ids.select_army() in observations.available_actions():
                 self.army_selected = True
                 return self.actions.select_army()
@@ -463,6 +489,9 @@ class PushWithArmy(Order):
             return self.actions.attack_minimap([21, 24])
         return self.actions.no_op()
 
+    def _reset(self):
+        self.army_selected = False
+        self.push_ordered = False
 
 class MorphOrbitalCommand(Order):
 
