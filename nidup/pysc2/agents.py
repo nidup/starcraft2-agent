@@ -19,7 +19,7 @@ class BuildOrderAgent(BaseAgent):
             self.build_order = TerranMMMTimingPushBuildOrder(base_location)
         if self.debug:
             time.sleep(0.5)
-        return self.build_order.action(observations)
+        return self.build_order.step(observations)
 
 
 class ScoutingAgent(BaseAgent):
