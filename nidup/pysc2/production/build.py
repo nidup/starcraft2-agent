@@ -2,19 +2,21 @@
 from pysc2.lib import actions
 from nidup.pysc2.actions import TerranActions, TerranActionIds
 from nidup.pysc2.observations import Observations
+from nidup.pysc2.order import Order
 from nidup.pysc2.information import BaseLocation
 from nidup.pysc2.unit_types import UnitTypeIds
 from sklearn.cluster import KMeans
 import math
 
 
-class Order:
+class BuildOrder(Order):
     base_location = None
     actions: None
     action_ids: None
     unit_type_ids: None
 
     def __init__(self, base_location: BaseLocation):
+        Order.__init__(self)
         self.base_location = base_location
         self.actions = TerranActions()
         self.action_ids = TerranActionIds()
@@ -38,10 +40,10 @@ class OrdersSequence:
         self.current_order = self.orders[self.current_order_index]
         # TODO: can avoid this using a proper collection
         for order in self.orders:
-            if not isinstance(order, Order):
+            if not isinstance(order, BuildOrder):
                 raise ValueError("Expect an instance of Order")
 
-    def current(self, observations: Observations) -> Order:
+    def current(self, observations: Observations) -> BuildOrder:
         print("order" + str(self.current_order_index))
         print(self.current_order)
         if self.current_order.done(observations):
@@ -56,7 +58,7 @@ class OrdersSequence:
         self.current_order = self.orders[self.current_order_index]
 
 
-class BuildSupplyDepot(Order):
+class BuildSupplyDepot(BuildOrder):
 
     select_scv_order = False
     supply_depot_built = False
@@ -64,7 +66,7 @@ class BuildSupplyDepot(Order):
     y_from_base = None
 
     def __init__(self, base_location, x_from_base, y_from_base):
-        Order.__init__(self, base_location)
+        BuildOrder.__init__(self, base_location)
         self.x_from_base = x_from_base
         self.y_from_base = y_from_base
         self.select_scv_order = SelectSCV(base_location)
@@ -89,13 +91,13 @@ class BuildSupplyDepot(Order):
         return self.actions.no_op()
 
 
-class BuildRefinery(Order):
+class BuildRefinery(BuildOrder):
 
     select_scv_order = None
     refinery_built = False
 
     def __init__(self, base_location: BaseLocation):
-        Order.__init__(self, base_location)
+        BuildOrder.__init__(self, base_location)
         self.select_scv_order = SelectSCV(base_location)
 
     def done(self, observations: Observations) -> bool:
@@ -123,7 +125,7 @@ class BuildRefinery(Order):
         return self.actions.no_op()
 
 
-class BuildArmyBuilding(Order):
+class BuildArmyBuilding(BuildOrder):
 
     x_from_base = None
     y_from_base = None
@@ -133,7 +135,7 @@ class BuildArmyBuilding(Order):
     building_rallied = False
 
     def __init__(self, base_location, x_from_base, y_from_base):
-        Order.__init__(self, base_location)
+        BuildOrder.__init__(self, base_location)
         self.x_from_base = x_from_base
         self.y_from_base = y_from_base
         self.select_scv_order = SelectSCV(base_location)
@@ -212,13 +214,13 @@ class BuildFactory(BuildArmyBuilding):
 
 
 
-class MorphOrbitalCommand(Order):
+class MorphOrbitalCommand(BuildOrder):
 
     command_center_selected = False
     orbital_command_built = False
 
     def __init__(self, base_location: BaseLocation):
-        Order.__init__(self, base_location)
+        BuildOrder.__init__(self, base_location)
 
     def done(self, observations: Observations) -> bool:
         return self.orbital_command_built
@@ -238,13 +240,13 @@ class MorphOrbitalCommand(Order):
         return self.actions.no_op()
 
 
-class BuildTechLabBarracks(Order):
+class BuildTechLabBarracks(BuildOrder):
 
     barracks_selected = False
     tech_lab_built = False
 
     def __init__(self, base_location: BaseLocation):
-        Order.__init__(self, base_location)
+        BuildOrder.__init__(self, base_location)
 
     def done(self, observations: Observations) -> bool:
         return self.tech_lab_built
@@ -266,12 +268,12 @@ class BuildTechLabBarracks(Order):
         return self.actions.no_op()
 
 
-class SelectSCV(Order):
+class SelectSCV(BuildOrder):
 
     scv_selected = False
 
     def __init__(self, base_location: BaseLocation):
-        Order.__init__(self, base_location)
+        BuildOrder.__init__(self, base_location)
 
     def done(self, observations: Observations) -> bool:
         return self.scv_selected
@@ -291,13 +293,13 @@ class SelectSCV(Order):
         return self.actions.no_op()
 
 
-class SendSCVToRefinery(Order):
+class SendSCVToRefinery(BuildOrder):
 
     select_scv_order = False
     scv_sent_to_refinery = False
 
     def __init__(self, base_location: BaseLocation):
-        Order.__init__(self, base_location)
+        BuildOrder.__init__(self, base_location)
         self.select_scv_order = SelectSCV(base_location)
 
     def done(self, observations: Observations) -> bool:

@@ -2,11 +2,12 @@
 from pysc2.lib import actions
 from nidup.pysc2.actions import TerranActions, TerranActionIds
 from nidup.pysc2.observations import Observations
+from nidup.pysc2.order import Order
 from nidup.pysc2.information import BaseLocation
 from nidup.pysc2.unit_types import UnitTypeIds
 
 
-class RepeatableOnceDoneOrder:
+class RepeatableOnceDoneOrder(Order):
 
     base_location = None
     actions: None
@@ -14,6 +15,7 @@ class RepeatableOnceDoneOrder:
     unit_type_ids: None
 
     def __init__(self, base_location: BaseLocation):
+        Order.__init__(self)
         self.base_location = base_location
         self.actions = TerranActions()
         self.action_ids = TerranActionIds()
@@ -23,6 +25,9 @@ class RepeatableOnceDoneOrder:
         raise NotImplementedError("Should be implemented by concrete order")
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
+        raise NotImplementedError("Should be implemented by concrete order")
+
+    def executable(self, observations: Observations) -> bool:
         raise NotImplementedError("Should be implemented by concrete order")
 
 
@@ -75,9 +80,9 @@ class TrainBarracksUnit(RepeatableOnceDoneOrder):
     def execute(self, observations: Observations) -> actions.FunctionCall:
         if self.done(observations):
             self._reset()
-        elif self.train_action_id() in observations.available_actions():
+        elif self._train_action_id() in observations.available_actions():
             self.already_trained = self.already_trained + 1
-            return self.train_action()
+            return self._train_action()
         elif not self.barracks_selected:
             unit_type = observations.screen().unit_type()
             unit_y, unit_x = (unit_type == self.unit_type_ids.terran_barracks()).nonzero()
@@ -87,16 +92,19 @@ class TrainBarracksUnit(RepeatableOnceDoneOrder):
                 return self.actions.select_point(target)
         return self.actions.no_op()
 
+    def executable(self, observations: Observations) -> bool:
+        raise NotImplementedError("Should be implemented by concrete order")
+
     def _reset(self):
         self.already_trained = 0
         self.barracks_selected = False
         self.army_selected = False
         self.army_rallied = False
 
-    def train_action(self) -> actions.FunctionCall:
+    def _train_action(self) -> actions.FunctionCall:
         raise NotImplementedError("Should be implemented by concrete order")
 
-    def train_action_id(self) -> int:
+    def _train_action_id(self) -> int:
         raise NotImplementedError("Should be implemented by concrete order")
 
 
@@ -105,22 +113,39 @@ class TrainMarine(TrainBarracksUnit):
     def __init__(self, base_location, amount):
         TrainBarracksUnit.__init__(self, base_location, amount)
 
-    def train_action(self) -> actions.FunctionCall:
+    def executable(self, observations: Observations) -> bool:
+        unit_type = observations.screen().unit_type()
+        unit_y, unit_x = (unit_type == self.unit_type_ids.terran_barracks()).nonzero()
+        if unit_y.any():
+            print ("executable")
+            return True
+        else:
+            return False
+
+    def _train_action(self) -> actions.FunctionCall:
         return self.actions.train_marine()
 
-    def train_action_id(self) -> int:
+    def _train_action_id(self) -> int:
         return self.action_ids.train_marine()
 
 
 class TrainMarauder(TrainBarracksUnit):
 
+    def executable(self, observations: Observations) -> bool:
+        unit_type = observations.screen().unit_type()
+        unit_y, unit_x = (unit_type == self.unit_type_ids.terran_barracks_techlab()).nonzero()
+        if unit_y.any():
+            return True
+        else:
+            return False
+
     def __init__(self, base_location, amount):
         TrainBarracksUnit.__init__(self, base_location, amount)
 
-    def train_action(self) -> actions.FunctionCall:
+    def _train_action(self) -> actions.FunctionCall:
         return self.actions.train_marauder()
 
-    def train_action_id(self) -> int:
+    def _train_action_id(self) -> int:
         return self.action_ids.train_marauder()
 
 
@@ -148,6 +173,9 @@ class PushWithArmy(RepeatableOnceDoneOrder):
                 return self.actions.attack_minimap([39, 45])
             return self.actions.attack_minimap([21, 24])
         return self.actions.no_op()
+
+    def executable(self, observations: Observations) -> bool:
+        return self.action_ids.select_army() in observations.available_actions()
 
     def _reset(self):
         self.army_selected = False

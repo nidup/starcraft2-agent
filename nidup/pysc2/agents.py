@@ -1,6 +1,7 @@
 from pysc2.agents.base_agent import BaseAgent
-from nidup.pysc2.build_orders import TerranMMMTimingPushBuildOrder, BaseLocation
+from nidup.pysc2.commanders import GameCommander
 from nidup.pysc2.observations import Observations
+from nidup.pysc2.information import BaseLocation
 from nidup.pysc2.actions import TerranActions, TerranActionIds
 from nidup.pysc2.unit_types import UnitTypeIds
 import time
@@ -8,18 +9,18 @@ import time
 
 class BuildOrderAgent(BaseAgent):
 
-    build_order = None
+    commander = None
     debug = False
 
     def step(self, obs):
         super(BuildOrderAgent, self).step(obs)
         observations = Observations(obs)
-        if self.build_order is None:
+        if self.commander is None:
             base_location = BaseLocation(observations)
-            self.build_order = TerranMMMTimingPushBuildOrder(base_location)
+            self.commander = GameCommander(base_location)
         if self.debug:
             time.sleep(0.5)
-        return self.build_order.step(observations)
+        return self.commander.order(observations).execute(observations)
 
 
 class ScoutingAgent(BaseAgent):
