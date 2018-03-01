@@ -133,15 +133,18 @@ class PlayerInformation:
 class Observations:
 
     obs = None
-    screen_features: None
-    player_information: None
-    minimap_features: None
+    screen_features = None
+    player_information = None
+    minimap_features = None
+    available_actions_data = None
+    control_groups_data = None
 
     def __init__(self, obs):
-        self.obs = obs
-        self.screen_features = ScreenFeatures(self.obs.observation["screen"])
-        self.player_information = PlayerInformation(self.obs.observation["player"])
-        self.minimap_features = MinimapFeatures(self.obs.observation["minimap"])
+        self.screen_features = ScreenFeatures(obs.observation["screen"])
+        self.player_information = PlayerInformation(obs.observation["player"])
+        self.minimap_features = MinimapFeatures(obs.observation["minimap"])
+        self.available_actions_data = obs.observation["available_actions"]
+        self.control_groups_data = obs.observation["control_groups"]
 
     def player(self) -> PlayerInformation:
         return self.player_information
@@ -149,9 +152,11 @@ class Observations:
     def screen(self) -> ScreenFeatures:
         return self.screen_features
 
-    def available_actions(self):
-        return self.obs.observation["available_actions"]
-
     def minimap(self) -> MinimapFeatures:
         return self.minimap_features
 
+    def available_actions(self):
+        return self.available_actions_data
+
+    def control_groups(self):
+        return self.control_groups_data

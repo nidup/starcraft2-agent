@@ -11,6 +11,7 @@ _BUILD_FACTORY = actions.FUNCTIONS.Build_Factory_screen.id
 _MORPH_ORBITAL_COMMAND = actions.FUNCTIONS.Morph_OrbitalCommand_quick.id
 _MOVE_MINIMAP = actions.FUNCTIONS.Move_minimap.id
 _MOVE_SCREEN = actions.FUNCTIONS.Move_screen.id
+_MOVE_CAMERA = actions.FUNCTIONS.move_camera.id
 _NOOP = actions.FUNCTIONS.no_op.id
 _RALLY_UNITS_MINIMAP = actions.FUNCTIONS.Rally_Units_minimap.id
 _SELECT_POINT = actions.FUNCTIONS.select_point.id
@@ -45,6 +46,9 @@ class TerranActionIds:
 
     def build_techlab_barracks(self) -> int:
         return _BUILD_TECHLAB_BARRACKS
+
+    def move_camera(self) -> int:
+        return _MOVE_CAMERA
 
     def move_minimap(self) -> int:
         return _MOVE_MINIMAP
@@ -87,6 +91,9 @@ class TerranActions:
 
     def build_techlab_barracks(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_BUILD_TECHLAB_BARRACKS, [_NOT_QUEUED, target])
+
+    def move_camera(self, target) -> actions.FunctionCall:
+        return actions.FunctionCall(_MOVE_CAMERA, [target])
 
     def move_minimap(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_MOVE_MINIMAP, [_NOT_QUEUED, target])

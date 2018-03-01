@@ -36,6 +36,19 @@ class BaseLocation:
             unit_y, unit_x = (unit_type == self.unit_type_ids.terran_orbital_command()).nonzero()
         return unit_y, unit_x
 
+    def camera_centered_on_command_center(self, screen: ScreenFeatures) -> bool:
+        unit_y, unit_x = self.locate_command_center(screen)
+        if unit_y.any():
+            return True
+        else:
+            return False
+
+    def base_location_on_minimap(self):
+        if self.base_top_left:
+            return [21, 15]
+        else:
+            return [45, 45]
+
     def other_unknown_bases_locations_on_minimap(self):
         locations = []
         if self.base_top_left:

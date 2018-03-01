@@ -44,8 +44,6 @@ class OrdersSequence:
                 raise ValueError("Expect an instance of Order")
 
     def current(self, observations: Observations) -> BuildOrder:
-        print("order" + str(self.current_order_index))
-        print(self.current_order)
         if self.current_order.done(observations):
             self._next_order()
         return self.current_order
@@ -56,6 +54,24 @@ class OrdersSequence:
     def _next_order(self):
         self.current_order_index = self.current_order_index + 1
         self.current_order = self.orders[self.current_order_index]
+
+
+class CenterCameraOnCommandCenter(BuildOrder):
+    centered_on_base = False
+
+    def __init__(self, base_location):
+        BuildOrder.__init__(self, base_location)
+
+    def done(self, observations: Observations) -> bool:
+        return self.centered_on_base
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        if not self.centered_on_base:
+            unit_y, unit_x = self.base_location.base_location_on_minimap()
+            target = [unit_x, unit_y]
+            self.centered_on_base = True
+            return self.actions.move_camera(target)
+        return self.actions.no_op()
 
 
 class BuildSupplyDepot(BuildOrder):
@@ -213,7 +229,6 @@ class BuildFactory(BuildArmyBuilding):
         return self.action_ids.build_factory()
 
 
-
 class MorphOrbitalCommand(BuildOrder):
 
     command_center_selected = False
@@ -289,7 +304,6 @@ class SelectSCV(BuildOrder):
                 target = [unit_x[0], unit_y[0]]
                 self.scv_selected = True
                 return self.actions.select_point(target)
-
         return self.actions.no_op()
 
 

@@ -46,8 +46,6 @@ class OrdersRepetition:
                 raise ValueError("Expect an instance of RepeatableOnceDoneOrder")
 
     def current(self, observations: Observations) -> RepeatableOnceDoneOrder:
-        print("order" + str(self.current_order_index))
-        print(self.current_order)
         if self.current_order.done(observations):
             self._next_order()
         return self.current_order
@@ -117,7 +115,6 @@ class TrainMarine(TrainBarracksUnit):
         unit_type = observations.screen().unit_type()
         unit_y, unit_x = (unit_type == self.unit_type_ids.terran_barracks()).nonzero()
         if unit_y.any():
-            print ("executable")
             return True
         else:
             return False

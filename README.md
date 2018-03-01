@@ -81,7 +81,7 @@ Run the nidup agents
 
 These agents have been built to work properly on the Simple64 map and are not robust enough to play elsewhere.
 
-Scouting Agent:
+Infinite Scouting Agent:
 ```
 $ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.ScoutingAgent --agent_race T
 ```
