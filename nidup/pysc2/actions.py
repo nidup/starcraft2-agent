@@ -65,6 +65,9 @@ class TerranActionIds:
     def select_army(self) -> int:
         return _SELECT_ARMY
 
+    def select_control_group(self) -> int:
+        return _SELECT_CONTROL_GROUP
+
     def train_marine(self) -> int:
         return _TRAIN_MARINE
 
@@ -112,6 +115,18 @@ class TerranActions:
 
     def select_army(self) -> actions.FunctionCall:
         return actions.FunctionCall(_SELECT_ARMY, [_NOT_QUEUED])
+
+    def select_control_group(self, group_id) -> actions.FunctionCall:
+        return self._select_control_group(0, group_id)
+
+    def set_control_group(self, group_id) -> actions.FunctionCall:
+        return self._select_control_group(1, group_id)
+
+    def add_control_group(self, group_id) -> actions.FunctionCall:
+        return self._select_control_group(2, group_id)
+
+    def _select_control_group(self, group_action, group_id) -> actions.FunctionCall:
+        return actions.FunctionCall(_SELECT_CONTROL_GROUP, [[group_action], [group_id]])
 
     def select_idle_worker(self) -> actions.FunctionCall:
         return actions.FunctionCall(_SELECT_IDLE_WORKER, [_NOT_QUEUED])

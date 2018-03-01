@@ -10,10 +10,6 @@ import math
 
 
 class BuildOrder(Order):
-    base_location = None
-    actions: None
-    action_ids: None
-    unit_type_ids: None
 
     def __init__(self, base_location: BaseLocation):
         Order.__init__(self)
