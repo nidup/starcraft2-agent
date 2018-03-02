@@ -82,6 +82,9 @@ Run the nidup agents
 
 These agents have been built to work properly on the Simple64 map and are not robust enough to play elsewhere.
 
+Scripted agents
+---------------
+
 Infinite Scouting Agent:
 ```
 $ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.ScoutingAgent --agent_race T
@@ -92,14 +95,28 @@ Build Order Agent:
 $ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.BuildOrderAgent --agent_race T
 ```
 
-Smart Agent (Reinforcement Learning [from these tutorials](https://chatbotslife.com/building-a-smart-pysc2-agent-cdc269cb095d)):
+Reinforcement Learning agent
+----------------------------
+
+It's [based on these tutorials](https://itnext.io/build-a-sparse-reward-pysc2-agent-a44e94ba5255)
+
+Train the Smart Agent by playing a lot of games:
 ```
-$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.smart_agents.SmartAgent --agent_race T
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.smart_agents.SparseAgent --agent_race T --norender --max_agent_steps=100000
 ```
 
 The option `--norender` can be added to disable the rendering and play game faster.
 
 The option `--max_agent_steps` can be added to make the agent play longer (default is 2500).
+
+The reward history and final Q Learning Table data is stored in sparse_agent.data.gz.
+
+This archive is re-used when it exists, you can drop it to train an agent from scratch.
+
+Run the Smart Agent after the reinforcement:
+```
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.smart_agents.SparseAgent --agent_race T
+```
 
 Credits
 -------
