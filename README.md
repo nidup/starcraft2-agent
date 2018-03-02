@@ -22,6 +22,7 @@ $ python3.6 -m pip install setuptools
 $ python3.6 -m pip install pysc2
 $ sudo python3.6 -m pip install scipy
 $ sudo python3.6 -m pip install sklearn
+$ sudo python3.6 -m pip install pandas
 ```
 
 Download [Starcraft 2 Linux Package](https://github.com/Blizzard/s2client-proto#downloads) and extract into the expected default location:
@@ -90,6 +91,13 @@ Build Order Agent:
 ```
 $ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.BuildOrderAgent --agent_race T
 ```
+
+Smart Agent (Reinforcement Learning [from these tutorials](https://chatbotslife.com/building-a-smart-pysc2-agent-cdc269cb095d)):
+```
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.smart_agents.SmartAgent --agent_race T
+```
+
+The option `--norender` can be added to disable the rendering and play game faster.
 
 Credits
 -------
