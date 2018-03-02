@@ -3,6 +3,7 @@ from pysc2.agents.base_agent import BaseAgent
 from nidup.pysc2.commanders import GameCommander, ScoutingCommander
 from nidup.pysc2.observations import Observations
 from nidup.pysc2.information import BaseLocation
+import random
 import time
 
 from nidup.pysc2.actions import TerranActions, TerranActionIds
@@ -46,6 +47,8 @@ class ControlGroupsAgent(BaseAgent):
     action_ids = None
     unit_type_ids = None
     started = False
+    #all_scv_selected = False
+    #unit_selected = False
     scv_selected = False
     scv_grouped = False
     scv_moved = False
@@ -53,6 +56,7 @@ class ControlGroupsAgent(BaseAgent):
     second_scv_grouped = False
     second_scv_moved = False
     group_one_selected = False
+    both_scv_moved = False
 
     def __init__(self):
         BaseAgent.__init__(self)
@@ -63,13 +67,26 @@ class ControlGroupsAgent(BaseAgent):
     def step(self, obs):
         super(ControlGroupsAgent, self).step(obs)
         observations = Observations(obs)
+
+        #print(observations.available_actions())
+        #print(observations.multi_select())
+        #print(observations.single_select())
+        #print(obs.observation.keys())
+
         if not self.started:
             self.base_location = BaseLocation(observations)
             self.started = True
-        elif not self.scv_selected:
+        #if not self.all_scv_selected:
+        #    self.all_scv_selected = True
+        #   return self.actions.select_rect([0, 0], [83, 83])
+        #elif not self.unit_selected:
+        #   self.unit_selected = True
+        #   return self.actions.select_all_units(0)
+        if not self.scv_selected:
             unit_type = observations.screen().unit_type()
             unit_y, unit_x = (unit_type == self.unit_type_ids.terran_scv()).nonzero()
-            target = [unit_x[0], unit_y[0]]
+            rand_unit_index = random.randint(0, len(unit_y) - 1)
+            target = [unit_x[rand_unit_index], unit_y[rand_unit_index]]
             self.scv_selected = True
             return self.actions.select_point(target)
         elif not self.scv_grouped:
@@ -83,7 +100,8 @@ class ControlGroupsAgent(BaseAgent):
         elif not self.second_scv_selected:
             unit_type = observations.screen().unit_type()
             unit_y, unit_x = (unit_type == self.unit_type_ids.terran_scv()).nonzero()
-            target = [unit_x[1], unit_y[1]]
+            rand_unit_index = random.randint(0, len(unit_y) - 1)
+            target = [unit_x[rand_unit_index], unit_y[rand_unit_index]]
             self.second_scv_selected = True
             return self.actions.select_point(target)
         elif not self.second_scv_grouped:
@@ -97,7 +115,14 @@ class ControlGroupsAgent(BaseAgent):
         elif not self.group_one_selected:
            self.group_one_selected = True
            return self.actions.select_control_group(1)
+        elif not self.both_scv_moved:
+           self.both_scv_moved = True
+           unit_y, unit_x = [32, 32]
+           target = [unit_x, unit_y]
+           return self.actions.move_minimap(target)
 
         #print(observations.control_groups())
+        #print(observations.screen().selected())
+        #return self.actions.no_op()
 
         return self.actions.no_op()

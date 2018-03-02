@@ -18,6 +18,7 @@ _SELECT_POINT = actions.FUNCTIONS.select_point.id
 _SELECT_IDLE_WORKER = actions.FUNCTIONS.select_idle_worker.id
 _SELECT_ARMY = actions.FUNCTIONS.select_army.id
 _SELECT_UNIT = actions.FUNCTIONS.select_unit.id
+_SELECT_RECT = actions.FUNCTIONS.select_rect.id
 _SELECT_CONTROL_GROUP = actions.FUNCTIONS.select_control_group.id
 _TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
 _TRAIN_MARAUDER = actions.FUNCTIONS.Train_Marauder_quick.id
@@ -67,6 +68,9 @@ class TerranActionIds:
 
     def select_control_group(self) -> int:
         return _SELECT_CONTROL_GROUP
+
+    def select_unit(self) -> int:
+        return _SELECT_UNIT
 
     def train_marine(self) -> int:
         return _TRAIN_MARINE
@@ -125,6 +129,7 @@ class TerranActions:
     def add_control_group(self, group_id) -> actions.FunctionCall:
         return self._select_control_group(2, group_id)
 
+    # group_actions are detailled here https://github.com/deepmind/pysc2/issues/39#issuecomment-323156798
     def _select_control_group(self, group_action, group_id) -> actions.FunctionCall:
         return actions.FunctionCall(_SELECT_CONTROL_GROUP, [[group_action], [group_id]])
 
@@ -133,6 +138,16 @@ class TerranActions:
 
     def select_point(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+
+    def select_rect(self, point1, point2) -> actions.FunctionCall:
+        return actions.FunctionCall(_SELECT_RECT, [_NOT_QUEUED, point1, point2])
+
+    # more information here https://github.com/deepmind/pysc2/issues/60
+    def select_unit(self, unit_index):
+        return actions.FunctionCall(_SELECT_UNIT, [[0], [unit_index]])
+
+    def select_all_units(self, unit_index):
+        return actions.FunctionCall(_SELECT_UNIT, [[1], [unit_index]])
 
     def train_marine(self) -> actions.FunctionCall:
         return actions.FunctionCall(_TRAIN_MARINE, [_NOT_QUEUED])

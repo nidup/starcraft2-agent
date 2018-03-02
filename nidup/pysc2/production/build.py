@@ -7,6 +7,7 @@ from nidup.pysc2.information import BaseLocation
 from nidup.pysc2.unit_types import UnitTypeIds
 from sklearn.cluster import KMeans
 import math
+import random
 
 
 class BuildOrder(Order):
@@ -297,7 +298,8 @@ class SelectSCV(BuildOrder):
             else:
                 unit_type = observations.screen().unit_type()
                 unit_y, unit_x = (unit_type == self.unit_type_ids.terran_scv()).nonzero()
-                target = [unit_x[0], unit_y[0]]
+                rand_unit_index = random.randint(0, len(unit_y) - 1)
+                target = [unit_x[rand_unit_index], unit_y[rand_unit_index]]
                 self.scv_selected = True
                 return self.actions.select_point(target)
         return self.actions.no_op()

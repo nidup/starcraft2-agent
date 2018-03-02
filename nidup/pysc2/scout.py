@@ -5,6 +5,7 @@ from nidup.pysc2.observations import Observations
 from nidup.pysc2.order import Order
 from nidup.pysc2.information import BaseLocation
 from nidup.pysc2.unit_types import UnitTypeIds
+import random
 
 
 class Scouting(Order):
@@ -35,7 +36,8 @@ class Scouting(Order):
         if not self.scv_selected:
             unit_type = observations.screen().unit_type()
             unit_y, unit_x = (unit_type == self.unit_type_ids.terran_scv()).nonzero()
-            target = [unit_x[0], unit_y[0]]
+            rand_unit_index = random.randint(0, len(unit_y) - 1)
+            target = [unit_x[rand_unit_index], unit_y[rand_unit_index]]
             self.scv_selected = True
             return self.actions.select_point(target)
         elif not self.scv_moved and self.action_ids.move_minimap() in observations.available_actions():
