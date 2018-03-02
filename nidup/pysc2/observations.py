@@ -140,6 +140,14 @@ class Observations:
         self.control_groups_data = obs.observation["control_groups"]
         self.single_select_data = obs.observation["single_select"]
         self.multi_select_data = obs.observation["multi_select"]
+        self.first_data = obs.first()
+        self.last_data = obs.last()
+
+    def first(self) -> bool:
+        return self.first_data
+
+    def last(self) -> bool:
+        return self.last_data
 
     def player(self) -> PlayerInformation:
         return self.player_information

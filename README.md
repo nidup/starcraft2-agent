@@ -99,6 +99,8 @@ $ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.smart_agents.S
 
 The option `--norender` can be added to disable the rendering and play game faster.
 
+The option `--max_agent_steps` can be added to make the agent play longer (default is 2500).
+
 Credits
 -------
 

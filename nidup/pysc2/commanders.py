@@ -45,7 +45,7 @@ class GameCommander:
     # TODO if NoOrder, move to next commander to avoid No Op
     def order(self, observations: Observations)-> Order:
         self.step_index.increment_step()
-        if not self.current_order:
+        if observations.first():
             self.current_order = self.current_commander.order(observations)
         elif self.current_order.done(observations):
             if self.current_commander == self.scout_commander:
@@ -66,7 +66,6 @@ class ScoutingCommander:
     def __init__(self, base_location: BaseLocation, looping: bool = False):
         self.scouting_order = Scouting(base_location, looping)
 
-    # TODO: scout should finish in his base!
     def order(self, observations: Observations) -> Order:
         if self.scouting_order.done(observations):
             return NoOrder()

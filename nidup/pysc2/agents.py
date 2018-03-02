@@ -18,7 +18,7 @@ class BuildOrderAgent(BaseAgent):
     def step(self, obs):
         super(BuildOrderAgent, self).step(obs)
         observations = Observations(obs)
-        if self.commander is None:
+        if observations.first():
             base_location = BaseLocation(observations)
             self.commander = GameCommander(base_location)
         if self.debug:
@@ -34,7 +34,7 @@ class ScoutingAgent(BaseAgent):
     def step(self, obs):
         super(ScoutingAgent, self).step(obs)
         observations = Observations(obs)
-        if self.commander is None:
+        if observations.first():
             base_location = BaseLocation(observations)
             self.commander = ScoutingCommander(base_location, self.infinite_scouting)
         return self.commander.order(observations).execute(observations)
