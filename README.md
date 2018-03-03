@@ -20,9 +20,10 @@ Install [PySC2 - StarCraft II Learning Environment](https://github.com/deepmind/
 ```
 $ python3.6 -m pip install setuptools
 $ python3.6 -m pip install pysc2
-$ sudo python3.6 -m pip install scipy
-$ sudo python3.6 -m pip install sklearn
-$ sudo python3.6 -m pip install pandas
+$ python3.6 -m pip install scipy
+$ python3.6 -m pip install sklearn
+$ python3.6 -m pip install pandas
+$ python3.6 -m pip install matplotlib
 ```
 
 Download [Starcraft 2 Linux Package](https://github.com/Blizzard/s2client-proto#downloads) and extract into the expected default location:
@@ -112,7 +113,12 @@ On my laptop, with no render,
 
 Run the Smart Agent after the reinforcement:
 ```
-$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.smart_agents.Reinforcement --agent_race T
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.smart_agents.ReinforcementAgent --agent_race T
+```
+
+Generate the learning report graph:
+```
+$ python3.6 generate_report.py --agent-name nidup.pysc2.smart_agents.ReinforcementAgent
 ```
 
 Data & Analysis
