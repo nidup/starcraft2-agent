@@ -48,7 +48,12 @@ class SmartOrder:
         self.unit_type_ids = UnitTypeIds()
 
 
-class BuildBarracks(SmartOrder):
+class SCVCommonActions:
+
+    def __init__(self):
+        self.actions = TerranActions()
+        self.action_ids = TerranActionIds()
+        self.unit_type_ids = UnitTypeIds()
 
     def select_scv(self, observations: Observations) -> actions.FunctionCall:
         unit_type = observations.screen().unit_type()
@@ -59,6 +64,24 @@ class BuildBarracks(SmartOrder):
             return self.actions.select_point(target)
 
         return self.actions.no_op()
+
+    def send_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
+        if self.action_ids.harvest_gather() in observations.available_actions():
+            unit_type = observations.screen().unit_type()
+            unit_y, unit_x = (unit_type == self.unit_type_ids.neutral_mineral_field()).nonzero()
+            if unit_y.any():
+                i = random.randint(0, len(unit_y) - 1)
+                m_x = unit_x[i]
+                m_y = unit_y[i]
+                target = [int(m_x), int(m_y)]
+                return self.actions.harvest_gather(target)
+        return self.actions.no_op()
+
+
+class BuildBarracks(SmartOrder):
+
+    def select_scv(self, observations: Observations) -> actions.FunctionCall:
+        return SCVCommonActions().select_scv(observations)
 
     def build(self, observations: Observations) -> actions.FunctionCall:
         unit_type = observations.screen().unit_type()
@@ -74,17 +97,14 @@ class BuildBarracks(SmartOrder):
                 return self.actions.build_barracks(target)
         return self.actions.no_op()
 
+    def send_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
+        return SCVCommonActions().send_scv_to_mineral(observations)
+
 
 class BuildSupplyDepot(SmartOrder):
 
     def select_scv(self, observations: Observations) -> actions.FunctionCall:
-        unit_type = observations.screen().unit_type()
-        unit_y, unit_x = (unit_type == self.unit_type_ids.terran_scv()).nonzero()
-        if unit_y.any():
-            i = random.randint(0, len(unit_y) - 1)
-            target = [unit_x[i], unit_y[i]]
-            return self.actions.select_point(target)
-        return self.actions.no_op()
+        return SCVCommonActions().select_scv(observations)
 
     def build(self, observations: Observations) -> actions.FunctionCall:
         unit_type = observations.screen().unit_type()
@@ -99,6 +119,9 @@ class BuildSupplyDepot(SmartOrder):
                     target = self.location.transform_distance(round(cc_x.mean()), -25, round(cc_y.mean()), -25)
                 return self.actions.build_supply_depot(target)
         return self.actions.no_op()
+
+    def send_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
+        return SCVCommonActions().send_scv_to_mineral(observations)
 
 
 class BuildMarine(SmartOrder):
@@ -130,7 +153,6 @@ class Attack(SmartOrder):
         do_it = True
         if len(observations.single_select()) > 0 and observations.single_select()[0][0] == self.unit_type_ids.terran_scv():
             do_it = False
-
         if len(observations.multi_select()) > 0 and observations.multi_select()[0][0] == self.unit_type_ids.terran_scv():
             do_it = False
 

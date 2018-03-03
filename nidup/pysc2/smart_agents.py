@@ -174,26 +174,18 @@ class ReinforcementAgent(BaseAgent):
                 return BuildMarine(self.location).train_marine(observations)
 
             elif smart_action == ACTION_ATTACK:
-                return Attack(self.location).attack_minimap(observations, x, y)
+                return Attack(self.location).attack_minimap(observations, int(x), int(y))
 
         elif self.move_number == 2:
             self.move_number = 0
 
             smart_action, x, y = self.splitAction(self.previous_action)
 
-            if smart_action == ACTION_BUILD_BARRACKS or smart_action == ACTION_BUILD_SUPPLY_DEPOT:
-                if _HARVEST_GATHER in obs.observation['available_actions']:
-                    unit_y, unit_x = (unit_type == _NEUTRAL_MINERAL_FIELD).nonzero()
+            if smart_action == ACTION_BUILD_SUPPLY_DEPOT:
+                return BuildSupplyDepot(self.location).send_scv_to_mineral(observations)
 
-                    if unit_y.any():
-                        i = random.randint(0, len(unit_y) - 1)
-
-                        m_x = unit_x[i]
-                        m_y = unit_y[i]
-
-                        target = [int(m_x), int(m_y)]
-
-                        return actions.FunctionCall(_HARVEST_GATHER, [_QUEUED, target])
+            elif smart_action == ACTION_BUILD_BARRACKS:
+                return BuildBarracks(self.location).send_scv_to_mineral(observations)
 
         return actions.FunctionCall(_NO_OP, [])
 

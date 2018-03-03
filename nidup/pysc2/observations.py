@@ -212,7 +212,7 @@ class Observations:
         return self.control_groups_data
 
     def single_select(self):
-        return self.multi_select_data
+        return self.single_select_data
 
     def multi_select(self):
         return self.multi_select_data

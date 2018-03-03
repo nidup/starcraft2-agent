@@ -8,6 +8,7 @@ _BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
 _BUILD_TECHLAB_BARRACKS = actions.FUNCTIONS.Build_TechLab_screen.id
 _BUILD_REFINERY = actions.FUNCTIONS.Build_Refinery_screen.id
 _BUILD_FACTORY = actions.FUNCTIONS.Build_Factory_screen.id
+_HARVEST_GATHER = actions.FUNCTIONS.Harvest_Gather_screen.id
 _MORPH_ORBITAL_COMMAND = actions.FUNCTIONS.Morph_OrbitalCommand_quick.id
 _MOVE_MINIMAP = actions.FUNCTIONS.Move_minimap.id
 _MOVE_SCREEN = actions.FUNCTIONS.Move_screen.id
@@ -48,6 +49,9 @@ class TerranActionIds:
 
     def build_techlab_barracks(self) -> int:
         return _BUILD_TECHLAB_BARRACKS
+
+    def harvest_gather(self) -> int:
+        return _HARVEST_GATHER
 
     def move_camera(self) -> int:
         return _MOVE_CAMERA
@@ -99,6 +103,9 @@ class TerranActions:
 
     def build_techlab_barracks(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_BUILD_TECHLAB_BARRACKS, [_NOT_QUEUED, target])
+
+    def harvest_gather(self, target) -> actions.FunctionCall:
+        return actions.FunctionCall(_HARVEST_GATHER, [_QUEUED, target])
 
     def move_camera(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_MOVE_CAMERA, [target])
