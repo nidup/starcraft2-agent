@@ -26,6 +26,7 @@ _TRAIN_MARAUDER = actions.FUNCTIONS.Train_Marauder_quick.id
 
 _NOT_QUEUED = [0]
 _QUEUED = [1]
+_SELECT_ALL = [2]
 
 
 class TerranActionIds:
@@ -139,6 +140,9 @@ class TerranActions:
     def select_point(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
 
+    def select_point_all(self, target) -> actions.FunctionCall:
+        return actions.FunctionCall(_SELECT_POINT, [_SELECT_ALL, target])
+
     def select_rect(self, point1, point2) -> actions.FunctionCall:
         return actions.FunctionCall(_SELECT_RECT, [_NOT_QUEUED, point1, point2])
 
@@ -150,7 +154,7 @@ class TerranActions:
         return actions.FunctionCall(_SELECT_UNIT, [[1], [unit_index]])
 
     def train_marine(self) -> actions.FunctionCall:
-        return actions.FunctionCall(_TRAIN_MARINE, [_NOT_QUEUED])
+        return actions.FunctionCall(_TRAIN_MARINE, [_QUEUED])
 
     def train_marauder(self) -> actions.FunctionCall:
         return actions.FunctionCall(_TRAIN_MARAUDER, [_NOT_QUEUED])

@@ -1,13 +1,10 @@
 import random
 import math
-import os.path
-
 import numpy as np
-import pandas as pd
-
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.learning.game_results import GameResultsTable
 from nidup.pysc2.observations import Observations
+from nidup.pysc2.smart_orders import Location, BuildBarracks, BuildSupplyDepot, BuildMarine, Attack
 from pysc2.agents.base_agent import BaseAgent
 from pysc2.lib import actions
 from pysc2.lib import features
@@ -39,8 +36,6 @@ _NOT_QUEUED = [0]
 _QUEUED = [1]
 _SELECT_ALL = [2]
 
-DATA_FILE = 'sparse_agent_data'
-
 ACTION_DO_NOTHING = 'donothing'
 ACTION_BUILD_SUPPLY_DEPOT = 'buildsupplydepot'
 ACTION_BUILD_BARRACKS = 'buildbarracks'
@@ -60,6 +55,7 @@ for mm_x in range(0, 64):
             smart_actions.append(ACTION_ATTACK + '_' + str(mm_x - 16) + '_' + str(mm_y - 16))
 
 
+# based on https://itnext.io/build-a-sparse-reward-pysc2-agent-a44e94ba5255
 class ReinforcementAgent(BaseAgent):
     def __init__(self):
         super(ReinforcementAgent, self).__init__()
@@ -69,23 +65,7 @@ class ReinforcementAgent(BaseAgent):
 
         self.previous_action = None
         self.previous_state = None
-
-        self.cc_y = None
-        self.cc_x = None
-
         self.move_number = 0
-
-    def transformDistance(self, x, x_distance, y, y_distance):
-        if not self.base_top_left:
-            return [x - x_distance, y - y_distance]
-
-        return [x + x_distance, y + y_distance]
-
-    def transformLocation(self, x, y):
-        if not self.base_top_left:
-            return [64 - x, 64 - y]
-
-        return [x, y]
 
     def splitAction(self, action_id):
         smart_action = smart_actions[action_id]
@@ -99,6 +79,7 @@ class ReinforcementAgent(BaseAgent):
 
     def step(self, obs):
         super(ReinforcementAgent, self).step(obs)
+        observations = Observations(obs)
 
         if obs.last():
             reward = obs.reward
@@ -122,8 +103,7 @@ class ReinforcementAgent(BaseAgent):
         if obs.first():
             player_y, player_x = (obs.observation['minimap'][_PLAYER_RELATIVE] == _PLAYER_SELF).nonzero()
             self.base_top_left = 1 if player_y.any() and player_y.mean() <= 31 else 0
-
-            self.cc_y, self.cc_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
+            self.location = Location(observations)
 
         cc_y, cc_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
         cc_count = 1 if cc_y.any() else 0
@@ -167,25 +147,17 @@ class ReinforcementAgent(BaseAgent):
 
             smart_action, x, y = self.splitAction(self.previous_action)
 
-            if smart_action == ACTION_BUILD_BARRACKS or smart_action == ACTION_BUILD_SUPPLY_DEPOT:
-                unit_y, unit_x = (unit_type == _TERRAN_SCV).nonzero()
+            if smart_action == ACTION_BUILD_BARRACKS:
+                return BuildBarracks(self.location).select_scv(observations)
 
-                if unit_y.any():
-                    i = random.randint(0, len(unit_y) - 1)
-                    target = [unit_x[i], unit_y[i]]
-
-                    return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
+            elif smart_action == ACTION_BUILD_SUPPLY_DEPOT:
+                return BuildSupplyDepot(self.location).select_scv(observations)
 
             elif smart_action == ACTION_BUILD_MARINE:
-                if barracks_y.any():
-                    i = random.randint(0, len(barracks_y) - 1)
-                    target = [barracks_x[i], barracks_y[i]]
-
-                    return actions.FunctionCall(_SELECT_POINT, [_SELECT_ALL, target])
+                return BuildMarine(self.location).select_barracks(observations)
 
             elif smart_action == ACTION_ATTACK:
-                if _SELECT_ARMY in obs.observation['available_actions']:
-                    return actions.FunctionCall(_SELECT_ARMY, [_NOT_QUEUED])
+                return Attack(self.location).select_army(observations)
 
         elif self.move_number == 1:
             self.move_number += 1
@@ -193,45 +165,16 @@ class ReinforcementAgent(BaseAgent):
             smart_action, x, y = self.splitAction(self.previous_action)
 
             if smart_action == ACTION_BUILD_SUPPLY_DEPOT:
-                if supply_depot_count < 2 and _BUILD_SUPPLY_DEPOT in obs.observation['available_actions']:
-                    if self.cc_y.any():
-                        if supply_depot_count == 0:
-                            target = self.transformDistance(round(self.cc_x.mean()), -35, round(self.cc_y.mean()), 0)
-                        elif supply_depot_count == 1:
-                            target = self.transformDistance(round(self.cc_x.mean()), -25, round(self.cc_y.mean()), -25)
-
-                        return actions.FunctionCall(_BUILD_SUPPLY_DEPOT, [_NOT_QUEUED, target])
+                return BuildSupplyDepot(self.location).build(observations)
 
             elif smart_action == ACTION_BUILD_BARRACKS:
-                if barracks_count < 2 and _BUILD_BARRACKS in obs.observation['available_actions']:
-                    if self.cc_y.any():
-                        if barracks_count == 0:
-                            target = self.transformDistance(round(self.cc_x.mean()), 15, round(self.cc_y.mean()), -9)
-                        elif barracks_count == 1:
-                            target = self.transformDistance(round(self.cc_x.mean()), 15, round(self.cc_y.mean()), 12)
-
-                        return actions.FunctionCall(_BUILD_BARRACKS, [_NOT_QUEUED, target])
+                return BuildBarracks(self.location).build(observations)
 
             elif smart_action == ACTION_BUILD_MARINE:
-                if _TRAIN_MARINE in obs.observation['available_actions']:
-                    return actions.FunctionCall(_TRAIN_MARINE, [_QUEUED])
+                return BuildMarine(self.location).train_marine(observations)
 
             elif smart_action == ACTION_ATTACK:
-                do_it = True
-
-                if len(obs.observation['single_select']) > 0 and obs.observation['single_select'][0][0] == _TERRAN_SCV:
-                    do_it = False
-
-                if len(obs.observation['multi_select']) > 0 and obs.observation['multi_select'][0][0] == _TERRAN_SCV:
-                    do_it = False
-
-                if do_it and _ATTACK_MINIMAP in obs.observation["available_actions"]:
-                    x_offset = random.randint(-1, 1)
-                    y_offset = random.randint(-1, 1)
-
-                    return actions.FunctionCall(_ATTACK_MINIMAP, [_NOT_QUEUED,
-                                                                  self.transformLocation(int(x) + (x_offset * 8),
-                                                                                         int(y) + (y_offset * 8))])
+                return Attack(self.location).attack_minimap(observations, x, y)
 
         elif self.move_number == 2:
             self.move_number = 0

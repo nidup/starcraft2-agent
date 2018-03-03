@@ -37,3 +37,6 @@ class UnitTypeIds:
 
     def terran_refinery(self) -> int:
         return _TERRAN_REFINERY
+
+    def terran_supply_depot(self) -> int:
+        return _TERRAN_SUPPLYDEPOT
