@@ -5,7 +5,7 @@ import os.path
 import numpy as np
 import pandas as pd
 
-from nidup.pysc2.learning.qlearning import QLearningTable
+from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.learning.game_results import GameResultsTable
 from nidup.pysc2.observations import Observations
 from pysc2.agents.base_agent import BaseAgent
@@ -65,6 +65,7 @@ class ReinforcementAgent(BaseAgent):
         super(ReinforcementAgent, self).__init__()
 
         self.qlearn = QLearningTable(actions=list(range(len(smart_actions))))
+        QLearningTableStorage().load(self.qlearn, self.name())
 
         self.previous_action = None
         self.previous_state = None
@@ -73,9 +74,6 @@ class ReinforcementAgent(BaseAgent):
         self.cc_x = None
 
         self.move_number = 0
-
-        if os.path.isfile(DATA_FILE + '.gz'):
-            self.qlearn.q_table = pd.read_pickle(DATA_FILE + '.gz', compression='gzip')
 
     def transformDistance(self, x, x_distance, y, y_distance):
         if not self.base_top_left:
@@ -106,8 +104,7 @@ class ReinforcementAgent(BaseAgent):
             reward = obs.reward
 
             self.qlearn.learn(str(self.previous_state), self.previous_action, reward, 'terminal')
-
-            self.qlearn.q_table.to_pickle(DATA_FILE + '.gz', 'gzip')
+            QLearningTableStorage().save(self.qlearn, self.name())
 
             self.previous_action = None
             self.previous_state = None

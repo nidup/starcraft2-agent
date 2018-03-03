@@ -1,6 +1,7 @@
 
 import numpy as np
 import pandas as pd
+import os
 
 
 # cf https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow
@@ -50,3 +51,19 @@ class QLearningTable:
             self.q_table = self.q_table.append(
                 pd.Series([0] * len(self.actions), index=self.q_table.columns, name=state)
             )
+
+
+class QLearningTableStorage:
+
+    def load(self, qlearning: QLearningTable, agent_name: str):
+        if os.path.isfile(self._file_path(agent_name)):
+            qlearning.q_table = pd.read_pickle(self._file_path(agent_name), compression='gzip')
+
+    def save(self, qlearning: QLearningTable, agent_name: str):
+        qlearning.q_table.to_pickle(self._file_path(agent_name), 'gzip')
+
+    def _file_path(self, agent_name: str) -> str:
+        root_folder = 'data'
+        filename = agent_name + '_qlearning.gz'
+        path = os.path.join(root_folder, filename)
+        return path

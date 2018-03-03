@@ -19,7 +19,6 @@ class GameResultsTable:
             dtype=np.int8
         )
         self._load_file()
-        print(self.table)
 
     def append(self, reward: int, score: ScoreDetails):
         now = datetime.datetime.now()
