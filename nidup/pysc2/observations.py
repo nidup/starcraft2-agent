@@ -142,6 +142,7 @@ class Observations:
         self.multi_select_data = obs.observation["multi_select"]
         self.first_data = obs.first()
         self.last_data = obs.last()
+        self.reward_data = obs.reward
 
     def first(self) -> bool:
         return self.first_data
@@ -169,3 +170,6 @@ class Observations:
 
     def multi_select(self):
         return self.multi_select_data
+
+    def reward(self) -> int:
+        return self.reward_data

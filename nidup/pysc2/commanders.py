@@ -55,7 +55,7 @@ class GameCommander:
             elif self.current_commander == self.army_commander:
                 self.current_commander = self.scout_commander
             self.current_order = self.current_commander.order(observations)
-        print(self.current_order)
+        #print(self.current_order)
         return self.current_order
 
 

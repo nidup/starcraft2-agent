@@ -107,9 +107,13 @@ $ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.smart_agents.S
 
 The option `--norender` can be added to disable the rendering and play game faster.
 
-The option `--max_agent_steps` can be added to make the agent play longer (default is 2500).
+The option `--max_agent_steps` can be added to make the agent play longer. The default value is 2500.
 
-The reward history and final Q Learning Table data is stored in sparse_agent.data.gz.
+On my laptop, with no render,
+ - 100k agent steps ~= 30 episodes ~= 30 minutes
+ - 400k agent steps ~= 144 episodes ~= 100 minutes
+
+The reward history and final Q Learning Table data is stored in `sparse_agent_data.gz`.
 
 This archive is re-used when it exists, you can drop it to train an agent from scratch.
 
