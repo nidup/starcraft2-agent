@@ -46,6 +46,12 @@ class SmartOrder:
         self.action_ids = TerranActionIds()
         self.unit_type_ids = UnitTypeIds()
 
+    def done(self, observations: Observations) -> bool:
+        raise NotImplementedError("Should be implemented by concrete order")
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        raise NotImplementedError("Should be implemented by concrete order")
+
 
 class SCVCommonActions:
 
@@ -79,6 +85,22 @@ class SCVCommonActions:
 
 class BuildBarracks(SmartOrder):
 
+    def __init__(self, location: Location):
+        SmartOrder.__init__(self, location)
+        self.step = 0
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 3
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.step == 1:
+            return self.select_scv(observations)
+        elif self.step == 2:
+            return self.build(observations)
+        elif self.step == 3:
+            return self.send_scv_to_mineral(observations)
+
     def select_scv(self, observations: Observations) -> actions.FunctionCall:
         return SCVCommonActions().select_scv(observations)
 
@@ -101,6 +123,22 @@ class BuildBarracks(SmartOrder):
 
 
 class BuildSupplyDepot(SmartOrder):
+
+    def __init__(self, location: Location):
+        SmartOrder.__init__(self, location)
+        self.step = 0
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 3
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.step == 1:
+            return self.select_scv(observations)
+        elif self.step == 2:
+            return self.build(observations)
+        elif self.step == 3:
+            return self.send_scv_to_mineral(observations)
 
     def select_scv(self, observations: Observations) -> actions.FunctionCall:
         return SCVCommonActions().select_scv(observations)
@@ -125,6 +163,20 @@ class BuildSupplyDepot(SmartOrder):
 
 class BuildMarine(SmartOrder):
 
+    def __init__(self, location: Location):
+        SmartOrder.__init__(self, location)
+        self.step = 0
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.step == 1:
+            return self.select_barracks(observations)
+        elif self.step == 2:
+            return self.train_marine(observations)
+
     def select_barracks(self, observations: Observations) -> actions.FunctionCall:
         unit_type = observations.screen().unit_type()
         barracks_y, barracks_x = (unit_type == self.unit_type_ids.terran_barracks()).nonzero()
@@ -142,13 +194,29 @@ class BuildMarine(SmartOrder):
 
 class Attack(SmartOrder):
 
+    def __init__(self, location: Location, x , y):
+        SmartOrder.__init__(self, location)
+        self.step = 0
+        self.x = x
+        self.y = y
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.step == 1:
+            return self.select_army(observations)
+        elif self.step == 2:
+            return self.attack_minimap(observations)
+
     def select_army(self, observations: Observations) -> actions.FunctionCall:
         if self.action_ids.select_army() in observations.available_actions():
             return self.actions.select_army()
 
         return self.actions.no_op()
 
-    def attack_minimap(self, observations: Observations, x, y) -> actions.FunctionCall:
+    def attack_minimap(self, observations: Observations) -> actions.FunctionCall:
         do_it = True
         if len(observations.single_select()) > 0 and observations.single_select()[0][0] == self.unit_type_ids.terran_scv():
             do_it = False
@@ -158,13 +226,24 @@ class Attack(SmartOrder):
         if do_it and self.action_ids.attack_minimap() in observations.available_actions():
             x_offset = random.randint(-1, 1)
             y_offset = random.randint(-1, 1)
-            target = self.location.transform_location(int(x) + (x_offset * 8), int(y) + (y_offset * 8))
+            target = self.location.transform_location(int(self.x) + (x_offset * 8), int(self.y) + (y_offset * 8))
             return self.actions.attack_minimap(target)
 
         return self.actions.no_op()
 
 
 class NoOrder:
+
+    def __init__(self):
+        self.step = 0
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 1
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.step == 1:
+            return self.do_nothing()
 
     def do_nothing(self) -> actions.FunctionCall:
         return TerranActions().no_op()

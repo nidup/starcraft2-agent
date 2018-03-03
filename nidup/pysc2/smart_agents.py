@@ -14,11 +14,6 @@ _PLAYER_ID = features.SCREEN_FEATURES.player_id.index
 
 _PLAYER_SELF = 1
 _PLAYER_HOSTILE = 4
-_ARMY_SUPPLY = 5
-
-_TERRAN_COMMANDCENTER = 18
-_TERRAN_SUPPLY_DEPOT = 19
-_TERRAN_BARRACKS = 21
 
 ACTION_DO_NOTHING = 'donothing'
 ACTION_BUILD_SUPPLY_DEPOT = 'buildsupplydepot'
@@ -77,13 +72,11 @@ class StateBuilder:
 class ReinforcementAgent(BaseAgent):
     def __init__(self):
         super(ReinforcementAgent, self).__init__()
-
         self.qlearn = QLearningTable(actions=list(range(len(smart_actions))))
         QLearningTableStorage().load(self.qlearn, self.name())
-
         self.previous_action = None
         self.previous_state = None
-        self.move_number = 0
+        self.previous_order = None
         self.location = None
 
     def split_action(self, action_id):
@@ -92,7 +85,7 @@ class ReinforcementAgent(BaseAgent):
         y = 0
         if '_' in smart_action:
             smart_action, x, y = smart_action.split('_')
-        return (smart_action, x, y)
+        return smart_action, x, y
 
     def step(self, obs):
         super(ReinforcementAgent, self).step(obs)
@@ -106,18 +99,17 @@ class ReinforcementAgent(BaseAgent):
 
             self.previous_action = None
             self.previous_state = None
+            self.previous_order = None
 
-            self.move_number = 0
             game_results = GameResultsTable(self.name())
             game_results.append(observations.reward(), observations.score_cumulative())
 
-            return NoOrder().do_nothing()
+            return NoOrder().execute(observations)
 
-        if obs.first():
+        elif obs.first():
             self.location = Location(observations)
 
-        if self.move_number == 0:
-            self.move_number += 1
+        if not self.previous_order or self.previous_order.done(observations):
 
             current_state = StateBuilder().current_state(self.location, observations)
 
@@ -130,48 +122,20 @@ class ReinforcementAgent(BaseAgent):
             self.previous_action = rl_action
 
             smart_action, x, y = self.split_action(self.previous_action)
-
             if smart_action == ACTION_BUILD_BARRACKS:
-                return BuildBarracks(self.location).select_scv(observations)
-
+                self.previous_order = BuildBarracks(self.location)
             elif smart_action == ACTION_BUILD_SUPPLY_DEPOT:
-                return BuildSupplyDepot(self.location).select_scv(observations)
-
+                self.previous_order = BuildSupplyDepot(self.location)
             elif smart_action == ACTION_BUILD_MARINE:
-                return BuildMarine(self.location).select_barracks(observations)
-
+                self.previous_order = BuildMarine(self.location)
             elif smart_action == ACTION_ATTACK:
-                return Attack(self.location).select_army(observations)
+                self.previous_order = Attack(self.location, int(x), int(y))
+            elif smart_action == ACTION_DO_NOTHING:
+                self.previous_order = NoOrder()
+            else:
+                raise Exception('The smart action '+smart_action+" is unknown")
 
-        elif self.move_number == 1:
-            self.move_number += 1
-
-            smart_action, x, y = self.split_action(self.previous_action)
-
-            if smart_action == ACTION_BUILD_SUPPLY_DEPOT:
-                return BuildSupplyDepot(self.location).build(observations)
-
-            elif smart_action == ACTION_BUILD_BARRACKS:
-                return BuildBarracks(self.location).build(observations)
-
-            elif smart_action == ACTION_BUILD_MARINE:
-                return BuildMarine(self.location).train_marine(observations)
-
-            elif smart_action == ACTION_ATTACK:
-                return Attack(self.location).attack_minimap(observations, int(x), int(y))
-
-        elif self.move_number == 2:
-            self.move_number = 0
-
-            smart_action, x, y = self.split_action(self.previous_action)
-
-            if smart_action == ACTION_BUILD_SUPPLY_DEPOT:
-                return BuildSupplyDepot(self.location).send_scv_to_mineral(observations)
-
-            elif smart_action == ACTION_BUILD_BARRACKS:
-                return BuildBarracks(self.location).send_scv_to_mineral(observations)
-
-        return NoOrder().do_nothing()
+        return self.previous_order.execute(observations)
 
     def name(self) -> str:
         return __name__ + "." + self.__class__.__name__
