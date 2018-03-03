@@ -25,7 +25,7 @@ class BuildOrderAgent(BaseAgent):
             self.commander = GameCommander(base_location)
             self.game_results = GameResultsTable(self.name())
         elif observations.last():
-            self.game_results.append(observations.reward())
+            self.game_results.append(observations.reward(), observations.score_cumulative())
         if self.debug:
             time.sleep(0.5)
         return self.commander.order(observations).execute(observations)

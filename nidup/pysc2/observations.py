@@ -128,6 +128,51 @@ class PlayerInformation:
         return self.obs_player[10]
 
 
+class ScoreDetails:
+
+    def __init__(self, obs_score):
+        self.obs_score = obs_score
+
+    def score(self) -> int:
+        return self.obs_score[0]
+
+    def idle_production_time(self) -> int:
+        return self.obs_score[1]
+
+    def idle_worker_time(self) -> int:
+        return self.obs_score[2]
+
+    def total_value_units(self) -> int:
+        return self.obs_score[3]
+
+    def total_value_structures(self) -> int:
+        return self.obs_score[4]
+
+    def killed_value_units(self) -> int:
+        return self.obs_score[5]
+
+    def killed_value_structures(self) -> int:
+        return self.obs_score[6]
+
+    def collected_minerals(self) -> int:
+        return self.obs_score[7]
+
+    def collected_vespene(self) -> int:
+        return self.obs_score[8]
+
+    def collection_rate_minerals(self) -> int:
+        return self.obs_score[9]
+
+    def collection_rate_vespene(self) -> int:
+        return self.obs_score[10]
+
+    def spent_minerals(self) -> int:
+        return self.obs_score[11]
+
+    def spent_vespene(self) -> int:
+        return self.obs_score[12]
+
+
 # Wrap `obs` variable, a series of nested arrays to an object
 # cf https://github.com/deepmind/pysc2/blob/master/docs/environment.md
 class Observations:
@@ -143,6 +188,7 @@ class Observations:
         self.first_data = obs.first()
         self.last_data = obs.last()
         self.reward_data = obs.reward
+        self.score_details = ScoreDetails(obs.observation["score_cumulative"])
 
     def first(self) -> bool:
         return self.first_data
@@ -173,3 +219,6 @@ class Observations:
 
     def reward(self) -> int:
         return self.reward_data
+
+    def score_cumulative(self) -> ScoreDetails:
+        return self.score_details
