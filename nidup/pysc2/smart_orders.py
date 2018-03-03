@@ -1,6 +1,5 @@
 
 import random
-import math
 from pysc2.lib import actions
 from nidup.pysc2.actions import TerranActions, TerranActionIds
 from nidup.pysc2.observations import Observations
@@ -21,7 +20,7 @@ class Location:
         unit_type = observations.screen().unit_type()
         self.cc_y, self.cc_x = (unit_type == UnitTypeIds().terran_command_center()).nonzero()
 
-    def top_left(self):
+    def command_center_is_top_left(self) -> bool:
         return self.base_top_left
 
     def command_center_position(self):
@@ -163,3 +162,9 @@ class Attack(SmartOrder):
             return self.actions.attack_minimap(target)
 
         return self.actions.no_op()
+
+
+class NoOrder:
+
+    def do_nothing(self) -> actions.FunctionCall:
+        return TerranActions().no_op()

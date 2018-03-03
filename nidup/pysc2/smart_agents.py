@@ -1,22 +1,11 @@
-import random
 import math
 import numpy as np
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.learning.game_results import GameResultsTable
 from nidup.pysc2.observations import Observations
-from nidup.pysc2.smart_orders import Location, BuildBarracks, BuildSupplyDepot, BuildMarine, Attack
+from nidup.pysc2.smart_orders import Location, BuildBarracks, BuildSupplyDepot, BuildMarine, Attack, NoOrder
 from pysc2.agents.base_agent import BaseAgent
-from pysc2.lib import actions
 from pysc2.lib import features
-
-_NO_OP = actions.FUNCTIONS.no_op.id
-_SELECT_POINT = actions.FUNCTIONS.select_point.id
-_BUILD_SUPPLY_DEPOT = actions.FUNCTIONS.Build_SupplyDepot_screen.id
-_BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
-_TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
-_SELECT_ARMY = actions.FUNCTIONS.select_army.id
-_ATTACK_MINIMAP = actions.FUNCTIONS.Attack_minimap.id
-_HARVEST_GATHER = actions.FUNCTIONS.Harvest_Gather_screen.id
 
 _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
 _UNIT_TYPE = features.SCREEN_FEATURES.unit_type.index
@@ -27,14 +16,8 @@ _PLAYER_HOSTILE = 4
 _ARMY_SUPPLY = 5
 
 _TERRAN_COMMANDCENTER = 18
-_TERRAN_SCV = 45
 _TERRAN_SUPPLY_DEPOT = 19
 _TERRAN_BARRACKS = 21
-_NEUTRAL_MINERAL_FIELD = 341
-
-_NOT_QUEUED = [0]
-_QUEUED = [1]
-_SELECT_ALL = [2]
 
 ACTION_DO_NOTHING = 'donothing'
 ACTION_BUILD_SUPPLY_DEPOT = 'buildsupplydepot'
@@ -66,15 +49,14 @@ class ReinforcementAgent(BaseAgent):
         self.previous_action = None
         self.previous_state = None
         self.move_number = 0
+        self.location = None
 
     def splitAction(self, action_id):
         smart_action = smart_actions[action_id]
-
         x = 0
         y = 0
         if '_' in smart_action:
             smart_action, x, y = smart_action.split('_')
-
         return (smart_action, x, y)
 
     def step(self, obs):
@@ -96,13 +78,11 @@ class ReinforcementAgent(BaseAgent):
             game_results = GameResultsTable(self.name())
             game_results.append(observations.reward(), observations.score_cumulative())
 
-            return actions.FunctionCall(_NO_OP, [])
+            return NoOrder().do_nothing()
 
         unit_type = obs.observation['screen'][_UNIT_TYPE]
 
         if obs.first():
-            player_y, player_x = (obs.observation['minimap'][_PLAYER_RELATIVE] == _PLAYER_SELF).nonzero()
-            self.base_top_left = 1 if player_y.any() and player_y.mean() <= 31 else 0
             self.location = Location(observations)
 
         cc_y, cc_x = (unit_type == _TERRAN_COMMANDCENTER).nonzero()
@@ -131,7 +111,7 @@ class ReinforcementAgent(BaseAgent):
 
                 hot_squares[((y - 1) * 2) + (x - 1)] = 1
 
-            if not self.base_top_left:
+            if not self.location.command_center_is_top_left():
                 hot_squares = hot_squares[::-1]
 
             for i in range(0, 4):
@@ -187,7 +167,7 @@ class ReinforcementAgent(BaseAgent):
             elif smart_action == ACTION_BUILD_BARRACKS:
                 return BuildBarracks(self.location).send_scv_to_mineral(observations)
 
-        return actions.FunctionCall(_NO_OP, [])
+        return NoOrder().do_nothing()
 
     def name(self) -> str:
         return __name__ + "." + self.__class__.__name__
