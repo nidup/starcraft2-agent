@@ -15,7 +15,6 @@ class BuildOrderAgent(BaseAgent):
 
     commander = None
     debug = False
-    game_results = None
 
     def step(self, obs):
         super(BuildOrderAgent, self).step(obs)
@@ -23,9 +22,9 @@ class BuildOrderAgent(BaseAgent):
         if observations.first():
             base_location = BaseLocation(observations)
             self.commander = GameCommander(base_location)
-            self.game_results = GameResultsTable(self.name())
         elif observations.last():
-            self.game_results.append(observations.reward(), observations.score_cumulative())
+            game_results = GameResultsTable(self.name())
+            game_results.append(observations.reward(), observations.score_cumulative())
         if self.debug:
             time.sleep(0.5)
         return self.commander.order(observations).execute(observations)

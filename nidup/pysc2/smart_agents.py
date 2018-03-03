@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 
 from nidup.pysc2.learning.qlearning import QLearningTable
+from nidup.pysc2.learning.game_results import GameResultsTable
+from nidup.pysc2.observations import Observations
 from pysc2.agents.base_agent import BaseAgent
 from pysc2.lib import actions
 from pysc2.lib import features
@@ -58,9 +60,9 @@ for mm_x in range(0, 64):
             smart_actions.append(ACTION_ATTACK + '_' + str(mm_x - 16) + '_' + str(mm_y - 16))
 
 
-class SparseAgent(BaseAgent):
+class ReinforcementAgent(BaseAgent):
     def __init__(self):
-        super(SparseAgent, self).__init__()
+        super(ReinforcementAgent, self).__init__()
 
         self.qlearn = QLearningTable(actions=list(range(len(smart_actions))))
 
@@ -98,7 +100,7 @@ class SparseAgent(BaseAgent):
         return (smart_action, x, y)
 
     def step(self, obs):
-        super(SparseAgent, self).step(obs)
+        super(ReinforcementAgent, self).step(obs)
 
         if obs.last():
             reward = obs.reward
@@ -111,6 +113,10 @@ class SparseAgent(BaseAgent):
             self.previous_state = None
 
             self.move_number = 0
+
+            observations = Observations(obs)
+            game_results = GameResultsTable(self.name())
+            game_results.append(observations.reward(), observations.score_cumulative())
 
             return actions.FunctionCall(_NO_OP, [])
 
@@ -250,3 +256,6 @@ class SparseAgent(BaseAgent):
                         return actions.FunctionCall(_HARVEST_GATHER, [_QUEUED, target])
 
         return actions.FunctionCall(_NO_OP, [])
+
+    def name(self) -> str:
+        return __name__ + "." + self.__class__.__name__

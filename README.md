@@ -1,7 +1,7 @@
 Starcraft 2 agent
 =================
 
-Discovering PySC2 - StarCraft II Learning Environment, playing with simple agent 🤖
+Discovering PySC2 - StarCraft II Learning Environment, playing with simple agent and reinforcement learning 🤖
 
 Clone the repository
 --------------------
@@ -77,26 +77,23 @@ Defeat Roaches Mini Game,
 $ python3.6 -m pysc2.bin.agent --map DefeatRoaches --agent pysc2.agents.scripted_agent.DefeatRoaches
 ```
 
-Run the nidup agents
---------------------
+Run the Nidup Scripted Agents
+-----------------------------
 
-These agents have been built to work properly on the Simple64 map and are not robust enough to play elsewhere.
-
-Scripted agents
----------------
+These agents have been built to work properly on the Simple64 map, as a Terran, and are not robust enough to play elsewhere.
 
 Infinite Scouting Agent:
 ```
-$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.ScoutingAgent --agent_race T
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.scripted_agents.ScoutingAgent --agent_race T
 ```
 
 Build Order Agent:
 ```
-$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.BuildOrderAgent --agent_race T
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.scripted_agents.BuildOrderAgent --agent_race T
 ```
 
-Reinforcement Learning agent
-----------------------------
+Run the Nidup Reinforcement Learning Agent
+------------------------------------------
 
 It's [based on these tutorials](https://itnext.io/build-a-sparse-reward-pysc2-agent-a44e94ba5255)
 
@@ -119,8 +116,14 @@ This archive is re-used when it exists, you can drop it to train an agent from s
 
 Run the Smart Agent after the reinforcement:
 ```
-$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.smart_agents.SparseAgent --agent_race T
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.smart_agents.Reinforcement --agent_race T
 ```
+
+Data & Analysis
+---------------
+
+Game results are store in `data` folder using a different file per agent.
+The file is suffixed by `_results` and contains a pandas DataFrame.
 
 Credits
 -------
