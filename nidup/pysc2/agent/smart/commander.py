@@ -8,11 +8,6 @@ from nidup.pysc2.learning.game_results import GameResultsTable
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.smart.orders import Location, BuildBarracks, BuildSupplyDepot, BuildMarine, Attack, NoOrder
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
-from pysc2.lib import features
-
-_PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
-_UNIT_TYPE = features.SCREEN_FEATURES.unit_type.index
-_PLAYER_ID = features.SCREEN_FEATURES.player_id.index
 
 _PLAYER_SELF = 1
 _PLAYER_HOSTILE = 4
@@ -23,22 +18,52 @@ ACTION_BUILD_BARRACKS = 'buildbarracks'
 ACTION_BUILD_MARINE = 'buildmarine'
 ACTION_ATTACK = 'attack'
 
-smart_actions = [
-    ACTION_DO_NOTHING,
-    ACTION_BUILD_SUPPLY_DEPOT,
-    ACTION_BUILD_BARRACKS,
-    ACTION_BUILD_MARINE,
-]
 
-for mm_x in range(0, 64):
-    for mm_y in range(0, 64):
-        if (mm_x + 1) % 32 == 0 and (mm_y + 1) % 32 == 0:
-            smart_actions.append(ACTION_ATTACK + '_' + str(mm_x - 16) + '_' + str(mm_y - 16))
+class SmartActions:
+
+    def __init__(self):
+        self.actions = [
+            ACTION_DO_NOTHING,
+            ACTION_BUILD_SUPPLY_DEPOT,
+            ACTION_BUILD_BARRACKS,
+            ACTION_BUILD_MARINE
+        ]
+        # split the mini-map into four quadrants keep the action space small to make it easier for the agent to learn
+        for mm_x in range(0, 64):
+            for mm_y in range(0, 64):
+                if (mm_x + 1) % 32 == 0 and (mm_y + 1) % 32 == 0:
+                    self.actions.append(ACTION_ATTACK + '_' + str(mm_x - 16) + '_' + str(mm_y - 16))
+
+    def all(self) -> []:
+        return self.actions
+
+    def order(self, action_id: str, location: Location) -> Order:
+        smart_action, x, y = self._split_action(action_id)
+        if smart_action == ACTION_BUILD_BARRACKS:
+            return BuildBarracks(location)
+        elif smart_action == ACTION_BUILD_SUPPLY_DEPOT:
+            return BuildSupplyDepot(location)
+        elif smart_action == ACTION_BUILD_MARINE:
+            return BuildMarine(location)
+        elif smart_action == ACTION_ATTACK:
+            return Attack(location, int(x), int(y))
+        elif smart_action == ACTION_DO_NOTHING:
+            return NoOrder()
+        else:
+            raise Exception('The smart action ' + smart_action + " is unknown")
+
+    def _split_action(self, action_id):
+        smart_action = self.actions[action_id]
+        x = 0
+        y = 0
+        if '_' in smart_action:
+            smart_action, x, y = smart_action.split('_')
+        return smart_action, x, y
 
 
 class StateBuilder:
 
-    def current_state(self, location: Location, observations: Observations):
+    def build_state(self, location: Location, observations: Observations) -> []:
         unit_type = observations.screen().unit_type()
         unit_type_ids = UnitTypeIds()
         cc_y, cc_x = (unit_type == unit_type_ids.terran_command_center()).nonzero()
@@ -76,34 +101,25 @@ class QLearningCommander(Commander):
     def __init__(self, agent_name: str):
         super(Commander, self).__init__()
         self.agent_name = agent_name
-        self.qlearn = QLearningTable(actions=list(range(len(smart_actions))))
+        self.smart_actions = SmartActions()
+        self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
         QLearningTableStorage().load(self.qlearn, self.agent_name)
         self.previous_action = None
         self.previous_state = None
         self.previous_order = None
         self.location = None
 
-    def split_action(self, action_id):
-        smart_action = smart_actions[action_id]
-        x = 0
-        y = 0
-        if '_' in smart_action:
-            smart_action, x, y = smart_action.split('_')
-        return smart_action, x, y
-
     def order(self, observations: Observations)-> Order:
         if observations.last():
-            reward = observations.reward()
-
-            self.qlearn.learn(str(self.previous_state), self.previous_action, reward, 'terminal')
+            self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
             QLearningTableStorage().save(self.qlearn, self.agent_name)
+
+            game_results = GameResultsTable(self.agent_name)
+            game_results.append(observations.reward(), observations.score_cumulative())
 
             self.previous_action = None
             self.previous_state = None
             self.previous_order = None
-
-            game_results = GameResultsTable(self.agent_name)
-            game_results.append(observations.reward(), observations.score_cumulative())
 
             return NoOrder()
 
@@ -112,7 +128,7 @@ class QLearningCommander(Commander):
 
         if not self.previous_order or self.previous_order.done(observations):
 
-            current_state = StateBuilder().current_state(self.location, observations)
+            current_state = StateBuilder().build_state(self.location, observations)
 
             if self.previous_action is not None:
                 self.qlearn.learn(str(self.previous_state), self.previous_action, 0, str(current_state))
@@ -121,19 +137,6 @@ class QLearningCommander(Commander):
 
             self.previous_state = current_state
             self.previous_action = rl_action
-
-            smart_action, x, y = self.split_action(self.previous_action)
-            if smart_action == ACTION_BUILD_BARRACKS:
-                self.previous_order = BuildBarracks(self.location)
-            elif smart_action == ACTION_BUILD_SUPPLY_DEPOT:
-                self.previous_order = BuildSupplyDepot(self.location)
-            elif smart_action == ACTION_BUILD_MARINE:
-                self.previous_order = BuildMarine(self.location)
-            elif smart_action == ACTION_ATTACK:
-                self.previous_order = Attack(self.location, int(x), int(y))
-            elif smart_action == ACTION_DO_NOTHING:
-                self.previous_order = NoOrder()
-            else:
-                raise Exception('The smart action '+smart_action+" is unknown")
+            self.previous_order = self.smart_actions.order(rl_action, self.location)
 
         return self.previous_order
