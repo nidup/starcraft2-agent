@@ -58,14 +58,3 @@ class BaseLocation:
         locations.append([45, 15])
         locations.append([21, 45])
         return locations
-
-
-class StepIndex:
-
-    step_index = 0
-
-    def increment_step(self):
-        self.step_index = self.step_index + 1
-
-    def __str__(self) -> str:
-        return "step index :" + self.step_index.__str__()

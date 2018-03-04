@@ -1,13 +1,12 @@
 
-from pysc2.agents.base_agent import BaseAgent
-from nidup.pysc2.agent.scripted.commander import GameCommander, ScoutingCommander
-from nidup.pysc2.wrapper.observations import Observations
-from nidup.pysc2.information import BaseLocation
 import random
 import time
-
+from pysc2.agents.base_agent import BaseAgent
+from nidup.pysc2.agent.scripted.commander import GameCommander, ScoutingCommander
+from nidup.pysc2.information import BaseLocation
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
+from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.learning.game_results import GameResultsTable
 
 
