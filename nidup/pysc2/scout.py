@@ -1,7 +1,7 @@
 
 from pysc2.lib import actions
 from nidup.pysc2.actions import TerranActions, TerranActionIds
-from nidup.pysc2.observations import Observations
+from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.order import Order
 from nidup.pysc2.information import BaseLocation
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds

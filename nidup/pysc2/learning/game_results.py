@@ -3,7 +3,7 @@ import datetime
 import pandas as pd
 import numpy as np
 import os
-from nidup.pysc2.observations import ScoreDetails
+from nidup.pysc2.wrapper.observations import ScoreDetails
 
 
 class GameResultsTable:

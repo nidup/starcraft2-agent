@@ -1,7 +1,7 @@
 
 from pysc2.agents.base_agent import BaseAgent
 from nidup.pysc2.commanders import GameCommander, ScoutingCommander
-from nidup.pysc2.observations import Observations
+from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.information import BaseLocation
 import random
 import time

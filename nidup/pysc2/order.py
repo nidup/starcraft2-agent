@@ -1,6 +1,6 @@
 
 from pysc2.lib import actions
-from nidup.pysc2.observations import Observations
+from nidup.pysc2.wrapper.observations import Observations
 
 
 class Order:
