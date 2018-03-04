@@ -8,6 +8,7 @@ _BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
 _BUILD_TECHLAB_BARRACKS = actions.FUNCTIONS.Build_TechLab_screen.id
 _BUILD_REFINERY = actions.FUNCTIONS.Build_Refinery_screen.id
 _BUILD_FACTORY = actions.FUNCTIONS.Build_Factory_screen.id
+_HARVEST_GATHER = actions.FUNCTIONS.Harvest_Gather_screen.id
 _MORPH_ORBITAL_COMMAND = actions.FUNCTIONS.Morph_OrbitalCommand_quick.id
 _MOVE_MINIMAP = actions.FUNCTIONS.Move_minimap.id
 _MOVE_SCREEN = actions.FUNCTIONS.Move_screen.id
@@ -26,6 +27,7 @@ _TRAIN_MARAUDER = actions.FUNCTIONS.Train_Marauder_quick.id
 
 _NOT_QUEUED = [0]
 _QUEUED = [1]
+_SELECT_ALL = [2]
 
 
 class TerranActionIds:
@@ -47,6 +49,9 @@ class TerranActionIds:
 
     def build_techlab_barracks(self) -> int:
         return _BUILD_TECHLAB_BARRACKS
+
+    def harvest_gather(self) -> int:
+        return _HARVEST_GATHER
 
     def move_camera(self) -> int:
         return _MOVE_CAMERA
@@ -99,6 +104,9 @@ class TerranActions:
     def build_techlab_barracks(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_BUILD_TECHLAB_BARRACKS, [_NOT_QUEUED, target])
 
+    def harvest_gather(self, target) -> actions.FunctionCall:
+        return actions.FunctionCall(_HARVEST_GATHER, [_QUEUED, target])
+
     def move_camera(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_MOVE_CAMERA, [target])
 
@@ -139,6 +147,9 @@ class TerranActions:
     def select_point(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_SELECT_POINT, [_NOT_QUEUED, target])
 
+    def select_point_all(self, target) -> actions.FunctionCall:
+        return actions.FunctionCall(_SELECT_POINT, [_SELECT_ALL, target])
+
     def select_rect(self, point1, point2) -> actions.FunctionCall:
         return actions.FunctionCall(_SELECT_RECT, [_NOT_QUEUED, point1, point2])
 
@@ -150,7 +161,7 @@ class TerranActions:
         return actions.FunctionCall(_SELECT_UNIT, [[1], [unit_index]])
 
     def train_marine(self) -> actions.FunctionCall:
-        return actions.FunctionCall(_TRAIN_MARINE, [_NOT_QUEUED])
+        return actions.FunctionCall(_TRAIN_MARINE, [_QUEUED])
 
     def train_marauder(self) -> actions.FunctionCall:
         return actions.FunctionCall(_TRAIN_MARAUDER, [_NOT_QUEUED])

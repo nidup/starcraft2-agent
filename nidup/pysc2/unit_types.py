@@ -8,11 +8,14 @@ _TERRAN_FACTORY = 27
 _TERRAN_SCV = 45
 _TERRAN_ORBITALCOMMAND = 132
 _TERRAN_BARRACKSTECHLAB = 37
-_NEUTRAL_MINERALFIELD = 341
+_NEUTRAL_MINERAL_FIELD = 341
 _NEUTRAL_VESPENE_GEYSER = 342
 
 
 class UnitTypeIds:
+
+    def neutral_mineral_field(self) -> int:
+        return _NEUTRAL_MINERAL_FIELD
 
     def neutral_vespene_geyser(self) -> int:
         return _NEUTRAL_VESPENE_GEYSER
@@ -37,3 +40,6 @@ class UnitTypeIds:
 
     def terran_refinery(self) -> int:
         return _TERRAN_REFINERY
+
+    def terran_supply_depot(self) -> int:
+        return _TERRAN_SUPPLYDEPOT
