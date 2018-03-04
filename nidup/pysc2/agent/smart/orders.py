@@ -188,7 +188,7 @@ class Attack(SmartOrder):
 
     def attack_minimap(self, observations: Observations) -> actions.FunctionCall:
         do_it = True
-        if len(observations.single_select()) > 0 and observations.single_select()[0][0] == self.unit_type_ids.terran_scv():
+        if observations.single_select().not_empty() and observations.single_select().unit_type() == self.unit_type_ids.terran_scv():
             do_it = False
         if len(observations.multi_select()) > 0 and observations.multi_select()[0][0] == self.unit_type_ids.terran_scv():
             do_it = False

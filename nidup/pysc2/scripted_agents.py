@@ -2,12 +2,13 @@
 import random
 import time
 from pysc2.agents.base_agent import BaseAgent
-from nidup.pysc2.agent.scripted.commander import GameCommander, ScoutingCommander
+from nidup.pysc2.agent.scripted.commander import GameCommander, ScoutingCommander, NoOrder
 from nidup.pysc2.agent.scripted.information import BaseLocation
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.learning.game_results import GameResultsTable
+from nidup.pysc2.agent.scripted.build import BuildRefinery
 
 
 class BuildOrderAgent(BaseAgent):
@@ -46,13 +47,37 @@ class ScoutingAgent(BaseAgent):
         return self.commander.order(observations).execute(observations)
 
 
+class RefineryAgent(BaseAgent):
+
+    def __init__(self):
+        BaseAgent.__init__(self)
+        self.actions = TerranActions()
+        self.action_ids = TerranActionIds()
+        self.unit_type_ids = UnitTypeIds()
+        self.base_location = None
+        self.order_first_refinery = None
+        self.order_second_refinery = None
+
+    def step(self, obs):
+        super(RefineryAgent, self).step(obs)
+        observations = Observations(obs)
+        if observations.first():
+            self.base_location = BaseLocation(observations)
+            self.order_first_refinery = BuildRefinery(self.base_location)
+            self.order_second_refinery = BuildRefinery(self.base_location)
+        if not self.order_first_refinery.done(observations):
+            return self.order_first_refinery.execute(observations)
+        elif not self.order_second_refinery.done(observations):
+            return self.order_second_refinery.execute(observations)
+        return NoOrder().execute(observations)
+
+
 class ControlGroupsAgent(BaseAgent):
 
     base_location = None
     actions = None
     action_ids = None
     unit_type_ids = None
-    started = False
     #all_scv_selected = False
     #unit_selected = False
     scv_selected = False
@@ -79,9 +104,8 @@ class ControlGroupsAgent(BaseAgent):
         #print(observations.single_select())
         #print(obs.observation.keys())
 
-        if not self.started:
+        if observations.first():
             self.base_location = BaseLocation(observations)
-            self.started = True
         #if not self.all_scv_selected:
         #    self.all_scv_selected = True
         #   return self.actions.select_rect([0, 0], [83, 83])
