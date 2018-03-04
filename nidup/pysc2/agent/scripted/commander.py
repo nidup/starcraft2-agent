@@ -1,7 +1,7 @@
 
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.information import BaseLocation
+from nidup.pysc2.agent.scripted.information import BaseLocation
 from nidup.pysc2.agent.scripted.build import OrdersSequence, CenterCameraOnCommandCenter, BuildSupplyDepot, BuildFactory, BuildRefinery, BuildBarracks, BuildTechLabBarracks, MorphOrbitalCommand
 from nidup.pysc2.agent.scripted.train import OrdersRepetition, TrainMarine, TrainMarauder, PushWithArmy
 from nidup.pysc2.agent.scripted.scout import Scouting

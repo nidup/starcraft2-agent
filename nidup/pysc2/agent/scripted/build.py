@@ -3,7 +3,7 @@ from pysc2.lib import actions
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.information import BaseLocation
+from nidup.pysc2.agent.scripted.information import BaseLocation
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 from sklearn.cluster import KMeans
 import math
