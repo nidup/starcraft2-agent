@@ -116,11 +116,6 @@ Run the Smart Agent after the reinforcement:
 $ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.smart_agents.ReinforcementAgent --agent_race T
 ```
 
-Generate the learning report graph:
-```
-$ python3.6 generate_report.py --agent-name nidup.pysc2.smart_agents.ReinforcementAgent
-```
-
 Data & Analysis
 ---------------
 
@@ -134,6 +129,18 @@ The file is suffixed by `_results` and contains a pandas DataFrame.
 The reward history and final QLearning Table are stored in `data` folder using a different file per agent.
 The file is suffixed by `_qlearning` and contains a pandas DataFrame.
 This archive is re-used when it exists, you can drop it to train the agent from scratch.
+
+**Report & queries**
+
+Generate the learning report graph:
+```
+$ python3.6 generate_report.py --agent-name nidup.pysc2.smart_agents.ReinforcementAgent
+```
+
+Query the game results:
+```
+$ python3.6 generate_report.py --agent-name nidup.pysc2.smart_agents.ReinforcementAgent --filter win
+```
 
 Credits
 -------

@@ -1,46 +1,16 @@
 
 import random
 from pysc2.lib import actions
-from nidup.pysc2.actions import TerranActions, TerranActionIds
-from nidup.pysc2.observations import Observations
-from nidup.pysc2.unit_types import UnitTypeIds
-
-# Parameters
-_PLAYER_SELF = 1
-
-
-class Location:
-
-    base_top_left = None
-    unit_type_ids = None
-
-    def __init__(self, observations: Observations):
-        player_y, player_x = (observations.minimap().player_relative() == _PLAYER_SELF).nonzero()
-        self.base_top_left = player_y.mean() <= 31
-        unit_type = observations.screen().unit_type()
-        self.cc_y, self.cc_x = (unit_type == UnitTypeIds().terran_command_center()).nonzero()
-
-    def command_center_is_top_left(self) -> bool:
-        return self.base_top_left
-
-    def command_center_position(self):
-        return self.cc_x, self.cc_y
-
-    def transform_distance(self, x, x_distance, y, y_distance):
-        if not self.base_top_left:
-            return [x - x_distance, y - y_distance]
-
-        return [x + x_distance, y + y_distance]
-
-    def transform_location(self, x, y):
-        if not self.base_top_left:
-            return [64 - x, 64 - y]
-
-        return [x, y]
+from nidup.pysc2.agent.order import Order
+from nidup.pysc2.agent.smart.information import Location
+from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
+from nidup.pysc2.wrapper.observations import Observations
+from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 
-class SmartOrder:
+class SmartOrder(Order):
     def __init__(self, location: Location):
+        Order.__init__(self)
         self.location = location
         self.actions = TerranActions()
         self.action_ids = TerranActionIds()
@@ -232,9 +202,10 @@ class Attack(SmartOrder):
         return self.actions.no_op()
 
 
-class NoOrder:
+class NoOrder(Order):
 
     def __init__(self):
+        Order.__init__(self)
         self.step = 0
 
     def done(self, observations: Observations) -> bool:
