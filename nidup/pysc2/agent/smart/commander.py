@@ -37,9 +37,8 @@ class SmartActions:
                     attack_actions.append(ACTION_ATTACK + '_' + str(mm_x - 16) + '_' + str(mm_y - 16))
         # remove the player's base quadrant
         del attack_actions[0]
-        # remove other base quadrants (keep only enemy's one)
-        del attack_actions[0]
-        del attack_actions[0]
+        # keep only enemy's base 1 and base 2 quadrants (natural expansion)
+        del attack_actions[1]
         self.actions = self.actions + attack_actions
 
     def all(self) -> []:
