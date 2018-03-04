@@ -1,6 +1,7 @@
 
 import random
 from pysc2.lib import actions
+from nidup.pysc2.agent.order import Order
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
@@ -39,8 +40,9 @@ class Location:
         return [x, y]
 
 
-class SmartOrder:
+class SmartOrder(Order):
     def __init__(self, location: Location):
+        Order.__init__(self)
         self.location = location
         self.actions = TerranActions()
         self.action_ids = TerranActionIds()
@@ -232,9 +234,10 @@ class Attack(SmartOrder):
         return self.actions.no_op()
 
 
-class NoOrder:
+class NoOrder(Order):
 
     def __init__(self):
+        Order.__init__(self)
         self.step = 0
 
     def done(self, observations: Observations) -> bool:
