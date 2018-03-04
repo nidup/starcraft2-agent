@@ -6,7 +6,7 @@ from nidup.pysc2.information import BaseLocation
 import random
 import time
 
-from nidup.pysc2.actions import TerranActions, TerranActionIds
+from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 from nidup.pysc2.learning.game_results import GameResultsTable
 

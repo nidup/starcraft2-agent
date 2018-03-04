@@ -5,7 +5,7 @@ from nidup.pysc2.information import BaseLocation, StepIndex
 from nidup.pysc2.production.build import OrdersSequence, CenterCameraOnCommandCenter, BuildSupplyDepot, BuildFactory, BuildRefinery, BuildBarracks, BuildTechLabBarracks, MorphOrbitalCommand
 from nidup.pysc2.production.train import OrdersRepetition, TrainMarine, TrainMarauder, PushWithArmy
 from nidup.pysc2.scout import Scouting
-from nidup.pysc2.actions import TerranActions
+from nidup.pysc2.wrapper.actions import TerranActions
 
 
 class NoOrder(Order):
