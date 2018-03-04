@@ -21,7 +21,8 @@ ACTION_ATTACK = 'attack'
 
 class SmartActions:
 
-    def __init__(self):
+    def __init__(self, location: Location):
+        self.location = location
         self.actions = [
             ACTION_DO_NOTHING,
             ACTION_BUILD_SUPPLY_DEPOT,
@@ -29,24 +30,30 @@ class SmartActions:
             ACTION_BUILD_MARINE
         ]
         # split the mini-map into four quadrants keep the action space small to make it easier for the agent to learn
+        attack_actions = []
         for mm_x in range(0, 64):
             for mm_y in range(0, 64):
                 if (mm_x + 1) % 32 == 0 and (mm_y + 1) % 32 == 0:
-                    self.actions.append(ACTION_ATTACK + '_' + str(mm_x - 16) + '_' + str(mm_y - 16))
+                    attack_actions.append(ACTION_ATTACK + '_' + str(mm_x - 16) + '_' + str(mm_y - 16))
+        # remove the player's base quadrant
+        del attack_actions[0]
+        # keep only enemy's base 1 and base 2 quadrants (natural expansion)
+        del attack_actions[1]
+        self.actions = self.actions + attack_actions
 
     def all(self) -> []:
         return self.actions
 
-    def order(self, action_id: str, location: Location) -> Order:
+    def order(self, action_id: str) -> Order:
         smart_action, x, y = self._split_action(action_id)
         if smart_action == ACTION_BUILD_BARRACKS:
-            return BuildBarracks(location)
+            return BuildBarracks(self.location)
         elif smart_action == ACTION_BUILD_SUPPLY_DEPOT:
-            return BuildSupplyDepot(location)
+            return BuildSupplyDepot(self.location)
         elif smart_action == ACTION_BUILD_MARINE:
-            return BuildMarine(location)
+            return BuildMarine(self.location)
         elif smart_action == ACTION_ATTACK:
-            return Attack(location, int(x), int(y))
+            return Attack(self.location, int(x), int(y))
         elif smart_action == ACTION_DO_NOTHING:
             return NoOrder()
         else:
@@ -101,9 +108,8 @@ class QLearningCommander(Commander):
     def __init__(self, agent_name: str):
         super(Commander, self).__init__()
         self.agent_name = agent_name
-        self.smart_actions = SmartActions()
-        self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
-        QLearningTableStorage().load(self.qlearn, self.agent_name)
+        self.smart_actions = None
+        self.qlearn = None
         self.previous_action = None
         self.previous_state = None
         self.previous_order = None
@@ -125,6 +131,9 @@ class QLearningCommander(Commander):
 
         elif observations.first():
             self.location = Location(observations)
+            self.smart_actions = SmartActions(self.location)
+            self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
+            QLearningTableStorage().load(self.qlearn, self.agent_name)
 
         if not self.previous_order or self.previous_order.done(observations):
 
@@ -137,6 +146,6 @@ class QLearningCommander(Commander):
 
             self.previous_state = current_state
             self.previous_action = rl_action
-            self.previous_order = self.smart_actions.order(rl_action, self.location)
+            self.previous_order = self.smart_actions.order(rl_action)
 
         return self.previous_order
