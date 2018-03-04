@@ -3,7 +3,7 @@ import random
 from pysc2.lib import actions
 from nidup.pysc2.actions import TerranActions, TerranActionIds
 from nidup.pysc2.observations import Observations
-from nidup.pysc2.unit_types import UnitTypeIds
+from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 # Parameters
 _PLAYER_SELF = 1

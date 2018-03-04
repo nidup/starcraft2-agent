@@ -4,7 +4,7 @@ from nidup.pysc2.actions import TerranActions, TerranActionIds
 from nidup.pysc2.observations import Observations
 from nidup.pysc2.order import Order
 from nidup.pysc2.information import BaseLocation
-from nidup.pysc2.unit_types import UnitTypeIds
+from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 
 class RepeatableOnceDoneOrder(Order):

@@ -4,7 +4,7 @@ from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.learning.game_results import GameResultsTable
 from nidup.pysc2.observations import Observations
 from nidup.pysc2.smart_orders import Location, BuildBarracks, BuildSupplyDepot, BuildMarine, Attack, NoOrder
-from nidup.pysc2.unit_types import UnitTypeIds
+from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 from pysc2.agents.base_agent import BaseAgent
 from pysc2.lib import features
 
