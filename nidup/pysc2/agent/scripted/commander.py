@@ -1,6 +1,7 @@
 
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.order import Order
+from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.agent.scripted.information import BaseLocation
 from nidup.pysc2.agent.scripted.build import OrdersSequence, CenterCameraOnCommandCenter, BuildSupplyDepot, BuildFactory, BuildRefinery, BuildBarracks, BuildTechLabBarracks, MorphOrbitalCommand
 from nidup.pysc2.agent.scripted.train import OrdersRepetition, TrainMarine, TrainMarauder, PushWithArmy
@@ -25,7 +26,7 @@ class NoOrder(Order):
         return self.actions.no_op()
 
 
-class GameCommander:
+class GameCommander(Commander):
 
     # collect
     scout_commander = None
@@ -35,6 +36,7 @@ class GameCommander:
     current_order = None
 
     def __init__(self, base_location: BaseLocation):
+        Commander.__init__(self)
         self.scout_commander = ScoutingCommander(base_location)
         self.production_commander = ProductionCommander(base_location)
         self.army_commander = ArmyCommander(base_location)
@@ -56,11 +58,12 @@ class GameCommander:
         return self.current_order
 
 
-class ScoutingCommander:
+class ScoutingCommander(Commander):
 
     scouting_order = None
 
     def __init__(self, base_location: BaseLocation, looping: bool = False):
+        Commander.__init__(self)
         self.scouting_order = Scouting(base_location, looping)
 
     def order(self, observations: Observations) -> Order:
@@ -70,12 +73,13 @@ class ScoutingCommander:
             return self.scouting_order
 
 
-class ProductionCommander:
+class ProductionCommander(Commander):
 
     build_orders: None
     base_location = None
 
     def __init__(self, base_location: BaseLocation):
+        Commander.__init__(self)
         self.base_location = base_location
         # cf http://liquipedia.net/starcraft2/MMM_Timing_Push
         self.build_orders = OrdersSequence(
@@ -112,11 +116,12 @@ class ProductionCommander:
             return NoOrder()
 
 
-class ArmyCommander:
+class ArmyCommander(Commander):
 
     attack_orders: None
 
     def __init__(self, base_location: BaseLocation):
+        Commander.__init__(self)
         self.attack_orders = OrdersRepetition(
             [
                 # Constant Marauder and Marine
