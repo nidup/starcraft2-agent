@@ -3,7 +3,7 @@ import random
 import time
 from pysc2.agents.base_agent import BaseAgent
 from nidup.pysc2.agent.scripted.commander import GameCommander, ScoutingCommander, NoOrder
-from nidup.pysc2.agent.scripted.information import BaseLocation
+from nidup.pysc2.agent.information import BaseLocation
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 from nidup.pysc2.wrapper.observations import Observations
