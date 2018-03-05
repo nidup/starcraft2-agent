@@ -23,6 +23,9 @@ class ReinforcementMarineAgent(BaseAgent):
         observations = Observations(obs)
         if observations.first():
             self.commander = QLearningCommander(self.name())
+        elif observations.last():
+            game_results = GameResultsTable(self.name())
+            game_results.append(observations.reward(), observations.score_cumulative())
 
         return self.commander.order(observations).execute(observations)
 

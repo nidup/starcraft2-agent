@@ -121,9 +121,6 @@ class QLearningCommander(Commander):
             self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
             QLearningTableStorage().save(self.qlearn, self.agent_name)
 
-            game_results = GameResultsTable(self.agent_name)
-            game_results.append(observations.reward(), observations.score_cumulative())
-
             self.previous_action = None
             self.previous_state = None
             self.previous_order = None
