@@ -1,15 +1,14 @@
 Starcraft2 Nidup's agents
 =========================
 
-Discovering PySC2 - StarCraft II Learning Environment, playing with reinforcement learning 🤖
-
-Can be installed following [this doc](doc/install.md)
-
-Notes
------
+Discovering PySC2 - StarCraft II Learning Environment, playing with Reinforcement Learning 🤖
 
 These agents have been built to work properly on the Simple64 map, as a Terran player.
 They are not robust enough to play elsewhere.
+
+All the following data have been collected playing against the default built-in AI (very-easy difficulty).
+
+Agents can be installed following [this doc](doc/install.md).
 
 Basic agents (scripted)
 -----------------------
@@ -20,8 +19,8 @@ Reinforcement Marine Agent (Machine Learning)
 ---------------------------------------------
 
 This agent uses a QLearning table on a reduced set of actions, build supply depot, barrack, train marine & attack.
-
 It has been slightly fine-tuned to be trained faster and win more games against the built-in AI.
+[Here are more details on training and attempts](doc/reinforcement_marine_agent.md).
 
 ![Image of ReinforcementMarineAgent 4](doc/ReinforcementMarineAgent_enemyb1andb2.png)
 
@@ -52,8 +51,3 @@ Query the game results:
 ```
 $ python3.6 generate_report.py --agent-name nidup.pysc2.agents.ReinforcementMarineAgent --filter win
 ```
-
-Credits
--------
-
-Thank you @skjb for the following [tutorial](https://github.com/skjb/pysc2-tutorial) 🚀

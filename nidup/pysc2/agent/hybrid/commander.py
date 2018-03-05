@@ -6,7 +6,7 @@ from nidup.pysc2.agent.order import Order
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location
-from nidup.pysc2.agent.scripted.build import OrdersSequence, CenterCameraOnCommandCenter, BuildSupplyDepot, BuildFactory, BuildRefinery, BuildBarracks, BuildTechLabBarracks, MorphOrbitalCommand
+from nidup.pysc2.agent.scripted.build import OrdersSequence, BuildSupplyDepot, BuildBarracks
 from nidup.pysc2.agent.smart.orders import BuildMarine, Attack, NoOrder
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
@@ -129,8 +129,6 @@ class BuildOrderCommander(Commander):
                 BuildSupplyDepot(location, -25, -25),
                 BuildBarracks(location, 15, -9),
                 BuildBarracks(location, 15, 12),
-                #BuildFactory(location, 20, 20),
-                #BuildTechLabBarracks(location)
             ]
         )
 
