@@ -173,6 +173,72 @@ class ScoreDetails:
         return self.obs_score[12]
 
 
+class SingleSelect:
+
+    def __init__(self, select):
+        self.select = select
+
+    def empty(self) -> bool:
+        return len(self.select) == 0
+
+    def unit_type(self) -> int:
+        return self.select[0][0]
+
+    def player_relative(self) -> int:
+        return self.select[0][1]
+
+    def health(self) -> int:
+        return self.select[0][2]
+
+    def shields(self) -> int:
+        return self.select[0][3]
+
+    def energy(self) -> int:
+        return self.select[0][4]
+
+    def transport_slot_taken(self) -> int:
+        return self.select[0][5]
+
+    def build_progress_percentage(self) -> int:
+        return self.select[0][6]
+
+    def is_built(self) -> bool:
+        return self.build_progress_percentage() == 0
+
+
+class MultiSelect:
+
+    def __init__(self, select):
+        self.select = select
+
+    def empty(self) -> bool:
+        return len(self.select) == 0
+
+    def unit_type(self, index: int) -> int:
+        return self.select[index][0]
+
+    def player_relative(self, index: int) -> int:
+        return self.select[index][1]
+
+    def health(self, index: int) -> int:
+        return self.select[index][2]
+
+    def shields(self, index: int) -> int:
+        return self.select[index][3]
+
+    def energy(self, index: int) -> int:
+        return self.select[index][4]
+
+    def transport_slot_taken(self, index: int) -> int:
+        return self.select[index][5]
+
+    def build_progress_percentage(self, index: int) -> int:
+        return self.select[index][6]
+
+    def is_built(self, index: int) -> bool:
+        return self.build_progress_percentage(index) == 0
+
+
 # Wrap `obs` variable, a series of nested arrays to an object
 # cf https://github.com/deepmind/pysc2/blob/master/docs/environment.md
 class Observations:
@@ -183,8 +249,8 @@ class Observations:
         self.minimap_features = MinimapFeatures(obs.observation["minimap"])
         self.available_actions_data = obs.observation["available_actions"]
         self.control_groups_data = obs.observation["control_groups"]
-        self.single_select_data = obs.observation["single_select"]
-        self.multi_select_data = obs.observation["multi_select"]
+        self.single_select_data = SingleSelect(obs.observation["single_select"])
+        self.multi_select_data = MultiSelect(obs.observation["multi_select"])
         self.first_data = obs.first()
         self.last_data = obs.last()
         self.reward_data = obs.reward
@@ -211,10 +277,10 @@ class Observations:
     def control_groups(self):
         return self.control_groups_data
 
-    def single_select(self):
+    def single_select(self) -> SingleSelect:
         return self.single_select_data
 
-    def multi_select(self):
+    def multi_select(self) -> MultiSelect:
         return self.multi_select_data
 
     def reward(self) -> int:

@@ -106,35 +106,68 @@ class BuildSupplyDepot(BuildOrder):
 
 class BuildRefinery(BuildOrder):
 
-    select_scv_order = None
-    refinery_built = False
+    builder_scv_selected = False
+    refinery_building = False
+    refinery_selected = False
+    refinery_target = None
+    first_collector_scv_selected = False
+    first_collector_scv_sent = False
+    second_collector_scv_selected = False
+    second_collector_scv_sent = False
 
     def __init__(self, base_location: BaseLocation):
         BuildOrder.__init__(self, base_location)
-        self.select_scv_order = SelectSCV(base_location)
+        self.base_location = base_location
 
     def done(self, observations: Observations) -> bool:
-        return self.refinery_built
+        return self.second_collector_scv_sent
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
-        if not self.refinery_built:
-            if not self.select_scv_order.done(observations):
-                return self.select_scv_order.execute(observations)
-            # https://itnext.io/how-to-locate-and-select-units-in-pysc2-2bb1c81f2ad3
-            elif self.action_ids.build_refinery() in observations.available_actions():
-                unit_type = observations.screen().unit_type()
-                vespene_y, vespene_x = (unit_type == self.unit_type_ids.neutral_vespene_geyser()).nonzero()
-                vespene_geyser_count = int(math.ceil(len(vespene_y) / 97))
-                units = []
-                for i in range(0, len(vespene_y)):
-                    units.append((vespene_x[i], vespene_y[i]))
-                kmeans = KMeans(vespene_geyser_count)
-                kmeans.fit(units)
-                vespene1_x = int(kmeans.cluster_centers_[0][0])
-                vespene1_y = int(kmeans.cluster_centers_[0][1])
-                target = [vespene1_x, vespene1_y]
-                self.refinery_built = True
-                return self.actions.build_refinery(target)
+        if not self.builder_scv_selected:
+            self.builder_scv_selected = True
+            print ("select builder")
+            return SelectSCV(self.base_location).execute(observations)
+        # https://itnext.io/how-to-locate-and-select-units-in-pysc2-2bb1c81f2ad3
+        elif not self.refinery_building and self.action_ids.build_refinery() in observations.available_actions():
+            unit_type = observations.screen().unit_type()
+            vespene_y, vespene_x = (unit_type == self.unit_type_ids.neutral_vespene_geyser()).nonzero()
+            vespene_geyser_count = int(math.ceil(len(vespene_y) / 97))
+            units = []
+            for i in range(0, len(vespene_y)):
+                units.append((vespene_x[i], vespene_y[i]))
+            kmeans = KMeans(vespene_geyser_count)
+            kmeans.fit(units)
+            vespene1_x = int(kmeans.cluster_centers_[0][0])
+            vespene1_y = int(kmeans.cluster_centers_[0][1])
+            self.refinery_target = [vespene1_x, vespene1_y]
+            self.refinery_building = True
+            print ("refinery building")
+            return self.actions.build_refinery(self.refinery_target)
+        elif self.refinery_building and not self.refinery_selected:
+            unit_type = observations.screen().unit_type()
+            refinery_y, refinery_x = (unit_type == self.unit_type_ids.terran_refinery()).nonzero()
+            if refinery_y.any():
+                self.refinery_selected = True
+                print ("refinery selected")
+                return self.actions.select_point(self.refinery_target)
+        elif self.refinery_selected and not self.first_collector_scv_selected:
+            if observations.single_select().is_built():
+                self.first_collector_scv_selected = True
+                print("select first collector")
+                return SelectSCV(self.base_location).execute(observations)
+        elif self.first_collector_scv_selected and not self.first_collector_scv_sent:
+            self.first_collector_scv_sent = True
+            print("sent first collector")
+            return self.actions.harvest_gather(self.refinery_target)
+        elif self.first_collector_scv_sent and not self.second_collector_scv_selected:
+            self.second_collector_scv_selected = True
+            print("select second collector")
+            return SelectSCV(self.base_location).execute(observations)
+        elif self.second_collector_scv_selected and not self.second_collector_scv_sent:
+            self.second_collector_scv_sent = True
+            print("sent second collector")
+            return self.actions.harvest_gather(self.refinery_target)
+
         return self.actions.no_op()
 
 
