@@ -10,6 +10,29 @@ from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.learning.game_results import GameResultsTable
 from nidup.pysc2.agent.scripted.build import BuildRefinery
 from nidup.pysc2.agent.smart.commander import QLearningCommander
+from nidup.pysc2.agent.hybrid.commander import HybridGameCommander
+
+
+class HybridAttackReinforcementAgent(BaseAgent):
+
+    def __init__(self):
+        super(HybridAttackReinforcementAgent, self).__init__()
+        self.commander = None
+
+    def step(self, obs):
+        super(HybridAttackReinforcementAgent, self).step(obs)
+        observations = Observations(obs)
+        if observations.first():
+            base_location = Location(observations)
+            self.commander = HybridGameCommander(base_location, self.name())
+        elif observations.last():
+            game_results = GameResultsTable(self.name())
+            game_results.append(observations.reward(), observations.score_cumulative())
+
+        return self.commander.order(observations).execute(observations)
+
+    def name(self) -> str:
+        return __name__ + "." + self.__class__.__name__
 
 
 class ReinforcementMarineAgent(BaseAgent):
