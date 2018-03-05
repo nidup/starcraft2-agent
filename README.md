@@ -19,16 +19,17 @@ Here are [few scripted agents](doc/scripted_agents.md) (built to discover the AP
 Reinforcement Marine Agent (Machine Learning)
 ---------------------------------------------
 
-This agent uses QLearning table on a reduced set of actions, build supply depot, barrack, train marine, attack on part of the map.
+This agent uses a QLearning table on a reduced set of actions, build supply depot, barrack, train marine & attack.
 
-It has been slightly fine tuned to be trained faster and win more games against the built-in AI.
+It has been slightly fine-tuned to be trained faster and win more games against the built-in AI.
 
 ![Image of ReinforcementMarineAgent 4](doc/ReinforcementMarineAgent_enemyb1andb2.png)
 
 Hybrid Reinforcement Attack Agent (Machine Learning)
 ----------------------------------------------------
 
-This agent use the same QLearning approach but specialized on the train units & attack phase.
+This agent uses the same QLearning approach but specialized on the train units & attack phase.
+
 The build order phase is scripted to reduce the set of actions and focus the training on the attack.
 
 ```
