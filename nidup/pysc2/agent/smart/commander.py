@@ -6,7 +6,8 @@ from nidup.pysc2.agent.order import Order
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.learning.game_results import GameResultsTable
 from nidup.pysc2.wrapper.observations import Observations
-from nidup.pysc2.agent.smart.orders import Location, BuildBarracks, BuildSupplyDepot, BuildMarine, Attack, NoOrder
+from nidup.pysc2.agent.information import Location
+from nidup.pysc2.agent.smart.orders import BuildBarracks, BuildSupplyDepot, BuildMarine, Attack, NoOrder
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 _PLAYER_SELF = 1

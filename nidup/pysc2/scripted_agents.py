@@ -3,7 +3,7 @@ import random
 import time
 from pysc2.agents.base_agent import BaseAgent
 from nidup.pysc2.agent.scripted.commander import GameCommander, ScoutingCommander, NoOrder
-from nidup.pysc2.agent.scripted.information import BaseLocation
+from nidup.pysc2.agent.information import Location
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 from nidup.pysc2.wrapper.observations import Observations
@@ -20,7 +20,7 @@ class BuildOrderAgent(BaseAgent):
         super(BuildOrderAgent, self).step(obs)
         observations = Observations(obs)
         if observations.first():
-            base_location = BaseLocation(observations)
+            base_location = Location(observations)
             self.commander = GameCommander(base_location)
         elif observations.last():
             game_results = GameResultsTable(self.name())
@@ -42,7 +42,7 @@ class ScoutingAgent(BaseAgent):
         super(ScoutingAgent, self).step(obs)
         observations = Observations(obs)
         if observations.first():
-            base_location = BaseLocation(observations)
+            base_location = Location(observations)
             self.commander = ScoutingCommander(base_location, self.infinite_scouting)
         return self.commander.order(observations).execute(observations)
 
@@ -62,7 +62,7 @@ class RefineryAgent(BaseAgent):
         super(RefineryAgent, self).step(obs)
         observations = Observations(obs)
         if observations.first():
-            self.base_location = BaseLocation(observations)
+            self.base_location = Location(observations)
             self.order_first_refinery = BuildRefinery(self.base_location)
             self.order_second_refinery = BuildRefinery(self.base_location)
         if not self.order_first_refinery.done(observations):
@@ -105,7 +105,7 @@ class ControlGroupsAgent(BaseAgent):
         #print(obs.observation.keys())
 
         if observations.first():
-            self.base_location = BaseLocation(observations)
+            self.base_location = Location(observations)
         #if not self.all_scv_selected:
         #    self.all_scv_selected = True
         #   return self.actions.select_rect([0, 0], [83, 83])

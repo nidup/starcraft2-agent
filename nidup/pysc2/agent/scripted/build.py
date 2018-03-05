@@ -3,7 +3,7 @@ from pysc2.lib import actions
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.scripted.information import BaseLocation
+from nidup.pysc2.agent.information import Location
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 from sklearn.cluster import KMeans
 import math
@@ -12,7 +12,7 @@ import random
 
 class BuildOrder(Order):
 
-    def __init__(self, base_location: BaseLocation):
+    def __init__(self, base_location: Location):
         Order.__init__(self)
         self.base_location = base_location
         self.actions = TerranActions()
@@ -92,11 +92,11 @@ class BuildSupplyDepot(BuildOrder):
             if not self.select_scv_order.done(observations):
                 return self.select_scv_order.execute(observations)
             elif self.action_ids.build_supply_depot() in observations.available_actions():
-                unit_y, unit_x = self.base_location.locate_command_center(observations.screen())
-                target = self.base_location.transform_location(
-                    int(unit_x.mean()),
+                cc_y, cc_x = self.base_location.locate_command_center(observations.screen())
+                target = self.base_location.transform_distance(
+                    int(cc_x.mean()),
                     self.x_from_base,
-                    int(unit_y.mean()),
+                    int(cc_y.mean()),
                     self.y_from_base
                 )
                 self.supply_depot_built = True
@@ -115,7 +115,7 @@ class BuildRefinery(BuildOrder):
     second_collector_scv_selected = False
     second_collector_scv_sent = False
 
-    def __init__(self, base_location: BaseLocation):
+    def __init__(self, base_location: Location):
         BuildOrder.__init__(self, base_location)
         self.base_location = base_location
 
@@ -194,7 +194,7 @@ class BuildArmyBuilding(BuildOrder):
             if self.build_action_id() in observations.available_actions():
                 unit_y, unit_x = self.base_location.locate_command_center(observations.screen())
                 if unit_x.any():
-                    target = self.base_location.transform_location(
+                    target = self.base_location.transform_distance(
                         int(unit_x.mean()),
                         self.x_from_base,
                         int(unit_y.mean()),
@@ -214,9 +214,11 @@ class BuildArmyBuilding(BuildOrder):
                     return self.actions.select_point(target)
             else:
                 self.building_rallied = True
-                if self.base_location.top_left():
-                    return self.actions.rally_units_minimap([29, 21])
-                return self.actions.rally_units_minimap([29, 46])
+                if self.base_location.command_center_is_top_left():
+                    target = [29, 21]
+                else:
+                    target =[29, 46]
+                return self.actions.rally_units_minimap(target)
         return self.actions.no_op()
 
     def building_type(self) -> int:
@@ -264,7 +266,7 @@ class MorphOrbitalCommand(BuildOrder):
     command_center_selected = False
     orbital_command_built = False
 
-    def __init__(self, base_location: BaseLocation):
+    def __init__(self, base_location: Location):
         BuildOrder.__init__(self, base_location)
 
     def done(self, observations: Observations) -> bool:
@@ -290,7 +292,7 @@ class BuildTechLabBarracks(BuildOrder):
     barracks_selected = False
     tech_lab_built = False
 
-    def __init__(self, base_location: BaseLocation):
+    def __init__(self, base_location: Location):
         BuildOrder.__init__(self, base_location)
 
     def done(self, observations: Observations) -> bool:
@@ -317,7 +319,7 @@ class SelectSCV(BuildOrder):
 
     scv_selected = False
 
-    def __init__(self, base_location: BaseLocation):
+    def __init__(self, base_location: Location):
         BuildOrder.__init__(self, base_location)
 
     def done(self, observations: Observations) -> bool:
@@ -343,7 +345,7 @@ class SendSCVToRefinery(BuildOrder):
     select_scv_order = False
     scv_sent_to_refinery = False
 
-    def __init__(self, base_location: BaseLocation):
+    def __init__(self, base_location: Location):
         BuildOrder.__init__(self, base_location)
         self.select_scv_order = SelectSCV(base_location)
 
