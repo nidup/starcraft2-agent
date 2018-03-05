@@ -57,63 +57,45 @@ python3.6 -m pysc2.bin.play --map Simple64
 
 More options and details can be found on [PySC2 - StarCraft II Learning Environment](https://github.com/deepmind/pysc2)
 
-Run the PySC2 demo agents
--------------------------
-
-Collect Minerals Mini Game,
-
-```
-$ python3.6 -m pysc2.bin.agent --map CollectMineralShards --agent pysc2.agents.scripted_agent.CollectMineralShards
-```
-
-Move To Beacon Mini Game,
-
-```
-$ python3.6 -m pysc2.bin.agent --map MoveToBeacon --agent pysc2.agents.scripted_agent.MoveToBeacon
-```
-
-Defeat Roaches Mini Game,
-
-```
-$ python3.6 -m pysc2.bin.agent --map DefeatRoaches --agent pysc2.agents.scripted_agent.DefeatRoaches
-```
-
-Run the Nidup Scripted Agents
+Run the Nidup's Agents
 -----------------------------
 
 These agents have been built to work properly on the Simple64 map, as a Terran, and are not robust enough to play elsewhere.
 
-Infinite Scouting Agent:
+**Infinite Scouting Agent (Scripted)**
 ```
-$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.scripted_agents.ScoutingAgent --agent_race T
-```
-
-Build Order Agent:
-```
-$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.scripted_agents.BuildOrderAgent --agent_race T
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.ScoutingAgent --agent_race T
 ```
 
-Run the Nidup Reinforcement Learning Agent
-------------------------------------------
+**Build Order Agent (Scripted)**
+```
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.BuildOrderAgent --agent_race T
+```
 
-It's [based on these tutorials](https://itnext.io/build-a-sparse-reward-pysc2-agent-a44e94ba5255)
+**Reinforcement Marine Agent (Machine Learning)**
+
+This agent is formerly [based on these tutorials](https://itnext.io/build-a-sparse-reward-pysc2-agent-a44e94ba5255)
+
+It uses QLearning table on a reduced set of actions, build supply depot, barrack, train marine, attack.
+
+It has been fine tuned to be trained faster and win more games against the built-in AI.
 
 Train the Smart Agent by playing a lot of games:
 ```
-$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.smart_agents.ReinforcementAgent --agent_race T --norender --max_agent_steps=100000
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.ReinforcementMarineAgent --agent_race T --norender --max_agent_steps=100000
 ```
 
 The option `--norender` can be added to disable the rendering and play game faster.
 
 The option `--max_agent_steps` can be added to make the agent play longer. The default value is 2500.
 
-On my laptop, with no render,
+On my laptop, with no render, running on CPU,
  - 100k agent steps ~= 30 episodes ~= 30 minutes
  - 400k agent steps ~= 144 episodes ~= 100 minutes
 
-Run the Smart Agent after the reinforcement:
+Run after the reinforcement:
 ```
-$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.smart_agents.ReinforcementAgent --agent_race T
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.ReinforcementMarineAgent --agent_race T
 ```
 
 Data & Analysis
@@ -134,12 +116,12 @@ This archive is re-used when it exists, you can drop it to train the agent from 
 
 Generate the learning report graph:
 ```
-$ python3.6 generate_report.py --agent-name nidup.pysc2.smart_agents.ReinforcementAgent
+$ python3.6 generate_report.py --agent-name nidup.pysc2.agents.ReinforcementMarineAgent
 ```
 
 Query the game results:
 ```
-$ python3.6 generate_report.py --agent-name nidup.pysc2.smart_agents.ReinforcementAgent --filter win
+$ python3.6 generate_report.py --agent-name nidup.pysc2.agents.ReinforcementMarineAgent --filter win
 ```
 
 Credits
