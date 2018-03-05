@@ -188,9 +188,9 @@ class Attack(SmartOrder):
 
     def attack_minimap(self, observations: Observations) -> actions.FunctionCall:
         do_it = True
-        if observations.single_select().not_empty() and observations.single_select().unit_type() == self.unit_type_ids.terran_scv():
+        if not observations.single_select().empty() and observations.single_select().unit_type() == self.unit_type_ids.terran_scv():
             do_it = False
-        if len(observations.multi_select()) > 0 and observations.multi_select()[0][0] == self.unit_type_ids.terran_scv():
+        if not observations.multi_select().empty() and observations.multi_select().unit_type(0) == self.unit_type_ids.terran_scv():
             do_it = False
 
         if do_it and self.action_ids.attack_minimap() in observations.available_actions():
