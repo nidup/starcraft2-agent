@@ -2,7 +2,7 @@
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.agent.commander import Commander
-from nidup.pysc2.agent.information import BaseLocation
+from nidup.pysc2.agent.information import Location
 from nidup.pysc2.agent.scripted.build import OrdersSequence, CenterCameraOnCommandCenter, BuildSupplyDepot, BuildFactory, BuildRefinery, BuildBarracks, BuildTechLabBarracks, MorphOrbitalCommand
 from nidup.pysc2.agent.scripted.train import OrdersRepetition, TrainMarine, TrainMarauder, PushWithArmy
 from nidup.pysc2.agent.scripted.scout import Scouting
@@ -35,7 +35,7 @@ class GameCommander(Commander):
     current_commander = None
     current_order = None
 
-    def __init__(self, base_location: BaseLocation):
+    def __init__(self, base_location: Location):
         Commander.__init__(self)
         self.scout_commander = ScoutingCommander(base_location)
         self.production_commander = ProductionCommander(base_location)
@@ -62,7 +62,7 @@ class ScoutingCommander(Commander):
 
     scouting_order = None
 
-    def __init__(self, base_location: BaseLocation, looping: bool = False):
+    def __init__(self, base_location: Location, looping: bool = False):
         Commander.__init__(self)
         self.scouting_order = Scouting(base_location, looping)
 
@@ -78,7 +78,7 @@ class ProductionCommander(Commander):
     build_orders: None
     base_location = None
 
-    def __init__(self, base_location: BaseLocation):
+    def __init__(self, base_location: Location):
         Commander.__init__(self)
         self.base_location = base_location
         # cf http://liquipedia.net/starcraft2/MMM_Timing_Push
@@ -107,7 +107,7 @@ class ProductionCommander(Commander):
 
     def order(self, observations: Observations)-> Order:
         if not self.build_orders.finished(observations):
-            if not self.base_location.camera_centered_on_command_center(observations.screen()):
+            if not self.base_location.command_center_is_visible(observations.screen()):
                 current_order = CenterCameraOnCommandCenter(self.base_location)
             else:
                 current_order = self.build_orders.current(observations)
@@ -120,7 +120,7 @@ class ArmyCommander(Commander):
 
     attack_orders: None
 
-    def __init__(self, base_location: BaseLocation):
+    def __init__(self, base_location: Location):
         Commander.__init__(self)
         self.attack_orders = OrdersRepetition(
             [

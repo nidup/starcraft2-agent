@@ -3,7 +3,7 @@ from pysc2.lib import actions
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.information import BaseLocation
+from nidup.pysc2.agent.information import Location
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 import random
 
@@ -20,7 +20,7 @@ class Scouting(Order):
     scv_back_to_base = False
     infinite_scouting = False
 
-    def __init__(self, base_location: BaseLocation, looping: bool = False):
+    def __init__(self, base_location: Location, looping: bool = False):
         Order.__init__(self)
         self.base_location = base_location
         self.other_bases_minimap_locations = self.base_location.other_unknown_bases_locations_on_minimap()

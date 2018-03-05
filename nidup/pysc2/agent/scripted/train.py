@@ -3,13 +3,13 @@ from pysc2.lib import actions
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.information import BaseLocation
+from nidup.pysc2.agent.information import Location
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 
 class RepeatableOnceDoneOrder(Order):
 
-    def __init__(self, base_location: BaseLocation):
+    def __init__(self, base_location: Location):
         Order.__init__(self)
         self.base_location = base_location
         self.actions = TerranActions()
@@ -146,7 +146,7 @@ class PushWithArmy(RepeatableOnceDoneOrder):
     army_selected = False
     push_ordered = False
 
-    def __init__(self, base_location: BaseLocation):
+    def __init__(self, base_location: Location):
         RepeatableOnceDoneOrder.__init__(self, base_location)
 
     def done(self, observations: Observations) -> bool:
@@ -161,9 +161,11 @@ class PushWithArmy(RepeatableOnceDoneOrder):
                 return self.actions.select_army()
         elif self.army_selected and self.action_ids.attack_minimap() in observations.available_actions():
             self.push_ordered = True
-            if self.base_location.top_left():
-                return self.actions.attack_minimap([39, 45])
-            return self.actions.attack_minimap([21, 24])
+            if self.base_location.command_center_is_top_left():
+                target = [39, 45]
+            else:
+                target = [21, 24]
+            return self.actions.attack_minimap(target)
         return self.actions.no_op()
 
     def executable(self, observations: Observations) -> bool:

@@ -76,7 +76,7 @@ class BuildBarracks(SmartOrder):
 
     def build(self, observations: Observations) -> actions.FunctionCall:
         unit_type = observations.screen().unit_type()
-        cc_x, cc_y = self.location.command_center_position()
+        cc_x, cc_y = self.location.command_center_first_position()
         barracks_y, barracks_x = (unit_type == self.unit_type_ids.terran_barracks()).nonzero()
         barracks_count = int(round(len(barracks_y) / 137))
         if barracks_count < 2 and self.action_ids.build_barracks() in observations.available_actions():
@@ -115,7 +115,7 @@ class BuildSupplyDepot(SmartOrder):
 
     def build(self, observations: Observations) -> actions.FunctionCall:
         unit_type = observations.screen().unit_type()
-        cc_x, cc_y = self.location.command_center_position()
+        cc_x, cc_y = self.location.command_center_first_position()
         depot_y, depot_x = (unit_type == self.unit_type_ids.terran_supply_depot()).nonzero()
         supply_depot_count = int(round(len(depot_y) / 69))
         if supply_depot_count < 2 and self.action_ids.build_supply_depot() in observations.available_actions():
