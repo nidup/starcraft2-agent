@@ -68,6 +68,9 @@ class TerranActionIds:
     def no_op(self) -> int:
         return _NOOP
 
+    def rally_units_minimap(self) -> int:
+        return _RALLY_UNITS_MINIMAP
+
     def select_army(self) -> int:
         return _SELECT_ARMY
 

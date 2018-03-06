@@ -6,9 +6,8 @@ from nidup.pysc2.agent.order import Order
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location
-from nidup.pysc2.agent.scripted.build import OrdersSequence, BuildSupplyDepot, BuildBarracks
 from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
-from nidup.pysc2.agent.smart.orders import BuildMarine, Attack, NoOrder
+from nidup.pysc2.agent.smart.orders import BuildSupplyDepot, BuildBarracks, BuildMarine, Attack, NoOrder
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 _PLAYER_SELF = 1
@@ -118,37 +117,68 @@ class HybridGameCommander(Commander):
         return self.attack_commander.order(observations)
 
 
+class BuildOrder:
+
+    def __init__(self, location: Location):
+        self.location = location
+        self.current_order = BuildSupplyDepot(self.location)
+        self.expected_supply_depot = 10
+        self.expected_barracks = 4
+
+    def current(self, observations: Observations) -> Order:
+        if not self.current_order.done(observations):
+            return self.current_order
+        elif self.supply_depot_count(observations) < self.expected_supply_depot:
+            self.current_order = BuildSupplyDepot(self.location)
+        elif self.barracks_count(observations) < self.expected_barracks:
+            self.current_order = BuildBarracks(self.location)
+        else:
+            self.current_order = NoOrder()
+        return self.current_order
+
+    def finished(self, observations: Observations) -> bool:
+        supply_ok = self.supply_depot_count(observations) == self.expected_supply_depot
+        barracks_ok = self.barracks_count(observations) == self.expected_barracks
+        return supply_ok and barracks_ok
+
+    def supply_depot_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        depot_y, depot_x = (unit_type == unit_type_ids.terran_supply_depot()).nonzero()
+        supply_depot_count = int(round(len(depot_y) / 69))
+        return supply_depot_count
+
+    def barracks_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        barracks_y, barracks_x = (unit_type == unit_type_ids.terran_barracks()).nonzero()
+        barracks_count = int(round(len(barracks_y) / 137))
+        return barracks_count
+
+
 class BuildOrderCommander(Commander):
 
     def __init__(self, location: Location, agent_name: str):
         Commander.__init__(self)
         self.location = location
         self.agent_name = agent_name
-        self.build_orders = OrdersSequence(
-            [
-                BuildSupplyDepot(location, -35, -15),
-                BuildSupplyDepot(location, -35, 15),
-                BuildSupplyDepot(location, -35, 0),
-                BuildSupplyDepot(location, -35, -25),
-                BuildBarracks(location, 15, -9),
-                BuildBarracks(location, 15, 12),
-            ]
-        )
+        self.build_orders = BuildOrder(self.location)
         self.current_order = None
 
     def order(self, observations: Observations)-> Order:
 
-        if self.current_order and self.current_order.done(observations):
-            #print(self.current_order)
-            #camera_y, camera_x = self.location.current_visible_minimap_left_corner(observations.minimap())
-            #print("center camera from " + str(camera_x) + " " + str(camera_y) + " base top left " + str(self.location.command_center_is_top_left()))
+        if self.build_orders.finished(observations):
+            return NoOrder()
+        elif self.current_order and self.current_order.done(observations):
+            print(self.current_order)
+            camera_y, camera_x = self.location.current_visible_minimap_left_corner(observations.minimap())
+            print("center camera from " + str(camera_x) + " " + str(camera_y) + " base top left " + str(self.location.command_center_is_top_left()))
             self.current_order = None
             return CenterCameraOnCommandCenter(self.location)
-        elif not self.build_orders.finished(observations):
-            self.current_order = self.build_orders.current(observations)
-            return self.current_order
         else:
-            return NoOrder()
+            self.current_order = self.build_orders.current(observations)
+            print(self.current_order)
+            return self.current_order
 
 
 class QLearningAttackCommander(Commander):

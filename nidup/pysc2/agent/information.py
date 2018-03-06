@@ -18,8 +18,9 @@ class Location:
     def command_center_is_top_left(self) -> bool:
         return self.base_top_left
 
+    # return [y, x]
     def command_center_first_position(self):
-        return self.cc_x, self.cc_y
+        return self.cc_y, self.cc_x
 
     # handle ValueError: Argument is out of range for 91/Build_SupplyDepot_screen (3/queued [2]; 0/screen [0, 0]), got: [[0], [66, -1]]
     # should never return negative position

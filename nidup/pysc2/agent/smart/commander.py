@@ -48,9 +48,11 @@ class SmartActions:
     def order(self, action_id: str) -> Order:
         smart_action, x, y = self._split_action(action_id)
         if smart_action == ACTION_BUILD_BARRACKS:
-            return BuildBarracks(self.location)
+            max_barracks = 2
+            return BuildBarracks(self.location, max_barracks)
         elif smart_action == ACTION_BUILD_SUPPLY_DEPOT:
-            return BuildSupplyDepot(self.location)
+            max_supplies = 2
+            return BuildSupplyDepot(self.location, max_supplies)
         elif smart_action == ACTION_BUILD_MARINE:
             return BuildMarine(self.location)
         elif smart_action == ACTION_ATTACK:

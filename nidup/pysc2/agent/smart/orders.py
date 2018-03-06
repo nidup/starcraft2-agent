@@ -55,9 +55,10 @@ class SCVCommonActions:
 
 class BuildBarracks(SmartOrder):
 
-    def __init__(self, location: Location):
+    def __init__(self, location: Location, max_barracks: int = 4):
         SmartOrder.__init__(self, location)
         self.step = 0
+        self.max_barracks = max_barracks
 
     def done(self, observations: Observations) -> bool:
         return self.step == 3
@@ -76,16 +77,25 @@ class BuildBarracks(SmartOrder):
 
     def build(self, observations: Observations) -> actions.FunctionCall:
         unit_type = observations.screen().unit_type()
-        cc_x, cc_y = self.location.command_center_first_position()
+        cc_y, cc_x = self.location.command_center_first_position()
         barracks_y, barracks_x = (unit_type == self.unit_type_ids.terran_barracks()).nonzero()
         barracks_count = int(round(len(barracks_y) / 137))
-        if barracks_count < 2 and self.action_ids.build_barracks() in observations.available_actions():
+        if barracks_count < self.max_barracks and self.action_ids.build_barracks() in observations.available_actions():
             if cc_y.any():
-                if barracks_count == 0:
-                    target = self.location.transform_distance(round(cc_x.mean()), 15, round(cc_y.mean()), -9)
-                elif barracks_count == 1:
-                    target = self.location.transform_distance(round(cc_x.mean()), 15, round(cc_y.mean()), 12)
+                current_count_to_difference_from_cc = [
+                    [15, -10],
+                    [30, -10],
+                    [15, 10],
+                    [30, 10],
+                ]
+                target = self.location.transform_distance(
+                    round(cc_x.mean()),
+                    current_count_to_difference_from_cc[barracks_count][0],
+                    round(cc_y.mean()),
+                    current_count_to_difference_from_cc[barracks_count][1],
+                )
                 return self.actions.build_barracks(target)
+
         return self.actions.no_op()
 
     def send_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
@@ -94,9 +104,10 @@ class BuildBarracks(SmartOrder):
 
 class BuildSupplyDepot(SmartOrder):
 
-    def __init__(self, location: Location):
+    def __init__(self, location: Location, max_supplies: int = 10):
         SmartOrder.__init__(self, location)
         self.step = 0
+        self.max_supplies = max_supplies
 
     def done(self, observations: Observations) -> bool:
         return self.step == 3
@@ -115,15 +126,30 @@ class BuildSupplyDepot(SmartOrder):
 
     def build(self, observations: Observations) -> actions.FunctionCall:
         unit_type = observations.screen().unit_type()
-        cc_x, cc_y = self.location.command_center_first_position()
+        cc_y, cc_x = self.location.command_center_first_position()
         depot_y, depot_x = (unit_type == self.unit_type_ids.terran_supply_depot()).nonzero()
         supply_depot_count = int(round(len(depot_y) / 69))
-        if supply_depot_count < 2 and self.action_ids.build_supply_depot() in observations.available_actions():
+        if supply_depot_count < self.max_supplies and self.action_ids.build_supply_depot() in observations.available_actions():
             if cc_y.any():
-                if supply_depot_count == 0:
-                    target = self.location.transform_distance(round(cc_x.mean()), -35, round(cc_y.mean()), 0)
-                elif supply_depot_count == 1:
-                    target = self.location.transform_distance(round(cc_x.mean()), -25, round(cc_y.mean()), -25)
+                # some tweak to make it work on both start positions that seems not symetric
+                current_count_to_difference_from_cc = [
+                    [-35, -20],
+                    [-35, -10],
+                    [-35, 0],
+                    [-35, 10],
+                    [-35, 20],
+                    [-25, -30],
+                    [-15, -30],
+                    [-5, -30],
+                    [5, -35],
+                    [15, -35]
+                ]
+                target = self.location.transform_distance(
+                    round(cc_x.mean()),
+                    current_count_to_difference_from_cc[supply_depot_count][0],
+                    round(cc_y.mean()),
+                    current_count_to_difference_from_cc[supply_depot_count][1],
+                )
                 return self.actions.build_supply_depot(target)
         return self.actions.no_op()
 
