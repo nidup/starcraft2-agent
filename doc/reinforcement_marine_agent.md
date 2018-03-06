@@ -8,6 +8,12 @@ This agent is formerly [based on these tutorials](https://itnext.io/build-a-spar
 
 It uses QLearning table on a reduced set of actions, build supply depot, barrack, train marine, attack on part of the map.
 
+The map is split in 4 quadrant that can be attacked, so we have 4 attack actions.
+
+When targeting a quadrant, 9 different points can be attacked, the point is selected randomly.
+
+The agent's training is reinforced using a sparse reward applied on actions depending on the result of an episode.
+
 It has been fine tuned to be trained faster and win more games against the built-in AI.
 
 Train
@@ -26,8 +32,8 @@ On my laptop, with no render, running on CPU,
  - 100k agent steps ~= 30 episodes ~= 30 minutes
  - 400k agent steps ~= 144 episodes ~= 100 minutes
 
-The reward history and final QLearning Table are stored in `data` folder using a different file per agent.
-The file is suffixed by `_qlearning` and contains a pandas DataFrame.
+The reward history and final Q-Learning Table are stored in `data` folder using a different file per agent.
+The file is suffixed by `_QLearning` and contains a pandas DataFrame.
 This archive is re-used when it exists, you can drop it to train the agent from scratch.
 
 Run

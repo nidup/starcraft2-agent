@@ -1,5 +1,5 @@
 
-from nidup.pysc2.wrapper.observations import Observations, ScreenFeatures
+from nidup.pysc2.wrapper.observations import Observations, ScreenFeatures, MinimapFeatures
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 # Parameters
@@ -23,6 +23,7 @@ class Location:
 
     # handle ValueError: Argument is out of range for 91/Build_SupplyDepot_screen (3/queued [2]; 0/screen [0, 0]), got: [[0], [66, -1]]
     # should never return negative position
+    # ValueError: Argument is out of range for 42/Build_Barracks_screen (3/queued [2]; 0/screen [0, 0]), got: [[0], [10, -4]]
     def transform_distance(self, x, x_distance, y, y_distance):
         if not self.base_top_left:
             return [x - x_distance, y - y_distance]
@@ -35,6 +36,7 @@ class Location:
 
         return [x, y]
 
+    # return [y, x]
     def locate_command_center(self, screen: ScreenFeatures):
         unit_type = screen.unit_type()
         unit_y, unit_x = (unit_type == self.unit_type_ids.terran_command_center()).nonzero()
@@ -49,11 +51,26 @@ class Location:
         else:
             return False
 
+    # return [y, x]
     def base_location_on_minimap(self):
+        # TODO: should be computed during the init with current_visible_minimap_left_corner
+        center_offset = 16 / 2
         if self.base_top_left:
-            return [21, 15]
+            left_corner = [15, 9]
         else:
-            return [45, 45]
+            left_corner = [39, 32]
+        return [left_corner[0] + center_offset, left_corner[1] + center_offset]
+
+    # return [y, x]
+    def current_visible_minimap_left_corner(self, minimap: MinimapFeatures):
+        camera_x = None
+        camera_y = None
+        for ind_column, column in enumerate(minimap.camera()):
+            for ind_line, cell in enumerate(column):
+                if cell == 1 and not camera_x:
+                    camera_x = ind_line
+                    camera_y = ind_column
+        return camera_y, camera_x
 
     def other_unknown_bases_locations_on_minimap(self):
         locations = []

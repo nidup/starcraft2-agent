@@ -1,7 +1,7 @@
 Starcraft2 Nidup's agents
 =========================
 
-Discovering PySC2 - StarCraft II Learning Environment, playing with Reinforcement Learning 🤖
+Agents using Reinforcement Learning and [Deepmind PySC2](https://github.com/deepmind/pysc2) - StarCraft II Learning Environment 🤖
 
 These agents have been built to work properly on the Simple64 map, as a Terran player.
 They are not robust enough to play elsewhere.
@@ -18,7 +18,8 @@ Here are [few scripted agents](doc/scripted_agents.md) (built to discover the AP
 Reinforcement Marine Agent (Machine Learning)
 ---------------------------------------------
 
-This agent uses a QLearning table on a reduced set of actions, build supply depot, barrack, train marine & attack.
+This agent uses a Q-Learning table, a reduced set of actions (build supply depot, barrack, train marine & attack) and a sparse reward depending on the result of the episode.
+
 It has been slightly fine-tuned to be trained faster and win more games against the built-in AI.
 [Here are more details on training and attempts](doc/reinforcement_marine_agent.md).
 
@@ -27,15 +28,17 @@ It has been slightly fine-tuned to be trained faster and win more games against 
 Hybrid Reinforcement Attack Agent (Machine Learning)
 ----------------------------------------------------
 
-This agent uses the same QLearning approach but specialized on the train units & attack phase.
+This agent uses the same Q-Learning approach but specialized on the train units & attack phase.
 
 The build order phase is scripted to reduce the set of actions and focus the training on the attack.
+
+[Here are more details on improvements](doc/reinforcement_attack_agent.md).
 
 ```
 $ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.HybridAttackReinforcementAgent --agent_race T --max_agent_steps=1000000
 ```
 
-![Image of HybridAttackReinforcementAgent](doc/HybridAttackReinforcementAgent_results.png)
+![Image of HybridAttackReinforcementAgent](doc/HybridAttackReinforcementAgent_4_supply_4_rax.png)
 
 Data & Analysis
 ---------------

@@ -7,6 +7,7 @@ from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location
 from nidup.pysc2.agent.scripted.build import OrdersSequence, BuildSupplyDepot, BuildBarracks
+from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
 from nidup.pysc2.agent.smart.orders import BuildMarine, Attack, NoOrder
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
@@ -125,17 +126,27 @@ class BuildOrderCommander(Commander):
         self.agent_name = agent_name
         self.build_orders = OrdersSequence(
             [
+                BuildSupplyDepot(location, -35, -15),
+                BuildSupplyDepot(location, -35, 15),
                 BuildSupplyDepot(location, -35, 0),
-                BuildSupplyDepot(location, -25, -25),
+                BuildSupplyDepot(location, -35, -25),
                 BuildBarracks(location, 15, -9),
                 BuildBarracks(location, 15, 12),
             ]
         )
+        self.current_order = None
 
     def order(self, observations: Observations)-> Order:
-        if not self.build_orders.finished(observations):
-            current_order = self.build_orders.current(observations)
-            return current_order
+
+        if self.current_order and self.current_order.done(observations):
+            #print(self.current_order)
+            #camera_y, camera_x = self.location.current_visible_minimap_left_corner(observations.minimap())
+            #print("center camera from " + str(camera_x) + " " + str(camera_y) + " base top left " + str(self.location.command_center_is_top_left()))
+            self.current_order = None
+            return CenterCameraOnCommandCenter(self.location)
+        elif not self.build_orders.finished(observations):
+            self.current_order = self.build_orders.current(observations)
+            return self.current_order
         else:
             return NoOrder()
 

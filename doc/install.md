@@ -50,7 +50,7 @@ Test the environment
 By playing a game as a human,
 
 ```
-python3.6 -m pysc2.bin.play --map Simple64
+python3.6 -m pysc2.bin.play --map Simple64 --user_race T
 ```
 
 More options and details can be found on [PySC2 - StarCraft II Learning Environment](https://github.com/deepmind/pysc2)
