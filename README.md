@@ -4,6 +4,7 @@ Starcraft2 Nidup's agents
 Agents using Reinforcement Learning and [Deepmind PySC2](https://github.com/deepmind/pysc2) - StarCraft II Learning Environment 🤖
 
 These agents have been built to work properly on the Simple64 map, as a Terran player.
+
 They are not robust enough to play elsewhere.
 
 All the following data have been collected playing against the default built-in AI (very-easy difficulty).
