@@ -170,14 +170,14 @@ class BuildOrderCommander(Commander):
         if self.build_orders.finished(observations):
             return NoOrder()
         elif self.current_order and self.current_order.done(observations):
-            print(self.current_order)
-            camera_y, camera_x = self.location.current_visible_minimap_left_corner(observations.minimap())
-            print("center camera from " + str(camera_x) + " " + str(camera_y) + " base top left " + str(self.location.command_center_is_top_left()))
+            #print(self.current_order)
+            #camera_y, camera_x = self.location.current_visible_minimap_left_corner(observations.minimap())
+            #print("center camera from " + str(camera_x) + " " + str(camera_y) + " base top left " + str(self.location.command_center_is_top_left()))
             self.current_order = None
             return CenterCameraOnCommandCenter(self.location)
         else:
             self.current_order = self.build_orders.current(observations)
-            print(self.current_order)
+            #print(self.current_order)
             return self.current_order
 
 

@@ -45,8 +45,10 @@ After the reinforcement, you can run it:
 $ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.ReinforcementMarineAgent --agent_race T
 ```
 
-Evolution
----------
+Variants & Evolution
+--------------------
+
+Playing against the default built-in AI (very-easy difficulty).
 
 Attacking 4 quadrants:
 
