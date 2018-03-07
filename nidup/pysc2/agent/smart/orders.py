@@ -1,4 +1,5 @@
 
+import math
 import random
 from pysc2.lib import actions
 from nidup.pysc2.agent.order import Order
@@ -6,6 +7,7 @@ from nidup.pysc2.agent.information import Location
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
+from sklearn.cluster import KMeans
 
 
 class SmartOrder(Order):
@@ -53,7 +55,7 @@ class SCVCommonActions:
         return self.actions.no_op()
 
 
-class BuildBarracks(SmartOrder):
+class BuildBarrack(SmartOrder):
 
     def __init__(self, location: Location, max_barracks: int = 4):
         SmartOrder.__init__(self, location)
@@ -99,6 +101,63 @@ class BuildBarracks(SmartOrder):
         return self.actions.no_op()
 
     def send_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
+        return SCVCommonActions().send_scv_to_mineral(observations)
+
+
+class BuildFactory(SmartOrder):
+
+    def __init__(self, location: Location, max_factories: int = 2):
+        SmartOrder.__init__(self, location)
+        self.step = 0
+        self.max_factories = max_factories
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 3
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        print("factory")
+        self.step = self.step + 1
+        if self.step == 1:
+            return self.select_scv(observations)
+        elif self.step == 2:
+            return self.build(observations)
+        elif self.step == 3:
+            return self.send_scv_to_mineral(observations)
+
+    def select_scv(self, observations: Observations) -> actions.FunctionCall:
+        print("select scv")
+        return SCVCommonActions().select_scv(observations)
+
+    def build(self, observations: Observations) -> actions.FunctionCall:
+        unit_type = observations.screen().unit_type()
+        cc_y, cc_x = self.location.command_center_first_position()
+        factories_y, factories_x = (unit_type == self.unit_type_ids.terran_factory()).nonzero()
+        factories_count = int(round(len(factories_y) / 137))
+        if factories_count < self.max_factories and self.action_ids.build_factory() in observations.available_actions():
+            if cc_y.any():
+                current_count_to_difference_from_cc = [
+                    # [0, 20],
+                    # [30, -20]
+                    # [15, 10],
+                    # [30, 10],
+                    [30, -10],
+                ]
+                target = self.location.transform_distance(
+                    round(cc_x.mean()),
+                    current_count_to_difference_from_cc[factories_count][0],
+                    round(cc_y.mean()),
+                    current_count_to_difference_from_cc[factories_count][1],
+                )
+                print("build factory")
+                return self.actions.build_factory(target)
+            else:
+                print("pourquoi")
+
+        print("nooop")
+        return self.actions.no_op()
+
+    def send_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
+        print("send scv mineral")
         return SCVCommonActions().send_scv_to_mineral(observations)
 
 
@@ -155,6 +214,41 @@ class BuildSupplyDepot(SmartOrder):
 
     def send_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
         return SCVCommonActions().send_scv_to_mineral(observations)
+
+
+class BuildRefinery(SmartOrder):
+
+    def __init__(self, base_location: Location, max_refineries: int = 2):
+        SmartOrder.__init__(self, base_location)
+        self.step = 0
+        self.refinery_target = None
+        self.max_refineries = max_refineries
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 7
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.step == 1:
+            print("select scv")
+            return SCVCommonActions().select_scv(observations)
+        elif self.step == 2:
+            if self.action_ids.build_refinery() in observations.available_actions():
+                unit_type = observations.screen().unit_type()
+                vespene_y, vespene_x = (unit_type == self.unit_type_ids.neutral_vespene_geyser()).nonzero()
+                vespene_geyser_count = int(math.ceil(len(vespene_y) / 97))
+                units = []
+                for i in range(0, len(vespene_y)):
+                    units.append((vespene_x[i], vespene_y[i]))
+                kmeans = KMeans(vespene_geyser_count)
+                kmeans.fit(units)
+                vespene1_x = int(kmeans.cluster_centers_[0][0])
+                vespene1_y = int(kmeans.cluster_centers_[0][1])
+                self.refinery_target = [vespene1_x, vespene1_y]
+                print ("refinery building")
+                return self.actions.build_refinery(self.refinery_target)
+            #TODO: send to refinery
+        return self.actions.no_op()
 
 
 class BuildMarine(SmartOrder):

@@ -7,7 +7,7 @@ from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location
 from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
-from nidup.pysc2.agent.smart.orders import BuildSupplyDepot, BuildBarracks, BuildMarine, Attack, NoOrder
+from nidup.pysc2.agent.smart.orders import BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildFactory, BuildMarine, Attack, NoOrder
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 _PLAYER_SELF = 1
@@ -124,24 +124,32 @@ class BuildOrder:
         self.current_order = BuildSupplyDepot(self.location)
         self.expected_supply_depot = 10
         self.expected_barracks = 4
+        self.expected_refineries = 0
+        self.expected_factories = 0
 
     def current(self, observations: Observations) -> Order:
         if not self.current_order.done(observations):
             return self.current_order
-        elif self.supply_depot_count(observations) < self.expected_supply_depot:
+        elif self.supply_depots_count(observations) < self.expected_supply_depot:
             self.current_order = BuildSupplyDepot(self.location)
         elif self.barracks_count(observations) < self.expected_barracks:
-            self.current_order = BuildBarracks(self.location)
+            self.current_order = BuildBarrack(self.location)
+        elif self.refineries_count(observations) < self.expected_refineries:
+            self.current_order = BuildRefinery(self.location)
+        elif self.factories_count(observations) < self.expected_factories:
+            self.current_order = BuildFactory(self.location)
         else:
             self.current_order = NoOrder()
         return self.current_order
 
     def finished(self, observations: Observations) -> bool:
-        supply_ok = self.supply_depot_count(observations) == self.expected_supply_depot
+        supply_ok = self.supply_depots_count(observations) == self.expected_supply_depot
         barracks_ok = self.barracks_count(observations) == self.expected_barracks
-        return supply_ok and barracks_ok
+        refineries_ok = self.refineries_count(observations) == self.expected_refineries
+        factories_ok = self.factories_count(observations) == self.expected_factories
+        return supply_ok and barracks_ok and refineries_ok and factories_ok
 
-    def supply_depot_count(self, observations: Observations) -> int:
+    def supply_depots_count(self, observations: Observations) -> int:
         unit_type = observations.screen().unit_type()
         unit_type_ids = UnitTypeIds()
         depot_y, depot_x = (unit_type == unit_type_ids.terran_supply_depot()).nonzero()
@@ -154,6 +162,20 @@ class BuildOrder:
         barracks_y, barracks_x = (unit_type == unit_type_ids.terran_barracks()).nonzero()
         barracks_count = int(round(len(barracks_y) / 137))
         return barracks_count
+
+    def refineries_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        unit_y, unit_x = (unit_type == unit_type_ids.terran_refinery()).nonzero()
+        units_count = int(round(len(unit_y) / 97))
+        return units_count
+
+    def factories_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        factories_y, factories_x = (unit_type == unit_type_ids.terran_factory()).nonzero()
+        factories_count = int(round(len(factories_y) / 137))
+        return factories_count
 
 
 class BuildOrderCommander(Commander):

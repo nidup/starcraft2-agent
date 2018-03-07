@@ -4,10 +4,9 @@ import numpy as np
 from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
-from nidup.pysc2.learning.game_results import GameResultsTable
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location
-from nidup.pysc2.agent.smart.orders import BuildBarracks, BuildSupplyDepot, BuildMarine, Attack, NoOrder
+from nidup.pysc2.agent.smart.orders import BuildBarrack, BuildSupplyDepot, BuildMarine, Attack, NoOrder
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 _PLAYER_SELF = 1
@@ -49,7 +48,7 @@ class SmartActions:
         smart_action, x, y = self._split_action(action_id)
         if smart_action == ACTION_BUILD_BARRACKS:
             max_barracks = 2
-            return BuildBarracks(self.location, max_barracks)
+            return BuildBarrack(self.location, max_barracks)
         elif smart_action == ACTION_BUILD_SUPPLY_DEPOT:
             max_supplies = 2
             return BuildSupplyDepot(self.location, max_supplies)
