@@ -14,6 +14,8 @@ $ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.HybridA
 Variants & Evolution
 --------------------
 
+**Against [very-easy built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)**
+
 Playing against the default built-in AI (very-easy difficulty).
 
 Build order with 2 supply depots & 2 barracks (same than previous agent):
@@ -28,3 +30,12 @@ Build order with 10 supply depots & 4 barracks, ie, the marines ball:
 
 ![Image of HybridAttackReinforcementAgent 3](HybridAttackReinforcementAgent_10_supply_4_rax.png)
 
+**Against [easy built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)**
+
+```
+python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.HybridAttackReinforcementAgent --agent_race T --max_agent_steps=1000000 --difficulty 2 -norender
+```
+
+Build order with 10 supply depots & 4 barracks, ie, the marines ball:
+
+![Image of HybridAttackReinforcementAgent 4](HybridAttackReinforcementAgent_10_supply_4_rax-easy.png)

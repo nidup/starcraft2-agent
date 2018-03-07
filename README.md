@@ -36,10 +36,10 @@ The build order phase is scripted to reduce the set of actions and focus the tra
 [Here are more details on improvements](doc/reinforcement_attack_agent.md).
 
 ```
-$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.HybridAttackReinforcementAgent --agent_race T --max_agent_steps=1000000
+$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.HybridAttackReinforcementAgent --agent_race T --max_agent_steps=1000000 --difficulty 2
 ```
 
-![Image of HybridAttackReinforcementAgent 3](doc/HybridAttackReinforcementAgent_10_supply_4_rax.png)
+![Image of HybridAttackReinforcementAgent 4](doc/HybridAttackReinforcementAgent_10_supply_4_rax-easy.png)
 
 Data & Analysis
 ---------------
