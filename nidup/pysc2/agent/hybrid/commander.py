@@ -7,7 +7,7 @@ from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location
 from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
-from nidup.pysc2.agent.smart.orders import BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildFactory, BuildMarine, Attack, NoOrder
+from nidup.pysc2.agent.smart.orders import BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildFactory, BuildMarine, BuildMarauder, Attack, NoOrder, PrepareSCVControlGroupsOrder, BuildTechLabBarrack
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 _PLAYER_SELF = 1
@@ -15,6 +15,7 @@ _PLAYER_HOSTILE = 4
 
 ACTION_DO_NOTHING = 'donothing'
 ACTION_BUILD_MARINE = 'buildmarine'
+ACTION_BUILD_MARAUDER = 'buildmarauder'
 ACTION_ATTACK = 'attack'
 
 
@@ -24,7 +25,8 @@ class SmartActions:
         self.location = location
         self.actions = [
             ACTION_DO_NOTHING,
-            ACTION_BUILD_MARINE
+            ACTION_BUILD_MARINE,
+            ACTION_BUILD_MARAUDER
         ]
         # split the mini-map into four quadrants keep the action space small to make it easier for the agent to learn
         attack_actions = []
@@ -45,6 +47,8 @@ class SmartActions:
         smart_action, x, y = self._split_action(action_id)
         if smart_action == ACTION_BUILD_MARINE:
             return BuildMarine(self.location)
+        elif smart_action == ACTION_BUILD_MARAUDER:
+            return BuildMarauder(self.location)
         elif smart_action == ACTION_ATTACK:
             return Attack(self.location, int(x), int(y))
         elif smart_action == ACTION_DO_NOTHING:
@@ -61,23 +65,64 @@ class SmartActions:
         return smart_action, x, y
 
 
-class StateBuilder:
+class BuildingCounter:
 
-    def build_state(self, location: Location, observations: Observations) -> []:
+    def command_center_count(self, observations: Observations) -> int:
         unit_type = observations.screen().unit_type()
         unit_type_ids = UnitTypeIds()
         cc_y, cc_x = (unit_type == unit_type_ids.terran_command_center()).nonzero()
         cc_count = 1 if cc_y.any() else 0
+        return cc_count
+
+    def supply_depots_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
         depot_y, depot_x = (unit_type == unit_type_ids.terran_supply_depot()).nonzero()
         supply_depot_count = int(round(len(depot_y) / 69))
+        return supply_depot_count
+
+    def barracks_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
         barracks_y, barracks_x = (unit_type == unit_type_ids.terran_barracks()).nonzero()
         barracks_count = int(round(len(barracks_y) / 137))
+        return barracks_count
+
+    def techlab_barracks_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        techlabs_y, tachlabs_x = (unit_type == unit_type_ids.terran_barracks_techlab()).nonzero()
+        if techlabs_y.any():
+            return 1
+        return 0
+
+    def refineries_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        unit_y, unit_x = (unit_type == unit_type_ids.terran_refinery()).nonzero()
+        units_count = int(round(len(unit_y) / 97))
+        return units_count
+
+    def factories_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        factories_y, factories_x = (unit_type == unit_type_ids.terran_factory()).nonzero()
+        factories_count = int(round(len(factories_y) / 137))
+        return factories_count
+
+
+class StateBuilder:
+
+    def build_state(self, location: Location, observations: Observations) -> []:
+        counter = BuildingCounter()
 
         current_state = np.zeros(8)
-        current_state[0] = cc_count
-        current_state[1] = supply_depot_count
-        current_state[2] = barracks_count
-        current_state[3] = observations.player().food_army()
+        current_state[0] = counter.command_center_count(observations)
+        current_state[1] = counter.supply_depots_count(observations)
+        current_state[2] = counter.barracks_count(observations)
+        current_state[3] = counter.factories_count(observations)
+        current_state[4] = counter.techlab_barracks_count(observations)
+        current_state[5] = observations.player().food_army()
 
         hot_squares = np.zeros(4)
         enemy_y, enemy_x = (observations.minimap().player_relative() == _PLAYER_HOSTILE).nonzero()
@@ -99,15 +144,17 @@ class HybridGameCommander(Commander):
 
     def __init__(self, base_location: Location, agent_name: str):
         Commander.__init__(self)
+        self.control_group_order = PrepareSCVControlGroupsOrder(base_location)
         self.build_order_commander = BuildOrderCommander(base_location, agent_name)
         self.attack_commander = QLearningAttackCommander(base_location, agent_name)
         self.build_order_finished = False
 
     def order(self, observations: Observations)-> Order:
 
-        # TODO: send SCV back to minerals
-
-        if not self.build_order_finished:
+        # TODO: send SCV back to minerals?
+        if not self.control_group_order.done(observations):
+            return self.control_group_order
+        elif not self.build_order_finished:
             order = self.build_order_commander.order(observations)
             if isinstance(order, NoOrder):
                 self.build_order_finished = True
@@ -122,60 +169,38 @@ class BuildOrder:
     def __init__(self, location: Location):
         self.location = location
         self.current_order = BuildSupplyDepot(self.location)
-        self.expected_supply_depot = 10
+        self.expected_supply_depot = 8 # 2 last can block a vcs against minerals when playing bottom down
         self.expected_barracks = 4
-        self.expected_refineries = 0
-        self.expected_factories = 0
+        self.expected_refineries = 2
+        self.expected_factories = 1 # second one is not buildable when playing bottom down
+        self.expected_techlab_barrack = 1
 
     def current(self, observations: Observations) -> Order:
+        counter = BuildingCounter()
         if not self.current_order.done(observations):
             return self.current_order
-        elif self.supply_depots_count(observations) < self.expected_supply_depot:
+        elif counter.supply_depots_count(observations) < self.expected_supply_depot:
             self.current_order = BuildSupplyDepot(self.location)
-        elif self.barracks_count(observations) < self.expected_barracks:
+        elif counter.barracks_count(observations) < self.expected_barracks:
             self.current_order = BuildBarrack(self.location)
-        elif self.refineries_count(observations) < self.expected_refineries:
+        elif counter.refineries_count(observations) < self.expected_refineries:
             self.current_order = BuildRefinery(self.location)
-        elif self.factories_count(observations) < self.expected_factories:
+        elif counter.factories_count(observations) < self.expected_factories:
             self.current_order = BuildFactory(self.location)
+        elif counter.techlab_barracks_count(observations) < self.expected_techlab_barrack:
+            self.current_order = BuildTechLabBarrack(self.location)
         else:
             self.current_order = NoOrder()
         return self.current_order
 
     def finished(self, observations: Observations) -> bool:
-        supply_ok = self.supply_depots_count(observations) == self.expected_supply_depot
-        barracks_ok = self.barracks_count(observations) == self.expected_barracks
-        refineries_ok = self.refineries_count(observations) == self.expected_refineries
-        factories_ok = self.factories_count(observations) == self.expected_factories
-        return supply_ok and barracks_ok and refineries_ok and factories_ok
-
-    def supply_depots_count(self, observations: Observations) -> int:
-        unit_type = observations.screen().unit_type()
-        unit_type_ids = UnitTypeIds()
-        depot_y, depot_x = (unit_type == unit_type_ids.terran_supply_depot()).nonzero()
-        supply_depot_count = int(round(len(depot_y) / 69))
-        return supply_depot_count
-
-    def barracks_count(self, observations: Observations) -> int:
-        unit_type = observations.screen().unit_type()
-        unit_type_ids = UnitTypeIds()
-        barracks_y, barracks_x = (unit_type == unit_type_ids.terran_barracks()).nonzero()
-        barracks_count = int(round(len(barracks_y) / 137))
-        return barracks_count
-
-    def refineries_count(self, observations: Observations) -> int:
-        unit_type = observations.screen().unit_type()
-        unit_type_ids = UnitTypeIds()
-        unit_y, unit_x = (unit_type == unit_type_ids.terran_refinery()).nonzero()
-        units_count = int(round(len(unit_y) / 97))
-        return units_count
-
-    def factories_count(self, observations: Observations) -> int:
-        unit_type = observations.screen().unit_type()
-        unit_type_ids = UnitTypeIds()
-        factories_y, factories_x = (unit_type == unit_type_ids.terran_factory()).nonzero()
-        factories_count = int(round(len(factories_y) / 137))
-        return factories_count
+        counter = BuildingCounter()
+        supply_ok = counter.supply_depots_count(observations) == self.expected_supply_depot
+        barracks_ok = counter.barracks_count(observations) == self.expected_barracks
+        refineries_ok = counter.refineries_count(observations) == self.expected_refineries
+        factories_ok = counter.factories_count(observations) == self.expected_factories
+        techlab_barracks_ok = counter.techlab_barracks_count(observations) == self.expected_techlab_barrack
+        return supply_ok and barracks_ok and refineries_ok and factories_ok and techlab_barracks_ok
 
 
 class BuildOrderCommander(Commander):
@@ -188,8 +213,8 @@ class BuildOrderCommander(Commander):
         self.current_order = None
 
     def order(self, observations: Observations)-> Order:
-
         if self.build_orders.finished(observations):
+            #print(self.current_order)
             return NoOrder()
         elif self.current_order and self.current_order.done(observations):
             #print(self.current_order)

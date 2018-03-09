@@ -205,6 +205,9 @@ class SingleSelect:
     def is_built(self) -> bool:
         return self.build_progress_percentage() == 0
 
+    def __str__(self):
+        return str(self.select)
+
 
 class MultiSelect:
 
@@ -237,6 +240,9 @@ class MultiSelect:
 
     def is_built(self, index: int) -> bool:
         return self.build_progress_percentage(index) == 0
+
+    def __str__(self):
+        return str(self.select)
 
 
 # Wrap `obs` variable, a series of nested arrays to an object
