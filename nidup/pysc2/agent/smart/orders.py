@@ -3,7 +3,7 @@ import math
 import random
 from pysc2.lib import actions
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.information import Location
+from nidup.pysc2.agent.information import Location, BuildingCounter
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
@@ -219,10 +219,8 @@ class BuildBarrack(SmartOrder):
         return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
 
     def _build_barracks(self, observations: Observations) -> actions.FunctionCall:
-        unit_type = observations.screen().unit_type()
         cc_y, cc_x = self.location.command_center_first_position()
-        barracks_y, barracks_x = (unit_type == self.unit_type_ids.terran_barracks()).nonzero()
-        barracks_count = int(round(len(barracks_y) / 137))
+        barracks_count = BuildingCounter().barracks_count(observations)
         if barracks_count < self.max_barracks and self.action_ids.build_barracks() in observations.available_actions():
             if cc_y.any():
                 current_count_to_difference_from_cc = BuildingPositionsFromCommandCenter().barracks()
@@ -317,12 +315,8 @@ class BuildFactory(SmartOrder):
         return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
 
     def _build_factory(self, observations: Observations) -> actions.FunctionCall:
-        unit_type = observations.screen().unit_type()
         cc_y, cc_x = self.location.command_center_first_position()
-        factories_y, factories_x = (unit_type == self.unit_type_ids.terran_factory()).nonzero()
-        factories_count = int(round(len(factories_y) / 137))
-        #print(str(factories_count) + " factories < " + str(self.max_factories))
-        #print(str(self.action_ids.build_factory() in observations.available_actions()))
+        factories_count = BuildingCounter().factories_count(observations)
         if factories_count < self.max_factories and self.action_ids.build_factory() in observations.available_actions():
             if cc_y.any():
                 current_count_to_difference_from_cc = BuildingPositionsFromCommandCenter().factories()
@@ -332,9 +326,7 @@ class BuildFactory(SmartOrder):
                     round(cc_y.mean()),
                     current_count_to_difference_from_cc[factories_count][1],
                 )
-                #print("build factory")
                 return self.actions.build_factory(target)
-        #print("nooop")
         return self.actions.no_op()
 
     def _send_collecter_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
@@ -370,10 +362,8 @@ class BuildSupplyDepot(SmartOrder):
         return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
 
     def _build_supply_depot(self, observations: Observations) -> actions.FunctionCall:
-        unit_type = observations.screen().unit_type()
         cc_y, cc_x = self.location.command_center_first_position()
-        depot_y, depot_x = (unit_type == self.unit_type_ids.terran_supply_depot()).nonzero()
-        supply_depot_count = int(round(len(depot_y) / 69))
+        supply_depot_count = BuildingCounter().supply_depots_count(observations)
         if supply_depot_count < self.max_supplies and self.action_ids.build_supply_depot() in observations.available_actions():
             if cc_y.any():
                 # some tweak to make it work on both start positions that seems not symetric
@@ -423,7 +413,6 @@ class BuildRefinery(SmartOrder):
             return self._select_a_refinery_collecter_scv(group_id)
         elif self.step == 3:
             return self._build_refinery(observations)
-        #TODO: send to refinery once done ??
         return self.actions.no_op()
 
     def _relevant_group_id(self, observations: Observations) -> int:
@@ -432,10 +421,7 @@ class BuildRefinery(SmartOrder):
         return self.scv_groups.refinery_two_collectors_group_id()
 
     def _count_refineries(self, observations: Observations) -> int:
-        unit_type = observations.screen().unit_type()
-        refinery_y, refinery_x = (unit_type == self.unit_type_ids.terran_refinery()).nonzero()
-        refinery_count = int(math.ceil(len(refinery_x) / 97))
-        return refinery_count
+        return BuildingCounter().refineries_count(observations)
 
     def _select_all_refinery_collecter_scv(self, group_id: int) -> actions.FunctionCall:
         return SCVCommonActions().select_a_group_of_scv(group_id)
