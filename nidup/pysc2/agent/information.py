@@ -82,3 +82,49 @@ class Location:
         locations.append([45, 15])
         locations.append([21, 45])
         return locations
+
+
+class BuildingCounter:
+
+    def command_center_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        cc_y, cc_x = (unit_type == unit_type_ids.terran_command_center()).nonzero()
+        cc_count = 1 if cc_y.any() else 0
+        return cc_count
+
+    def supply_depots_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        depot_y, depot_x = (unit_type == unit_type_ids.terran_supply_depot()).nonzero()
+        supply_depot_count = int(round(len(depot_y) / 69))
+        return supply_depot_count
+
+    def barracks_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        barracks_y, barracks_x = (unit_type == unit_type_ids.terran_barracks()).nonzero()
+        barracks_count = int(round(len(barracks_y) / 137))
+        return barracks_count
+
+    def techlab_barracks_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        techlabs_y, tachlabs_x = (unit_type == unit_type_ids.terran_barracks_techlab()).nonzero()
+        if techlabs_y.any():
+            return 1
+        return 0
+
+    def refineries_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        unit_y, unit_x = (unit_type == unit_type_ids.terran_refinery()).nonzero()
+        units_count = int(round(len(unit_y) / 97))
+        return units_count
+
+    def factories_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        factories_y, factories_x = (unit_type == unit_type_ids.terran_factory()).nonzero()
+        factories_count = int(round(len(factories_y) / 137))
+        return factories_count
