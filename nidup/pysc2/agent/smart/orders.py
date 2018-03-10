@@ -187,21 +187,20 @@ class SCVCommonActions:
                 return self.actions.harvest_gather(target)
         return self.actions.no_op()
 
-    def send_scv_to_refinery(self, observations: Observations) -> actions.FunctionCall:
+    def send_selected_scv_group_to_refinery(self, observations: Observations, refinery_id: int) -> actions.FunctionCall:
+        print("send to refinery")
         if self.action_ids.harvest_gather() in observations.available_actions():
+
             unit_type = observations.screen().unit_type()
-            refinery_y, refinery_x = (unit_type == self.unit_type_ids.terran_refinery()).nonzero()
-            refinery_count = int(math.ceil(len(refinery_y) / 97))
-            if refinery_count > 0:
-                units = []
-                for i in range(0, len(refinery_y)):
-                    units.append((refinery_x[i], refinery_y[i]))
-                kmeans = KMeans(refinery_count)
-                kmeans.fit(units)
-                refinery1_x = int(kmeans.cluster_centers_[0][0])
-                refinery1_y = int(kmeans.cluster_centers_[0][1])
-                refinery_target = [refinery1_x, refinery1_y]
-                return self.actions.harvest_gather(refinery_target)
+            unit_y, unit_x = (unit_type == self.unit_type_ids.terran_refinery()).nonzero()
+
+
+            target = [int(unit_x.mean()), int(unit_y.mean())]
+
+            print("ok")
+            return self.actions.harvest_gather(target)
+        print("ko")
+        exit()
         return self.actions.no_op()
 
 
@@ -447,6 +446,58 @@ class BuildRefinery(SmartOrder):
             self.refinery_target = [vespene1_x, vespene1_y]
             return self.actions.build_refinery(self.refinery_target)
         return self.actions.no_op()
+
+
+class FillRefineryOnceBuilt(SmartOrder):
+
+    def __init__(self, base_location: Location, refinery_index: int):
+        SmartOrder.__init__(self, base_location)
+        self.step = 0
+        self.refinery_index = refinery_index
+        self.scv_groups = SCVControlGroups()
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 3
+
+    def doable(self, observations: Observations) -> bool:
+        refinery_count = BuildingCounter().refineries_count(observations)
+        return refinery_count == self.refinery_index
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        print("fill refinery")
+        refinery_count = BuildingCounter().refineries_count(observations)
+        refinery_id = self.refinery_index + 1
+        if refinery_count == 0:
+            return self.actions.no_op()
+        elif self.step == 0:
+            return self._select_refinery(observations)
+        elif self.step == 1 and self._selected_refinery_is_built(observations):
+            print("refinery is built, select collectors")
+            return self._select_vespene_collectors()
+        elif self.step == 2:
+            return self._send_collectors_to_refinery(observations)
+
+        return self.actions.no_op()
+
+    def _select_refinery(self, observations: Observations) -> actions.FunctionCall:
+        unit_type = observations.screen().unit_type()
+        refineries_y, refineries_x = (unit_type == self.unit_type_ids.terran_refinery()).nonzero()
+        if refineries_y.any():
+            self.step = self.step + 1
+            i = self.refinery_index - 1
+            target = [refineries_x[i], refineries_y[i]]
+            return self.actions.select_point(target)
+
+    def _selected_refinery_is_built(self, observations: Observations) -> bool:
+        return observations.single_select().is_built()
+
+    def _select_vespene_collectors(self) -> actions.FunctionCall:
+        self.step = self.step + 1
+        return SCVCommonActions().select_a_group_of_scv(SCVControlGroups().refinery_one_collectors_group_id())
+
+    def _send_collectors_to_refinery(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        return SCVCommonActions().send_selected_scv_group_to_refinery(observations, 1)
 
 
 class BuildMarine(SmartOrder):

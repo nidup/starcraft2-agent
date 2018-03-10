@@ -5,7 +5,7 @@ from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location
 from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
-from nidup.pysc2.agent.smart.orders import NoOrder, PrepareSCVControlGroupsOrder
+from nidup.pysc2.agent.smart.orders import NoOrder, PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt
 from nidup.pysc2.agent.hybrid.attack import SmartActions, StateBuilder
 from nidup.pysc2.agent.hybrid.build import BuildOrder
 
@@ -35,12 +35,16 @@ class WorkerCommander(Commander):
     def __init__(self, base_location: Location):
         Commander.__init__(self)
         self.control_group_order = PrepareSCVControlGroupsOrder(base_location)
+        self.fill_refinery_one_order = FillRefineryOnceBuilt(base_location, 1)
 
     def order(self, observations: Observations)-> Order:
         # refinery built + amount vespene > 1 (means a collector already started)
         # ok but the second one?
         if not self.control_group_order.done(observations):
             return self.control_group_order
+        elif self.fill_refinery_one_order.doable(observations) and not self.fill_refinery_one_order.done(observations):
+            print("refinery")
+            return self.fill_refinery_one_order
         return NoOrder()
 
 
