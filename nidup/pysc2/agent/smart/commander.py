@@ -4,10 +4,9 @@ import numpy as np
 from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
-from nidup.pysc2.learning.game_results import GameResultsTable
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location
-from nidup.pysc2.agent.smart.orders import BuildBarracks, BuildSupplyDepot, BuildMarine, Attack, NoOrder
+from nidup.pysc2.agent.smart.orders import BuildBarrack, BuildSupplyDepot, BuildMarine, Attack, NoOrder, PrepareSCVControlGroupsOrder
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 _PLAYER_SELF = 1
@@ -48,9 +47,11 @@ class SmartActions:
     def order(self, action_id: str) -> Order:
         smart_action, x, y = self._split_action(action_id)
         if smart_action == ACTION_BUILD_BARRACKS:
-            return BuildBarracks(self.location)
+            max_barracks = 2
+            return BuildBarrack(self.location, max_barracks)
         elif smart_action == ACTION_BUILD_SUPPLY_DEPOT:
-            return BuildSupplyDepot(self.location)
+            max_supplies = 2
+            return BuildSupplyDepot(self.location, max_supplies)
         elif smart_action == ACTION_BUILD_MARINE:
             return BuildMarine(self.location)
         elif smart_action == ACTION_ATTACK:
@@ -115,14 +116,12 @@ class QLearningCommander(Commander):
         self.previous_state = None
         self.previous_order = None
         self.location = None
+        self.control_group_order = None
 
     def order(self, observations: Observations)-> Order:
         if observations.last():
             self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
             QLearningTableStorage().save(self.qlearn, self.agent_name)
-
-            game_results = GameResultsTable(self.agent_name)
-            game_results.append(observations.reward(), observations.score_cumulative())
 
             self.previous_action = None
             self.previous_state = None
@@ -135,8 +134,12 @@ class QLearningCommander(Commander):
             self.smart_actions = SmartActions(self.location)
             self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
             QLearningTableStorage().load(self.qlearn, self.agent_name)
+            self.control_group_order = PrepareSCVControlGroupsOrder(self.location)
 
-        if not self.previous_order or self.previous_order.done(observations):
+        if not self.control_group_order.done(observations):
+            return self.control_group_order
+
+        elif not self.previous_order or self.previous_order.done(observations):
 
             current_state = StateBuilder().build_state(self.location, observations)
 

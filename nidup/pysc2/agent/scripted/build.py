@@ -53,24 +53,6 @@ class OrdersSequence:
         self.current_order = self.orders[self.current_order_index]
 
 
-class CenterCameraOnCommandCenter(BuildOrder):
-    centered_on_base = False
-
-    def __init__(self, base_location):
-        BuildOrder.__init__(self, base_location)
-
-    def done(self, observations: Observations) -> bool:
-        return self.centered_on_base
-
-    def execute(self, observations: Observations) -> actions.FunctionCall:
-        if not self.centered_on_base:
-            unit_y, unit_x = self.base_location.base_location_on_minimap()
-            target = [unit_x, unit_y]
-            self.centered_on_base = True
-            return self.actions.move_camera(target)
-        return self.actions.no_op()
-
-
 class BuildSupplyDepot(BuildOrder):
 
     select_scv_order = False
