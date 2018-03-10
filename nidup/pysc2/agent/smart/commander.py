@@ -6,7 +6,7 @@ from nidup.pysc2.agent.order import Order
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location
-from nidup.pysc2.agent.smart.orders import BuildBarrack, BuildSupplyDepot, BuildMarine, Attack, NoOrder
+from nidup.pysc2.agent.smart.orders import BuildBarrack, BuildSupplyDepot, BuildMarine, Attack, NoOrder, PrepareSCVControlGroupsOrder
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 _PLAYER_SELF = 1
@@ -116,6 +116,7 @@ class QLearningCommander(Commander):
         self.previous_state = None
         self.previous_order = None
         self.location = None
+        self.control_group_order = None
 
     def order(self, observations: Observations)-> Order:
         if observations.last():
@@ -133,8 +134,12 @@ class QLearningCommander(Commander):
             self.smart_actions = SmartActions(self.location)
             self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
             QLearningTableStorage().load(self.qlearn, self.agent_name)
+            self.control_group_order = PrepareSCVControlGroupsOrder(self.location)
 
-        if not self.previous_order or self.previous_order.done(observations):
+        if not self.control_group_order.done(observations):
+            return self.control_group_order
+
+        elif not self.previous_order or self.previous_order.done(observations):
 
             current_state = StateBuilder().build_state(self.location, observations)
 
