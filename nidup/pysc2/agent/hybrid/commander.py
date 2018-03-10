@@ -14,19 +14,34 @@ class HybridGameCommander(Commander):
 
     def __init__(self, base_location: Location, agent_name: str):
         Commander.__init__(self)
-        self.control_group_order = PrepareSCVControlGroupsOrder(base_location)
+        self.worker_commander = WorkerCommander(base_location)
         self.build_order_commander = BuildOrderCommander(base_location, agent_name)
         self.attack_commander = QLearningAttackCommander(base_location, agent_name)
 
     def order(self, observations: Observations)-> Order:
-        if not self.control_group_order.done(observations):
-            return self.control_group_order
-        else:
-            order = self.build_order_commander.order(observations)
-            if not isinstance(order, NoOrder):
-                return order
+        order = self.worker_commander.order(observations)
+        if not isinstance(order, NoOrder):
+            return order
+
+        order = self.build_order_commander.order(observations)
+        if not isinstance(order, NoOrder):
+            return order
 
         return self.attack_commander.order(observations)
+
+
+class WorkerCommander(Commander):
+
+    def __init__(self, base_location: Location):
+        Commander.__init__(self)
+        self.control_group_order = PrepareSCVControlGroupsOrder(base_location)
+
+    def order(self, observations: Observations)-> Order:
+        # refinery built + amount vespene > 1 (means a collector already started)
+        # ok but the second one?
+        if not self.control_group_order.done(observations):
+            return self.control_group_order
+        return NoOrder()
 
 
 class BuildOrderCommander(Commander):
@@ -40,17 +55,12 @@ class BuildOrderCommander(Commander):
 
     def order(self, observations: Observations)-> Order:
         if self.build_orders.finished(observations):
-            #print(self.current_order)
             return NoOrder()
         elif self.current_order and self.current_order.done(observations):
-            #print(self.current_order)
-            #camera_y, camera_x = self.location.current_visible_minimap_left_corner(observations.minimap())
-            #print("center camera from " + str(camera_x) + " " + str(camera_y) + " base top left " + str(self.location.command_center_is_top_left()))
             self.current_order = None
             return CenterCameraOnCommandCenter(self.location)
         else:
             self.current_order = self.build_orders.current(observations)
-            #print(self.current_order)
             return self.current_order
 
 
