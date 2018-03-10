@@ -62,3 +62,12 @@ The build order is sequential and has to be finished to let the train & attack p
 
 ![Image of HybridAttackReinforcementAgent 4](HybridAttackReinforcementAgent_8_supply_4_rax_2ref_1fac_1lab-easy.png)
 
+The same build order, updated to make the build of the supply depots triggered only when needed:
+
+![Image of HybridAttackReinforcementAgent 5](HybridAttackReinforcementAgent_8_supply_4_rax_2ref_1fac_1lab-2-easy.png)
+
+**Against [medium built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)**
+
+The same build order, updated to make the build of the supply depots triggered only when needed:
+
+![Image of HybridAttackReinforcementAgent 5](HybridAttackReinforcementAgent_8_supply_4_rax_2ref_1fac_1lab-2-medium.png)

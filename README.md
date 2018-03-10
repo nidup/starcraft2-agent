@@ -20,26 +20,19 @@ Reinforcement Marine Agent (Machine Learning)
 ---------------------------------------------
 
 This agent uses a Q-Learning table, a reduced set of actions (build supply depot, barrack, train marine & attack) and a sparse reward depending on the result of the episode.
-
 It has been slightly fine-tuned to be trained faster and win more games against the built-in AI.
 [Here are more details on training and attempts](doc/reinforcement_marine_agent.md).
-
-![Image of ReinforcementMarineAgent 4](doc/ReinforcementMarineAgent_enemyb1andb2.png)
 
 Hybrid Reinforcement Attack Agent (Machine Learning)
 ----------------------------------------------------
 
 This agent uses the same Q-Learning approach but specialized on the train units & attack phase.
-
 The build order phase is scripted to reduce the set of actions and focus the training on the attack.
-
+The build order and actions are enriched to train marines & marauders.
 [Here are more details on improvements](doc/reinforcement_attack_agent.md).
 
-```
-$ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.HybridAttackReinforcementAgent --agent_race T --max_agent_steps=1000000 --difficulty 2
-```
-
-![Image of HybridAttackReinforcementAgent 4](doc/HybridAttackReinforcementAgent_10_supply_4_rax-easy.png)
+Playing against [easy built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)
+![Image of HybridAttackReinforcementAgent 4](doc/HybridAttackReinforcementAgent_8_supply_4_rax_2ref_1fac_1lab-2-easy.png)
 
 Data & Analysis
 ---------------

@@ -147,18 +147,13 @@ class HybridGameCommander(Commander):
         self.control_group_order = PrepareSCVControlGroupsOrder(base_location)
         self.build_order_commander = BuildOrderCommander(base_location, agent_name)
         self.attack_commander = QLearningAttackCommander(base_location, agent_name)
-        self.build_order_finished = False
 
     def order(self, observations: Observations)-> Order:
-
-        # TODO: send SCV back to minerals?
         if not self.control_group_order.done(observations):
             return self.control_group_order
-        elif not self.build_order_finished:
+        else:
             order = self.build_order_commander.order(observations)
-            if isinstance(order, NoOrder):
-                self.build_order_finished = True
-            else:
+            if not isinstance(order, NoOrder):
                 return order
 
         return self.attack_commander.order(observations)
@@ -168,7 +163,7 @@ class BuildOrder:
 
     def __init__(self, location: Location):
         self.location = location
-        self.current_order = BuildSupplyDepot(self.location)
+        self.current_order = BuildSupplyDepot(self.location) # as a Terran, you need to start by this
         self.expected_supply_depot = 8 # 2 last can block a vcs against minerals when playing bottom down
         self.expected_barracks = 4
         self.expected_refineries = 2
@@ -177,21 +172,33 @@ class BuildOrder:
 
     def current(self, observations: Observations) -> Order:
         counter = BuildingCounter()
-        if not self.current_order.done(observations):
+        if not self.current_order.done(observations) and not isinstance(self.current_order, NoOrder):
             return self.current_order
-        elif counter.supply_depots_count(observations) < self.expected_supply_depot:
-            self.current_order = BuildSupplyDepot(self.location)
-        elif counter.barracks_count(observations) < self.expected_barracks:
+        elif self.missing_barracks(observations, counter):
             self.current_order = BuildBarrack(self.location)
-        elif counter.refineries_count(observations) < self.expected_refineries:
+        elif self.missing_supply_depot(observations, counter):
+            self.current_order = BuildSupplyDepot(self.location)
+        elif self.expected_refineries > counter.refineries_count(observations):
             self.current_order = BuildRefinery(self.location)
-        elif counter.factories_count(observations) < self.expected_factories:
+        elif self.expected_factories > counter.factories_count(observations):
             self.current_order = BuildFactory(self.location)
-        elif counter.techlab_barracks_count(observations) < self.expected_techlab_barrack:
+        elif self.expected_techlab_barrack > counter.techlab_barracks_count(observations):
             self.current_order = BuildTechLabBarrack(self.location)
         else:
             self.current_order = NoOrder()
         return self.current_order
+
+    def missing_supply_depot(self, observations: Observations, counter: BuildingCounter) -> bool:
+        expectMore = self.expected_supply_depot > counter.supply_depots_count(observations)
+        supplyAlmostFull = observations.player().food_cap() - observations.player().food_used() <= 4
+        buildingOne = isinstance(self.current_order, BuildSupplyDepot)
+        # but still build several in a row, needs to detect if a supply building is in progress
+        return expectMore and supplyAlmostFull and not buildingOne
+
+    def missing_barracks(self, observations: Observations, counter: BuildingCounter) -> bool:
+        expectMore = self.expected_barracks > counter.barracks_count(observations)
+        buildingOne = isinstance(self.current_order, BuildBarrack)
+        return expectMore and not buildingOne
 
     def finished(self, observations: Observations) -> bool:
         counter = BuildingCounter()
@@ -249,22 +256,16 @@ class QLearningAttackCommander(Commander):
         if observations.last():
             self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
             QLearningTableStorage().save(self.qlearn, self.agent_name)
-
             self.previous_action = None
             self.previous_state = None
             self.previous_order = None
-
             return NoOrder()
 
         if not self.previous_order or self.previous_order.done(observations):
-
             current_state = StateBuilder().build_state(self.location, observations)
-
             if self.previous_action is not None:
                 self.qlearn.learn(str(self.previous_state), self.previous_action, 0, str(current_state))
-
             rl_action = self.qlearn.choose_action(str(current_state))
-
             self.previous_state = current_state
             self.previous_action = rl_action
             self.previous_order = self.smart_actions.order(rl_action)
