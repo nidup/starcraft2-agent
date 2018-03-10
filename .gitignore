@@ -1,5 +1,6 @@
 data/*gz
 data/*png
+data/backup
 __pycache__
 *.pyc
 
