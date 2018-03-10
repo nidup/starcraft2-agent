@@ -45,13 +45,28 @@ class SCVControlGroups:
 
 class BuildingPositionsFromCommandCenter:
 
+    def supply_depots(self) -> []:
+        # some tweak to make it work on both start positions that seems not symetric
+        return [
+            [-35, -20],
+            [-35, -10],
+            [-35, 0],
+            [-35, 10],
+            [-35, 20],
+            [-25, -30],
+            [-15, -30],
+            [-5, -30],
+            [5, -35],
+            [15, -35]
+        ]
+
     def barracks(self) -> []:
         return [
-                [15, -10],
-                [30, -20], # keep space for techlab on first barracks
-                [15, 10],
-                [30, 10],
-            ]
+            [15, -10],
+            [30, -20], # keep space for techlab on first barracks
+            [15, 10],
+            [30, 10],
+        ]
 
     def factories(self) -> []:
         return [
@@ -366,19 +381,7 @@ class BuildSupplyDepot(SmartOrder):
         supply_depot_count = BuildingCounter().supply_depots_count(observations)
         if supply_depot_count < self.max_supplies and self.action_ids.build_supply_depot() in observations.available_actions():
             if cc_y.any():
-                # some tweak to make it work on both start positions that seems not symetric
-                current_count_to_difference_from_cc = [
-                    [-35, -20],
-                    [-35, -10],
-                    [-35, 0],
-                    [-35, 10],
-                    [-35, 20],
-                    [-25, -30],
-                    [-15, -30],
-                    [-5, -30],
-                    [5, -35],
-                    [15, -35]
-                ]
+                current_count_to_difference_from_cc = BuildingPositionsFromCommandCenter().supply_depots()
                 target = self.location.transform_distance(
                     round(cc_x.mean()),
                     current_count_to_difference_from_cc[supply_depot_count][0],
