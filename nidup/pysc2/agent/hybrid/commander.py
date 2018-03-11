@@ -38,9 +38,12 @@ class WorkerCommander(Commander):
         self.control_group_order = PrepareSCVControlGroupsOrder(base_location)
         self.fill_refinery_one_order = FillRefineryOnceBuilt(base_location, 1)
         self.fill_refinery_two_order = FillRefineryOnceBuilt(base_location, 2)
-        self.train_scv_order = BuildSCV(base_location)
+        self.train_scv_order_one = BuildSCV(base_location)
         self.train_scv_order_two = BuildSCV(base_location)
         self.train_scv_order_three = BuildSCV(base_location)
+        self.train_scv_order_four = BuildSCV(base_location)
+        self.train_scv_order_five = BuildSCV(base_location)
+        self.train_scv_order_six = BuildSCV(base_location)
         self.idle_scv_to_mineral = SendIdleSCVToMineral(base_location)
         self.current_order = self.control_group_order
 
@@ -54,13 +57,20 @@ class WorkerCommander(Commander):
                 self.current_order = self.fill_refinery_one_order
             elif self.fill_refinery_two_order.doable(observations) and not self.fill_refinery_two_order.done(observations):
                 self.current_order = self.fill_refinery_two_order
-            #elif self.fill_refinery_one_order.done(observations):
-                #if self.train_scv_order.doable(observations) and not self.train_scv_order.done(observations):
-                #    self.current_order = self.train_scv_order
-                #elif self.train_scv_order_two.doable(observations) and not self.train_scv_order_two.done(observations):
-                #    self.current_order = self.train_scv_order_two
-                #elif self.train_scv_order_three.doable(observations) and not self.train_scv_order_three.done(observations):
-                #    self.current_order = self.train_scv_order_three
+            elif self.fill_refinery_one_order.done(observations):
+                if self.train_scv_order_one.doable(observations) and not self.train_scv_order_one.done(observations):
+                    self.current_order = self.train_scv_order_one
+                elif self.train_scv_order_two.doable(observations) and not self.train_scv_order_two.done(observations):
+                    self.current_order = self.train_scv_order_two
+                elif self.train_scv_order_three.doable(observations) and not self.train_scv_order_three.done(observations):
+                    self.current_order = self.train_scv_order_three
+            elif self.fill_refinery_two_order.done(observations):
+                if self.train_scv_order_four.doable(observations) and not self.train_scv_order_four.done(observations):
+                    self.current_order = self.train_scv_order_four
+                elif self.train_scv_order_five.doable(observations) and not self.train_scv_order_five.done(observations):
+                    self.current_order = self.train_scv_order_five
+                elif self.train_scv_order_six.doable(observations) and not self.train_scv_order_six.done(observations):
+                    self.current_order = self.train_scv_order_six
 
         elif self.current_order and self.current_order.done(observations):
             self.current_order = None
@@ -86,10 +96,14 @@ class BuildOrderCommander(Commander):
         if self.build_orders.finished(observations):
             return NoOrder()
         elif self.current_order and self.current_order.done(observations):
+            print("is done")
+            print(self.current_order)
             self.current_order = None
             return CenterCameraOnCommandCenter(self.location)
         else:
             self.current_order = self.build_orders.current(observations)
+            #print("not done")
+            #print(self.current_order)
             return self.current_order
 
 

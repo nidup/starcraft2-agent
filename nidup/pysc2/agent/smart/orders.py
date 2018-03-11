@@ -382,9 +382,10 @@ class BuildRefinery(SmartOrder):
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
         group_id = self._relevant_group_id()
-        if self.step == 0:
+        self.step = self.step + 1
+        if self.step == 1:
             return self._select_all_refinery_collecter_scv(group_id)
-        elif self.step == 1:
+        elif self.step == 2:
             return self._build_refinery(observations)
         return self.actions.no_op()
 
@@ -394,12 +395,10 @@ class BuildRefinery(SmartOrder):
         return self.scv_groups.refinery_two_collectors_group_id()
 
     def _select_all_refinery_collecter_scv(self, group_id: int) -> actions.FunctionCall:
-        self.step = self.step + 1
         return SCVCommonActions().select_a_group_of_scv(group_id)
 
     def _build_refinery(self, observations: Observations) -> actions.FunctionCall:
         if self.action_ids.build_refinery() in observations.available_actions():
-            self.step = self.step + 1
             if self.refinery_index == 1:
                 difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[0]
             else:
