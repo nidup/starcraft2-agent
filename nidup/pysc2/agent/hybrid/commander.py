@@ -34,9 +34,13 @@ class WorkerCommander(Commander):
 
     def __init__(self, base_location: Location):
         Commander.__init__(self)
+        self.base_location = base_location
         self.control_group_order = PrepareSCVControlGroupsOrder(base_location)
         self.fill_refinery_one_order = FillRefineryOnceBuilt(base_location, 1)
         self.fill_refinery_two_order = FillRefineryOnceBuilt(base_location, 2)
+        self.train_scv_order = BuildSCV(base_location)
+        self.train_scv_order_two = BuildSCV(base_location)
+        self.train_scv_order_three = BuildSCV(base_location)
 
     def order(self, observations: Observations)-> Order:
         if not self.control_group_order.done(observations):
@@ -45,6 +49,15 @@ class WorkerCommander(Commander):
             return self.fill_refinery_one_order
         elif self.fill_refinery_two_order.doable(observations) and not self.fill_refinery_two_order.done(observations):
             return self.fill_refinery_two_order
+
+        #if self.fill_refinery_one_order.done(observations):
+        #    if self.train_scv_order.doable(observations) and not self.train_scv_order.done(observations):
+        #        return self.train_scv_order
+        #    elif self.train_scv_order_two.doable(observations) and not self.train_scv_order_two.done(observations):
+        #        return self.train_scv_order_two
+        #    elif self.train_scv_order_three.doable(observations) and not self.train_scv_order_three.done(observations):
+        #        return self.train_scv_order_three
+
         return NoOrder()
 
 
