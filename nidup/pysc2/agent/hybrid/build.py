@@ -12,7 +12,7 @@ class BuildOrder:
         self.current_order = BuildSupplyDepot(self.location) # as a Terran, you need to start by this
         self.expected_supply_depot = 8 # 2 last can block a vcs against minerals when playing bottom down
         self.expected_barracks = 4
-        self.expected_refineries = 2
+        self.expected_refineries = 1
         self.expected_factories = 1 # second one is not buildable when playing bottom down
         self.expected_techlab_barrack = 1
 

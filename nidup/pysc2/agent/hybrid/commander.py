@@ -46,6 +46,8 @@ class WorkerCommander(Commander):
         self.train_scv_order_six = BuildSCV(base_location)
         self.idle_scv_to_mineral = SendIdleSCVToMineral(base_location)
         self.current_order = self.control_group_order
+        self.extra_scv_to_build_orders = []
+        self._plan_to_build_scv_mineral_harvesters(4)
 
     def order(self, observations: Observations)-> Order:
         if not self.current_order:
@@ -55,22 +57,12 @@ class WorkerCommander(Commander):
                 self.current_order = self.idle_scv_to_mineral
             elif self.fill_refinery_one_order.doable(observations) and not self.fill_refinery_one_order.done(observations):
                 self.current_order = self.fill_refinery_one_order
+                self._plan_to_build_scv_mineral_harvesters(3)
             elif self.fill_refinery_two_order.doable(observations) and not self.fill_refinery_two_order.done(observations):
                 self.current_order = self.fill_refinery_two_order
-            elif self.fill_refinery_one_order.done(observations) and not self.train_scv_order_three.done(observations):
-                if self.train_scv_order_one.doable(observations) and not self.train_scv_order_one.done(observations):
-                    self.current_order = self.train_scv_order_one
-                elif self.train_scv_order_two.doable(observations) and not self.train_scv_order_two.done(observations):
-                    self.current_order = self.train_scv_order_two
-                elif self.train_scv_order_three.doable(observations) and not self.train_scv_order_three.done(observations):
-                    self.current_order = self.train_scv_order_three
-            elif self.fill_refinery_two_order.done(observations) and not self.train_scv_order_six.done(observations):
-                if self.train_scv_order_four.doable(observations) and not self.train_scv_order_four.done(observations):
-                    self.current_order = self.train_scv_order_four
-                elif self.train_scv_order_five.doable(observations) and not self.train_scv_order_five.done(observations):
-                    self.current_order = self.train_scv_order_five
-                elif self.train_scv_order_six.doable(observations) and not self.train_scv_order_six.done(observations):
-                    self.current_order = self.train_scv_order_six
+                self._plan_to_build_scv_mineral_harvesters(3)
+            elif self._has_scv_to_build(observations):
+                self.current_order = self._scv_to_build_order(observations)
 
         elif self.current_order and self.current_order.done(observations):
             self.current_order = None
@@ -80,6 +72,22 @@ class WorkerCommander(Commander):
             return self.current_order
 
         return NoOrder()
+
+    def _plan_to_build_scv_mineral_harvesters(self, number: int):
+        for index in range(number):
+            self.extra_scv_to_build_orders.append(BuildSCV(self.base_location))
+
+    def _has_scv_to_build(self, observations: Observations) -> bool:
+        for order in self.extra_scv_to_build_orders:
+            if order.doable(observations) and not order.done(observations):
+                return True
+        return False
+
+    def _scv_to_build_order(self, observations: Observations) -> BuildSCV:
+        for order in self.extra_scv_to_build_orders:
+            if order.doable(observations) and not order.done(observations):
+                return order
+        return None
 
 
 class BuildOrderCommander(Commander):
