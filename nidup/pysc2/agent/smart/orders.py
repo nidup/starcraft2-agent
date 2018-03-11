@@ -172,14 +172,6 @@ class SCVCommonActions:
     def select_a_group_of_scv(self, group_id: int) -> actions.FunctionCall:
         return self.actions.select_control_group(group_id)
 
-    def select_a_scv_from_the_current_selected_group(self, observations: Observations, group_id: int) -> actions.FunctionCall:
-        if self.action_ids.select_unit() in observations.available_actions():
-            group_size = observations.control_groups()[group_id][1]
-            random_scv_index = random.randint(0, group_size - 1)
-            return self.actions.select_unit(random_scv_index)
-        print("no way to select a unit from the group "+str(group_id))
-        exit(-1)
-
     def send_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
         if self.action_ids.harvest_gather() in observations.available_actions():
             unit_type = observations.screen().unit_type()
@@ -205,7 +197,7 @@ class SCVCommonActions:
                 round(cc_y.mean()),
                 difference_from_cc[1],
             )
-            print("send collector " + str(refinery_id) + " to refinery " + str(target[0]) + " " + str(target[1]))
+            #print("send collector " + str(refinery_id) + " to refinery " + str(target[0]) + " " + str(target[1]))
             return self.actions.harvest_gather(target)
         return self.actions.no_op()
 
@@ -410,10 +402,10 @@ class BuildRefinery(SmartOrder):
                 round(cc_y.mean()),
                 difference_from_cc[1],
             )
-            print(
-                "build refinery "+str(self.refinery_index) + " on "+str(target[0])+ " "+str(target[1])
-                + " CC is "+ str(round(cc_x.mean())) + " " + str(round(cc_y.mean()))
-            )
+            #print(
+            #    "build refinery "+str(self.refinery_index) + " on "+str(target[0])+ " "+str(target[1])
+            #    + " CC is "+ str(round(cc_x.mean())) + " " + str(round(cc_y.mean()))
+            #)
 
             return self.actions.build_refinery(target)
         return self.actions.no_op()
@@ -438,7 +430,7 @@ class FillRefineryOnceBuilt(SmartOrder):
         if self.step == 0:
             return self._select_refinery()
         elif self.step == 1 and self._selected_refinery_is_built(observations):
-            print("refinery is built, select collectors" + str(self.refinery_index))
+            #print("refinery is built, select collectors" + str(self.refinery_index))
             return self._select_vespene_collectors()
         elif self.step == 2:
             return self._send_collectors_to_refinery(observations)
@@ -458,7 +450,7 @@ class FillRefineryOnceBuilt(SmartOrder):
             round(cc_y.mean()),
             difference_from_cc[1],
         )
-        print("select refinery " + str(target[0]) + " " + str(target[1]))
+        #print("select refinery " + str(target[0]) + " " + str(target[1]))
         return self.actions.select_point(target)
 
     def _selected_refinery_is_built(self, observations: Observations) -> bool:
@@ -474,7 +466,7 @@ class FillRefineryOnceBuilt(SmartOrder):
 
     def _send_collectors_to_refinery(self, observations: Observations) -> actions.FunctionCall:
         self.step = self.step + 1
-        print(observations.multi_select())
+        #print(observations.multi_select())
         return SCVCommonActions().send_selected_scv_group_to_refinery(self.location, observations, self.refinery_index)
 
 
