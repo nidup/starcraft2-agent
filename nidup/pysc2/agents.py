@@ -90,6 +90,8 @@ class ScoutingAgent(BaseAgent):
 
 class RefineryAgent(BaseAgent):
 
+    debug = False
+
     def __init__(self):
         BaseAgent.__init__(self)
         self.base_location = None
@@ -110,16 +112,20 @@ class RefineryAgent(BaseAgent):
             self.fill_refinery_one_order = FillRefineryOnceBuilt(self.base_location, 1)
             self.fill_refinery_second_order = FillRefineryOnceBuilt(self.base_location, 2)
         if not self.control_group_order.done(observations):
-            return self.control_group_order.execute(observations)
+            action = self.control_group_order.execute(observations)
         elif not self.order_first_refinery.done(observations):
-            return self.order_first_refinery.execute(observations)
+            action = self.order_first_refinery.execute(observations)
         elif not self.order_second_refinery.done(observations):
-            return self.order_second_refinery.execute(observations)
+            action = self.order_second_refinery.execute(observations)
         elif self.fill_refinery_one_order.doable(observations) and not self.fill_refinery_one_order.done(observations):
-            return self.fill_refinery_one_order.execute(observations)
+            action = self.fill_refinery_one_order.execute(observations)
         elif self.fill_refinery_second_order.doable(observations) and not self.fill_refinery_second_order.done(observations):
-            return self.fill_refinery_second_order.execute(observations)
-        return NoOrder().execute(observations)
+            action = self.fill_refinery_second_order.execute(observations)
+        else:
+            action = NoOrder().execute(observations)
+        if self.debug:
+            time.sleep(0.5)
+        return action
 
 
 class SCVControlGroupsAgent(BaseAgent):

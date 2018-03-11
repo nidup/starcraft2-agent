@@ -28,17 +28,14 @@ class SCVControlGroups:
     def all_group_id(self) -> int:
         return 0
 
-    def builders_group_id(self) -> int:
+    def mineral_collectors_group_id(self) -> int:
         return 1
 
-    def mineral_collectors_group_id(self) -> int:
+    def refinery_one_collectors_group_id(self) -> int:
         return 2
 
-    def refinery_one_collectors_group_id(self) -> int:
-        return 3
-
     def refinery_two_collectors_group_id(self) -> int:
-        return 4
+        return 3
 
 
 class BuildingPositionsFromCommandCenter:
@@ -86,11 +83,11 @@ class BuildingPositionsFromCommandCenter:
 # order, control groups look like the following
 # print(observations.control_groups())
 # [[45 12] <- all scv
-#  [45  3] <- builder scv
-#  [45  3] <- mineral scv
+#  [45  6] <- mineral scv
 #  [45  3] <- vespene1 scv
 #  [45  3] <- vespene2 scv
 #  [0  0]  <- free control group
+#  [0  0]
 #  [0  0]
 #  [0  0]
 #  [0  0]
@@ -102,13 +99,11 @@ class PrepareSCVControlGroupsOrder(SmartOrder):
         self.step = 1
         groups = SCVControlGroups()
         self.all_scv_group_id = groups.all_group_id()
-        self.builder_group_id = groups.builders_group_id()
         self.mineral_group_id = groups.mineral_collectors_group_id()
         self.vespene_group1_id = groups.refinery_one_collectors_group_id()
         self.vespene_group2_id = groups.refinery_two_collectors_group_id()
         self.expected_group_sizes = {
-            self.builder_group_id: 3,
-            self.mineral_group_id: 3,
+            self.mineral_group_id: 6,
             self.vespene_group1_id: 3,
             self.vespene_group2_id: 3,
         }
