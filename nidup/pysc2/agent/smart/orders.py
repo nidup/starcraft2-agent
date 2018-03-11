@@ -219,27 +219,17 @@ class BuildBarrack(SmartOrder):
         self.max_barracks = max_barracks
 
     def done(self, observations: Observations) -> bool:
-        return self.step == 4
+        return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
         self.step = self.step + 1
         if self.step == 1:
             return self._select_all_mineral_collecter_scv()
         elif self.step == 2:
-            return self._select_a_mineral_collecter_scv(observations)
-        elif self.step == 3:
             return self._build_barracks(observations)
-        elif self.step == 4:
-            return self._send_collecter_scv_to_mineral(observations)
 
     def _select_all_mineral_collecter_scv(self) -> actions.FunctionCall:
         return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
-
-    def _select_a_mineral_collecter_scv(self, observations: Observations) -> actions.FunctionCall:
-        return SCVCommonActions().select_a_scv_from_the_current_selected_group(
-            observations,
-            self.scv_groups.mineral_collectors_group_id()
-        )
 
     def _build_barracks(self, observations: Observations) -> actions.FunctionCall:
         cc_y, cc_x = self.location.command_center_first_position()
@@ -256,9 +246,6 @@ class BuildBarrack(SmartOrder):
                 return self.actions.build_barracks(target)
 
         return self.actions.no_op()
-
-    def _send_collecter_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
-        return SCVCommonActions().send_scv_to_mineral(observations)
 
 
 class BuildTechLabBarrack(SmartOrder):
@@ -317,27 +304,17 @@ class BuildFactory(SmartOrder):
         self.scv_groups = SCVControlGroups()
 
     def done(self, observations: Observations) -> bool:
-        return self.step == 4
+        return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
         self.step = self.step + 1
         if self.step == 1:
             return self._select_all_mineral_collecter_scv()
         elif self.step == 2:
-            return self._select_a_mineral_collecter_scv(observations)
-        elif self.step == 3:
             return self._build_factory(observations)
-        elif self.step == 4:
-            return self._send_collecter_scv_to_mineral(observations)
 
     def _select_all_mineral_collecter_scv(self) -> actions.FunctionCall:
         return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
-
-    def _select_a_mineral_collecter_scv(self, observations: Observations) -> actions.FunctionCall:
-        return SCVCommonActions().select_a_scv_from_the_current_selected_group(
-            observations,
-            self.scv_groups.mineral_collectors_group_id()
-        )
 
     def _build_factory(self, observations: Observations) -> actions.FunctionCall:
         cc_y, cc_x = self.location.command_center_first_position()
@@ -354,9 +331,6 @@ class BuildFactory(SmartOrder):
                 return self.actions.build_factory(target)
         return self.actions.no_op()
 
-    def _send_collecter_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
-        return SCVCommonActions().send_scv_to_mineral(observations)
-
 
 class BuildSupplyDepot(SmartOrder):
 
@@ -367,27 +341,17 @@ class BuildSupplyDepot(SmartOrder):
         self.scv_groups = SCVControlGroups()
 
     def done(self, observations: Observations) -> bool:
-        return self.step == 4
+        return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
         self.step = self.step + 1
         if self.step == 1:
             return self._select_all_mineral_collecter_scv()
         elif self.step == 2:
-            return self._select_a_mineral_collecter_scv(observations)
-        elif self.step == 3:
             return self._build_supply_depot(observations)
-        elif self.step == 4:
-            return self._send_collecter_scv_to_mineral(observations)
 
     def _select_all_mineral_collecter_scv(self) -> actions.FunctionCall:
         return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
-
-    def _select_a_mineral_collecter_scv(self, observations: Observations) -> actions.FunctionCall:
-        return SCVCommonActions().select_a_scv_from_the_current_selected_group(
-            observations,
-            self.scv_groups.mineral_collectors_group_id()
-        )
 
     def _build_supply_depot(self, observations: Observations) -> actions.FunctionCall:
         cc_y, cc_x = self.location.command_center_first_position()
@@ -404,9 +368,6 @@ class BuildSupplyDepot(SmartOrder):
                 return self.actions.build_supply_depot(target)
         return self.actions.no_op()
 
-    def _send_collecter_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
-        return SCVCommonActions().send_scv_to_mineral(observations)
-
 
 class BuildRefinery(SmartOrder):
 
@@ -417,15 +378,13 @@ class BuildRefinery(SmartOrder):
         self.scv_groups = SCVControlGroups()
 
     def done(self, observations: Observations) -> bool:
-        return self.step == 3
+        return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
         group_id = self._relevant_group_id()
         if self.step == 0:
             return self._select_all_refinery_collecter_scv(group_id)
         elif self.step == 1:
-            return self._select_a_refinery_collecter_scv(observations, group_id)
-        elif self.step == 2:
             return self._build_refinery(observations)
         return self.actions.no_op()
 
@@ -437,10 +396,6 @@ class BuildRefinery(SmartOrder):
     def _select_all_refinery_collecter_scv(self, group_id: int) -> actions.FunctionCall:
         self.step = self.step + 1
         return SCVCommonActions().select_a_group_of_scv(group_id)
-
-    def _select_a_refinery_collecter_scv(self, observations: Observations, group_id) -> actions.FunctionCall:
-        self.step = self.step + 1
-        return SCVCommonActions().select_a_scv_from_the_current_selected_group(observations, group_id)
 
     def _build_refinery(self, observations: Observations) -> actions.FunctionCall:
         if self.action_ids.build_refinery() in observations.available_actions():
@@ -460,7 +415,6 @@ class BuildRefinery(SmartOrder):
                 "build refinery "+str(self.refinery_index) + " on "+str(target[0])+ " "+str(target[1])
                 + " CC is "+ str(round(cc_x.mean())) + " " + str(round(cc_y.mean()))
             )
-            # KO build refinery 2 on 24.0 52.0 CC is 35.0 31.0
 
             return self.actions.build_refinery(target)
         return self.actions.no_op()
@@ -523,6 +477,26 @@ class FillRefineryOnceBuilt(SmartOrder):
         self.step = self.step + 1
         print(observations.multi_select())
         return SCVCommonActions().send_selected_scv_group_to_refinery(self.location, observations, self.refinery_index)
+
+
+class SendIdleSCVToMineral(SmartOrder):
+
+    def __init__(self, base_location: Location):
+        SmartOrder.__init__(self, base_location)
+        self.step = 0
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().idle_worker_count() > 0
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.step == 1:
+            return self.actions.select_idle_worker()
+        elif self.step == 2:
+            return SCVCommonActions().send_scv_to_mineral(observations)
 
 
 class BuildSCV(SmartOrder):

@@ -5,7 +5,7 @@ from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location, BuildingCounter
 from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
-from nidup.pysc2.agent.smart.orders import NoOrder, PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, BuildSCV
+from nidup.pysc2.agent.smart.orders import NoOrder, PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, BuildSCV, SendIdleSCVToMineral
 from nidup.pysc2.agent.hybrid.attack import SmartActions, StateBuilder
 from nidup.pysc2.agent.hybrid.build import BuildOrder
 
@@ -41,22 +41,34 @@ class WorkerCommander(Commander):
         self.train_scv_order = BuildSCV(base_location)
         self.train_scv_order_two = BuildSCV(base_location)
         self.train_scv_order_three = BuildSCV(base_location)
+        self.idle_scv_to_mineral = SendIdleSCVToMineral(base_location)
+        self.current_order = self.control_group_order
 
     def order(self, observations: Observations)-> Order:
-        if not self.control_group_order.done(observations):
-            return self.control_group_order
-        elif self.fill_refinery_one_order.doable(observations) and not self.fill_refinery_one_order.done(observations):
-            return self.fill_refinery_one_order
-        elif self.fill_refinery_two_order.doable(observations) and not self.fill_refinery_two_order.done(observations):
-            return self.fill_refinery_two_order
+        if not self.current_order:
+            if self.idle_scv_to_mineral.doable(observations):
+                if self.idle_scv_to_mineral.done(observations):
+                    self.idle_scv_to_mineral = SendIdleSCVToMineral(self.base_location)
+                self.current_order = self.idle_scv_to_mineral
+            elif self.fill_refinery_one_order.doable(observations) and not self.fill_refinery_one_order.done(observations):
+                self.current_order = self.fill_refinery_one_order
+            elif self.fill_refinery_two_order.doable(observations) and not self.fill_refinery_two_order.done(observations):
+                self.current_order = self.fill_refinery_two_order
+            #elif self.fill_refinery_one_order.done(observations):
+                #if self.train_scv_order.doable(observations) and not self.train_scv_order.done(observations):
+                #    self.current_order = self.train_scv_order
+                #elif self.train_scv_order_two.doable(observations) and not self.train_scv_order_two.done(observations):
+                #    self.current_order = self.train_scv_order_two
+                #elif self.train_scv_order_three.doable(observations) and not self.train_scv_order_three.done(observations):
+                #    self.current_order = self.train_scv_order_three
 
-        #if self.fill_refinery_one_order.done(observations):
-        #    if self.train_scv_order.doable(observations) and not self.train_scv_order.done(observations):
-        #        return self.train_scv_order
-        #    elif self.train_scv_order_two.doable(observations) and not self.train_scv_order_two.done(observations):
-        #        return self.train_scv_order_two
-        #    elif self.train_scv_order_three.doable(observations) and not self.train_scv_order_three.done(observations):
-        #        return self.train_scv_order_three
+        elif self.current_order and self.current_order.done(observations):
+            self.current_order = None
+            return CenterCameraOnCommandCenter(self.base_location)
+
+        if self.current_order:
+            print(self.current_order)
+            return self.current_order
 
         return NoOrder()
 
