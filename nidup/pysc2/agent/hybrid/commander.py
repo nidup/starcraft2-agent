@@ -8,7 +8,7 @@ from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
 from nidup.pysc2.agent.smart.orders import NoOrder, PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt
 from nidup.pysc2.agent.hybrid.attack import SmartActions, StateBuilder
 from nidup.pysc2.agent.hybrid.build import BuildOrder
-import time
+
 
 class HybridGameCommander(Commander):
 
@@ -39,8 +39,6 @@ class WorkerCommander(Commander):
         self.fill_refinery_two_order = FillRefineryOnceBuilt(base_location, 2)
 
     def order(self, observations: Observations)-> Order:
-        # refinery built + amount vespene > 1 (means a collector already started)
-        # ok but the second one?
         if not self.control_group_order.done(observations):
             return self.control_group_order
         elif self.fill_refinery_one_order.doable(observations) and not self.fill_refinery_one_order.done(observations):

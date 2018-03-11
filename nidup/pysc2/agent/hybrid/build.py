@@ -9,7 +9,7 @@ class BuildOrder:
 
     def __init__(self, location: Location):
         self.location = location
-        self.current_order = BuildSupplyDepot(self.location) # as a Terran, you need to start by this
+        self.current_order = None # BuildSupplyDepot(self.location) # as a Terran, you need to start by this
         self.expected_supply_depot = 8 # 2 last can block a vcs against minerals when playing bottom down
         self.expected_barracks = 4
         self.expected_refineries = 2
@@ -18,18 +18,18 @@ class BuildOrder:
 
     def current(self, observations: Observations) -> Order:
         counter = BuildingCounter()
-        if not self.current_order.done(observations) and not isinstance(self.current_order, NoOrder):
+        if self.current_order and not self.current_order.done(observations) and not isinstance(self.current_order, NoOrder):
             return self.current_order
-        elif self.missing_barracks(observations, counter):
-            self.current_order = BuildBarrack(self.location)
-        elif self.missing_supply_depot(observations, counter):
-            self.current_order = BuildSupplyDepot(self.location)
         elif self.expected_refineries == 1 and self.expected_refineries > counter.refineries_count(observations):
             self.current_order = BuildRefinery(self.location, 1)
         elif self.expected_refineries == 2 and 0 == counter.refineries_count(observations):
             self.current_order = BuildRefinery(self.location, 1)
         elif self.expected_refineries == 2 and 1 == counter.refineries_count(observations):
-           self.current_order = BuildRefinery(self.location, 2)
+            self.current_order = BuildRefinery(self.location, 2)
+        elif self.missing_barracks(observations, counter):
+            self.current_order = BuildBarrack(self.location)
+        elif self.missing_supply_depot(observations, counter):
+            self.current_order = BuildSupplyDepot(self.location)
         elif self.expected_factories > counter.factories_count(observations):
             self.current_order = BuildFactory(self.location)
         elif self.expected_techlab_barrack > counter.techlab_barracks_count(observations):

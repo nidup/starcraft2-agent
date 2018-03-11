@@ -74,8 +74,8 @@ class BuildingPositionsFromCommandCenter:
 
     def vespene_geysers(self) -> []:
         return [
-            [-24, 12],
-            [11, -21]
+            [11, -21],
+            [-24, 12]
         ]
 
     def refineries(self) -> []:
@@ -446,6 +446,12 @@ class BuildRefinery(SmartOrder):
                 round(cc_y.mean()),
                 difference_from_cc[1],
             )
+            print(
+                "build refinery "+str(self.refinery_index) + " on "+str(target[0])+ " "+str(target[1])
+                + " CC is "+ str(round(cc_x.mean())) + " " + str(round(cc_y.mean()))
+            )
+            # KO build refinery 2 on 24.0 52.0 CC is 35.0 31.0
+
             return self.actions.build_refinery(target)
         return self.actions.no_op()
 
@@ -475,12 +481,6 @@ class FillRefineryOnceBuilt(SmartOrder):
             return self._send_collectors_to_refinery(observations)
 
         return self.actions.no_op()
-
-#    def _center_camera_on_command_center(self):
-#        self.step = self.step + 1
-#        unit_y, unit_x = self.location.base_location_on_minimap()
-#        target = [unit_x, unit_y]
-#        return self.actions.move_camera(target)
 
     def _select_refinery(self) -> actions.FunctionCall:
         self.step = self.step + 1
