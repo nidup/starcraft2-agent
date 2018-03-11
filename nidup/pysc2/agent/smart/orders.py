@@ -74,7 +74,7 @@ class BuildingPositionsFromCommandCenter:
 
     def vespene_geysers(self) -> []:
         return [
-            [11, -21],
+            [10, -22],
             [-24, 12]
         ]
 
