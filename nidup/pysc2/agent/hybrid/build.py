@@ -19,8 +19,6 @@ class BuildOrder:
     def current(self, observations: Observations) -> Order:
         counter = BuildingCounter()
         if not self.current_order.done(observations) and not isinstance(self.current_order, NoOrder):
-            print("build order not done")
-            print(self.current_order)
             return self.current_order
         elif self.expected_refineries == 1 and self.expected_refineries > counter.refineries_count(observations):
             print("first refinery order 1 expected")

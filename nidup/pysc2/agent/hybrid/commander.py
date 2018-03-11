@@ -57,14 +57,14 @@ class WorkerCommander(Commander):
                 self.current_order = self.fill_refinery_one_order
             elif self.fill_refinery_two_order.doable(observations) and not self.fill_refinery_two_order.done(observations):
                 self.current_order = self.fill_refinery_two_order
-            elif self.fill_refinery_one_order.done(observations):
+            elif self.fill_refinery_one_order.done(observations) and not self.train_scv_order_three.done(observations):
                 if self.train_scv_order_one.doable(observations) and not self.train_scv_order_one.done(observations):
                     self.current_order = self.train_scv_order_one
                 elif self.train_scv_order_two.doable(observations) and not self.train_scv_order_two.done(observations):
                     self.current_order = self.train_scv_order_two
                 elif self.train_scv_order_three.doable(observations) and not self.train_scv_order_three.done(observations):
                     self.current_order = self.train_scv_order_three
-            elif self.fill_refinery_two_order.done(observations):
+            elif self.fill_refinery_two_order.done(observations) and not self.train_scv_order_six.done(observations):
                 if self.train_scv_order_four.doable(observations) and not self.train_scv_order_four.done(observations):
                     self.current_order = self.train_scv_order_four
                 elif self.train_scv_order_five.doable(observations) and not self.train_scv_order_five.done(observations):
@@ -77,7 +77,6 @@ class WorkerCommander(Commander):
             return CenterCameraOnCommandCenter(self.base_location)
 
         if self.current_order:
-            print(self.current_order)
             return self.current_order
 
         return NoOrder()
@@ -96,14 +95,10 @@ class BuildOrderCommander(Commander):
         if self.build_orders.finished(observations):
             return NoOrder()
         elif self.current_order and self.current_order.done(observations):
-            print("is done")
-            print(self.current_order)
             self.current_order = None
             return CenterCameraOnCommandCenter(self.location)
         else:
             self.current_order = self.build_orders.current(observations)
-            #print("not done")
-            #print(self.current_order)
             return self.current_order
 
 
