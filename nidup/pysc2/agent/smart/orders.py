@@ -1,5 +1,4 @@
 
-import math
 import random
 from pysc2.lib import actions
 from nidup.pysc2.agent.order import Order
@@ -7,7 +6,6 @@ from nidup.pysc2.agent.information import Location, BuildingCounter
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
-from sklearn.cluster import KMeans
 
 
 class SmartOrder(Order):
@@ -73,6 +71,16 @@ class BuildingPositionsFromCommandCenter:
             [15, 25],
             [30, 25],
         ]
+
+    def vespene_geysers(self) -> []:
+        return [
+            [-24, 12],
+            [11, -21]
+        ]
+
+    def refineries(self) -> []:
+        return self.vespene_geysers()
+
 
 # Groups all scv to specialized group to facilitate the further selections of dedicated workers, at the end of this
 # order, control groups look like the following
@@ -187,17 +195,20 @@ class SCVCommonActions:
                 return self.actions.harvest_gather(target)
         return self.actions.no_op()
 
-    def send_selected_scv_group_to_refinery(self, observations: Observations, refinery_id: int) -> actions.FunctionCall:
-        print("send to refinery")
+    def send_selected_scv_group_to_refinery(self, location: Location, observations: Observations, refinery_id: int) -> actions.FunctionCall:
         if self.action_ids.harvest_gather() in observations.available_actions():
-
-            unit_type = observations.screen().unit_type()
-            unit_y, unit_x = (unit_type == self.unit_type_ids.terran_refinery()).nonzero()
-
-
-            target = [int(unit_x.mean()), int(unit_y.mean())]
-
-            print("ok")
+            if refinery_id == 1:
+                difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[0]
+            else:
+                difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[1]
+            cc_y, cc_x = location.command_center_first_position()
+            target = location.transform_distance(
+                round(cc_x.mean()),
+                difference_from_cc[0],
+                round(cc_y.mean()),
+                difference_from_cc[1],
+            )
+            print("send collector " + str(refinery_id) + " to refinery " + str(target[0]) + " " + str(target[1]))
             return self.actions.harvest_gather(target)
         print("ko")
         exit()
@@ -311,7 +322,6 @@ class BuildFactory(SmartOrder):
         return self.step == 4
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
-        #print("factory")
         self.step = self.step + 1
         if self.step == 1:
             return self._select_all_mineral_collecter_scv()
@@ -396,55 +406,47 @@ class BuildSupplyDepot(SmartOrder):
 
 class BuildRefinery(SmartOrder):
 
-    def __init__(self, base_location: Location, max_refineries: int = 2):
+    def __init__(self, base_location: Location, refinery_index: int):
         SmartOrder.__init__(self, base_location)
         self.step = 0
-        self.refinery_target = None
-        self.max_refineries = max_refineries
+        self.refinery_index = refinery_index
         self.scv_groups = SCVControlGroups()
 
     def done(self, observations: Observations) -> bool:
-        return self.step == 3
+        return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
-        self.step = self.step + 1
-        group_id = self._relevant_group_id(observations)
-        if self.step == 1:
+        group_id = self._relevant_group_id()
+        if self.step == 0:
             return self._select_all_refinery_collecter_scv(group_id)
-        elif self.step == 2:
-            return self._select_a_refinery_collecter_scv(group_id)
-        elif self.step == 3:
+        elif self.step == 1:
             return self._build_refinery(observations)
         return self.actions.no_op()
 
-    def _relevant_group_id(self, observations: Observations) -> int:
-        if self._count_refineries(observations) == 0:
+    def _relevant_group_id(self) -> int:
+        if self.refinery_index == 1:
             return self.scv_groups.refinery_one_collectors_group_id()
         return self.scv_groups.refinery_two_collectors_group_id()
 
-    def _count_refineries(self, observations: Observations) -> int:
-        return BuildingCounter().refineries_count(observations)
-
     def _select_all_refinery_collecter_scv(self, group_id: int) -> actions.FunctionCall:
-        return SCVCommonActions().select_a_group_of_scv(group_id)
-
-    def _select_a_refinery_collecter_scv(self, group_id: int) -> actions.FunctionCall:
+        self.step = self.step + 1
         return SCVCommonActions().select_a_group_of_scv(group_id)
 
     def _build_refinery(self, observations: Observations) -> actions.FunctionCall:
         if self.action_ids.build_refinery() in observations.available_actions():
-            unit_type = observations.screen().unit_type()
-            vespene_y, vespene_x = (unit_type == self.unit_type_ids.neutral_vespene_geyser()).nonzero()
-            vespene_geyser_count = int(math.ceil(len(vespene_y) / 97))
-            units = []
-            for i in range(0, len(vespene_y)):
-                units.append((vespene_x[i], vespene_y[i]))
-            kmeans = KMeans(vespene_geyser_count)
-            kmeans.fit(units)
-            vespene1_x = int(kmeans.cluster_centers_[0][0])
-            vespene1_y = int(kmeans.cluster_centers_[0][1])
-            self.refinery_target = [vespene1_x, vespene1_y]
-            return self.actions.build_refinery(self.refinery_target)
+            self.step = self.step + 1
+            if self.refinery_index == 1:
+                difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[0]
+            else:
+                difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[1]
+            cc_y, cc_x = self.location.command_center_first_position()
+            target = self.location.transform_distance(
+                round(cc_x.mean()),
+                difference_from_cc[0],
+                round(cc_y.mean()),
+                difference_from_cc[1],
+            )
+            return self.actions.build_refinery(target)
         return self.actions.no_op()
 
 
@@ -461,43 +463,57 @@ class FillRefineryOnceBuilt(SmartOrder):
 
     def doable(self, observations: Observations) -> bool:
         refinery_count = BuildingCounter().refineries_count(observations)
-        return refinery_count == self.refinery_index
+        return refinery_count >= self.refinery_index
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
-        print("fill refinery")
-        refinery_count = BuildingCounter().refineries_count(observations)
-        refinery_id = self.refinery_index + 1
-        if refinery_count == 0:
-            return self.actions.no_op()
-        elif self.step == 0:
-            return self._select_refinery(observations)
+        if self.step == 0:
+            return self._select_refinery()
         elif self.step == 1 and self._selected_refinery_is_built(observations):
-            print("refinery is built, select collectors")
+            print("refinery is built, select collectors" + str(self.refinery_index))
             return self._select_vespene_collectors()
         elif self.step == 2:
             return self._send_collectors_to_refinery(observations)
 
         return self.actions.no_op()
 
-    def _select_refinery(self, observations: Observations) -> actions.FunctionCall:
-        unit_type = observations.screen().unit_type()
-        refineries_y, refineries_x = (unit_type == self.unit_type_ids.terran_refinery()).nonzero()
-        if refineries_y.any():
-            self.step = self.step + 1
-            i = self.refinery_index - 1
-            target = [refineries_x[i], refineries_y[i]]
-            return self.actions.select_point(target)
+#    def _center_camera_on_command_center(self):
+#        self.step = self.step + 1
+#        unit_y, unit_x = self.location.base_location_on_minimap()
+#        target = [unit_x, unit_y]
+#        return self.actions.move_camera(target)
+
+    def _select_refinery(self) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.refinery_index == 1:
+            difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[0]
+        else:
+            difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[1]
+        cc_y, cc_x = self.location.command_center_first_position()
+        target = self.location.transform_distance(
+            round(cc_x.mean()),
+            difference_from_cc[0],
+            round(cc_y.mean()),
+            difference_from_cc[1],
+        )
+        print("select refinery " + str(target[0]) + " " + str(target[1]))
+        return self.actions.select_point(target)
 
     def _selected_refinery_is_built(self, observations: Observations) -> bool:
         return observations.single_select().is_built()
 
     def _select_vespene_collectors(self) -> actions.FunctionCall:
         self.step = self.step + 1
-        return SCVCommonActions().select_a_group_of_scv(SCVControlGroups().refinery_one_collectors_group_id())
+        if self.refinery_index == 1:
+            group_id = SCVControlGroups().refinery_one_collectors_group_id()
+        else:
+            group_id = SCVControlGroups().refinery_two_collectors_group_id()
+        return SCVCommonActions().select_a_group_of_scv(group_id)
 
     def _send_collectors_to_refinery(self, observations: Observations) -> actions.FunctionCall:
+        print("send collector step: " + str(self.step))
         self.step = self.step + 1
-        return SCVCommonActions().send_selected_scv_group_to_refinery(observations, 1)
+        print(observations.multi_select())
+        return SCVCommonActions().send_selected_scv_group_to_refinery(self.location, observations, self.refinery_index)
 
 
 class BuildMarine(SmartOrder):

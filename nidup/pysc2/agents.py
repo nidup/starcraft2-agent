@@ -5,10 +5,9 @@ from nidup.pysc2.agent.scripted.commander import GameCommander, ScoutingCommande
 from nidup.pysc2.agent.information import Location
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.learning.game_results import GameResultsTable
-from nidup.pysc2.agent.scripted.build import BuildRefinery
 from nidup.pysc2.agent.smart.commander import QLearningCommander
 from nidup.pysc2.agent.hybrid.commander import HybridGameCommander
-from nidup.pysc2.agent.smart.orders import PrepareSCVControlGroupsOrder
+from nidup.pysc2.agent.smart.orders import PrepareSCVControlGroupsOrder, BuildRefinery, FillRefineryOnceBuilt
 
 
 class HybridAttackReinforcementAgent(BaseAgent):
@@ -94,20 +93,32 @@ class RefineryAgent(BaseAgent):
     def __init__(self):
         BaseAgent.__init__(self)
         self.base_location = None
+        self.control_group_order = None
         self.order_first_refinery = None
         self.order_second_refinery = None
+        self.fill_refinery_one_order = None
+        self.fill_refinery_second_order = None
 
     def step(self, obs):
         super(RefineryAgent, self).step(obs)
         observations = Observations(obs)
         if observations.first():
             self.base_location = Location(observations)
-            self.order_first_refinery = BuildRefinery(self.base_location)
-            self.order_second_refinery = BuildRefinery(self.base_location)
-        if not self.order_first_refinery.done(observations):
+            self.control_group_order = PrepareSCVControlGroupsOrder(self.base_location)
+            self.order_first_refinery = BuildRefinery(self.base_location, 1)
+            self.order_second_refinery = BuildRefinery(self.base_location, 2)
+            self.fill_refinery_one_order = FillRefineryOnceBuilt(self.base_location, 1)
+            self.fill_refinery_second_order = FillRefineryOnceBuilt(self.base_location, 2)
+        if not self.control_group_order.done(observations):
+            return self.control_group_order.execute(observations)
+        elif not self.order_first_refinery.done(observations):
             return self.order_first_refinery.execute(observations)
         elif not self.order_second_refinery.done(observations):
             return self.order_second_refinery.execute(observations)
+        elif self.fill_refinery_one_order.doable(observations) and not self.fill_refinery_one_order.done(observations):
+            return self.fill_refinery_one_order.execute(observations)
+        elif self.fill_refinery_second_order.doable(observations) and not self.fill_refinery_second_order.done(observations):
+            return self.fill_refinery_second_order.execute(observations)
         return NoOrder().execute(observations)
 
 

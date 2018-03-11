@@ -12,7 +12,7 @@ class BuildOrder:
         self.current_order = BuildSupplyDepot(self.location) # as a Terran, you need to start by this
         self.expected_supply_depot = 8 # 2 last can block a vcs against minerals when playing bottom down
         self.expected_barracks = 4
-        self.expected_refineries = 1
+        self.expected_refineries = 2
         self.expected_factories = 1 # second one is not buildable when playing bottom down
         self.expected_techlab_barrack = 1
 
@@ -24,8 +24,12 @@ class BuildOrder:
             self.current_order = BuildBarrack(self.location)
         elif self.missing_supply_depot(observations, counter):
             self.current_order = BuildSupplyDepot(self.location)
-        elif self.expected_refineries > counter.refineries_count(observations):
-            self.current_order = BuildRefinery(self.location)
+        elif self.expected_refineries == 1 and self.expected_refineries > counter.refineries_count(observations):
+            self.current_order = BuildRefinery(self.location, 1)
+        elif self.expected_refineries == 2 and 0 == counter.refineries_count(observations):
+            self.current_order = BuildRefinery(self.location, 1)
+        elif self.expected_refineries == 2 and 1 == counter.refineries_count(observations):
+           self.current_order = BuildRefinery(self.location, 2)
         elif self.expected_factories > counter.factories_count(observations):
             self.current_order = BuildFactory(self.location)
         elif self.expected_techlab_barrack > counter.techlab_barracks_count(observations):
