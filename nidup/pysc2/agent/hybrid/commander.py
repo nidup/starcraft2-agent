@@ -3,9 +3,9 @@ from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
-from nidup.pysc2.agent.information import Location
+from nidup.pysc2.agent.information import Location, BuildingCounter
 from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
-from nidup.pysc2.agent.smart.orders import NoOrder, PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt
+from nidup.pysc2.agent.smart.orders import NoOrder, PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, BuildSCV
 from nidup.pysc2.agent.hybrid.attack import SmartActions, StateBuilder
 from nidup.pysc2.agent.hybrid.build import BuildOrder
 
