@@ -205,8 +205,6 @@ class SCVCommonActions:
             )
             print("send collector " + str(refinery_id) + " to refinery " + str(target[0]) + " " + str(target[1]))
             return self.actions.harvest_gather(target)
-        print("ko")
-        exit()
         return self.actions.no_op()
 
 
@@ -505,10 +503,42 @@ class FillRefineryOnceBuilt(SmartOrder):
         return SCVCommonActions().select_a_group_of_scv(group_id)
 
     def _send_collectors_to_refinery(self, observations: Observations) -> actions.FunctionCall:
-        print("send collector step: " + str(self.step))
         self.step = self.step + 1
         print(observations.multi_select())
         return SCVCommonActions().send_selected_scv_group_to_refinery(self.location, observations, self.refinery_index)
+
+
+class BuildSCV(SmartOrder):
+
+    def __init__(self, location: Location):
+        SmartOrder.__init__(self, location)
+        self.step = 0
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().food_used() < observations.player().food_cap()
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.step == 1:
+            return self._select_command_center(observations)
+        elif self.step == 2:
+            return self._train_scv(observations)
+
+    def _select_command_center(self, observations: Observations) -> actions.FunctionCall:
+        unit_type = observations.screen().unit_type()
+        cc_y, cc_x = (unit_type == self.unit_type_ids.terran_command_center()).nonzero()
+        if cc_y.any():
+            target = [round(cc_x.mean()), round(cc_y.mean())]
+            return self.actions.select_point(target)
+        return self.actions.no_op()
+
+    def _train_scv(self, observations: Observations) -> actions.FunctionCall:
+        if self.action_ids.train_scv() in observations.available_actions():
+            return self.actions.train_scv()
+        return self.actions.no_op()
 
 
 class BuildMarine(SmartOrder):

@@ -7,7 +7,7 @@ from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.learning.game_results import GameResultsTable
 from nidup.pysc2.agent.smart.commander import QLearningCommander
 from nidup.pysc2.agent.hybrid.commander import HybridGameCommander
-from nidup.pysc2.agent.smart.orders import PrepareSCVControlGroupsOrder, BuildRefinery, FillRefineryOnceBuilt
+from nidup.pysc2.agent.smart.orders import PrepareSCVControlGroupsOrder, BuildRefinery, FillRefineryOnceBuilt, BuildSCV
 
 
 class HybridAttackReinforcementAgent(BaseAgent):
@@ -88,7 +88,7 @@ class ScoutingAgent(BaseAgent):
         return self.commander.order(observations).execute(observations)
 
 
-class RefineryAgent(BaseAgent):
+class SCVHarvesterAgent(BaseAgent):
 
     debug = False
 
@@ -100,9 +100,10 @@ class RefineryAgent(BaseAgent):
         self.order_second_refinery = None
         self.fill_refinery_one_order = None
         self.fill_refinery_second_order = None
+        self.train_scv_order = None
 
     def step(self, obs):
-        super(RefineryAgent, self).step(obs)
+        super(SCVHarvesterAgent, self).step(obs)
         observations = Observations(obs)
         if observations.first():
             self.base_location = Location(observations)
@@ -111,6 +112,7 @@ class RefineryAgent(BaseAgent):
             self.order_second_refinery = BuildRefinery(self.base_location, 2)
             self.fill_refinery_one_order = FillRefineryOnceBuilt(self.base_location, 1)
             self.fill_refinery_second_order = FillRefineryOnceBuilt(self.base_location, 2)
+            self.train_scv_order = BuildSCV(self.base_location)
         if not self.control_group_order.done(observations):
             action = self.control_group_order.execute(observations)
         elif not self.order_first_refinery.done(observations):
@@ -121,6 +123,11 @@ class RefineryAgent(BaseAgent):
             action = self.fill_refinery_one_order.execute(observations)
         elif self.fill_refinery_second_order.doable(observations) and not self.fill_refinery_second_order.done(observations):
             action = self.fill_refinery_second_order.execute(observations)
+        elif self.train_scv_order.doable(observations) and not self.train_scv_order.done(observations):
+            action = self.train_scv_order.execute(observations)
+        elif self.train_scv_order.doable(observations) and self.train_scv_order.done(observations):
+            self.train_scv_order = BuildSCV(self.base_location)
+            action = self.train_scv_order.execute(observations)
         else:
             action = NoOrder().execute(observations)
         if self.debug:

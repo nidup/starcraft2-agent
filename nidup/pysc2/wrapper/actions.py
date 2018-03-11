@@ -23,6 +23,7 @@ _SELECT_RECT = actions.FUNCTIONS.select_rect.id
 _SELECT_CONTROL_GROUP = actions.FUNCTIONS.select_control_group.id
 _TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
 _TRAIN_MARAUDER = actions.FUNCTIONS.Train_Marauder_quick.id
+_TRAIN_SCV = actions.FUNCTIONS.Train_SCV_quick.id
 
 
 _NOT_QUEUED = [0]
@@ -85,6 +86,9 @@ class TerranActionIds:
 
     def train_marauder(self) -> int:
         return _TRAIN_MARAUDER
+
+    def train_scv(self) -> int:
+        return _TRAIN_SCV
 
 
 class TerranActions:
@@ -168,3 +172,6 @@ class TerranActions:
 
     def train_marauder(self) -> actions.FunctionCall:
         return actions.FunctionCall(_TRAIN_MARAUDER, [_NOT_QUEUED])
+
+    def train_scv(self) -> actions.FunctionCall:
+        return actions.FunctionCall(_TRAIN_SCV, [_NOT_QUEUED])
