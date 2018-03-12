@@ -110,5 +110,17 @@ Same variant but with a slightly different build order, 8 supply depots & 4 barr
 
 ![Image of HybridAttackReinforcementAgent 11](HybridAttackReinforcementAgent_8_supply_4_rax_1ref_1fac_1lab-worker-easy-3.png)
 
-Same variant but with a slightly different build order, 1 refinery & 3 barracks & 1 techlab & 2 reactors, ie, the MM ball.
+Variants & Evolution (Sequential Build Order)
+---------------------------------------------
+
+Introducing a sequential build orders to replace the trigger build orders.
+The build order is 1 refinery & 3 barracks & 1 techlab & 2 reactors, then pushing with marines & marauders.
 Adding some research like concussive shells and combat shields.
+
+![Image of HybridAttackReinforcementAgent 11](HybridAttackReinforcementAgent_3_rax_rush-easy1.png)
+
+Changing the hybrid commander to delegate to attack commander only once the build orders is finished.
+
+Including unit building in the build orders with 3 marauders and 6 marines to do the first timing push, then constantly harass.
+
+![Image of HybridAttackReinforcementAgent 12](HybridAttackReinforcementAgent_3_rax_rush-easy2.png)

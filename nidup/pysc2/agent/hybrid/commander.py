@@ -34,7 +34,11 @@ class HybridGameCommander(Commander):
             if not isinstance(self.current_order, NoOrder):
                 return self.current_order
 
-            self.current_order = self.attack_commander.order(observations, step_index)
+            # wait for the former build order to be finished
+            if self.build_order_commander.build_is_finished(observations):
+                self.current_order = self.attack_commander.order(observations, step_index)
+            else:
+                return self.current_order
 
         return self.current_order
 
@@ -133,6 +137,9 @@ class BuildOrderCommander(Commander):
                 self.current_order = order
                 return self.current_order
         return NoOrder()
+
+    def build_is_finished(self, observations: Observations) -> bool:
+        return self.build_orders.finished(observations)
 
     def _extra_supply_depots(self, observations: Observations) -> Order:
         counter = BuildingCounter()

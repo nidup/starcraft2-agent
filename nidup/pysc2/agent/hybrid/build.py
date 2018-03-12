@@ -1,7 +1,7 @@
 
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location, BuildingCounter
-from nidup.pysc2.agent.smart.orders import SmartOrder, BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildFactory, NoOrder, BuildTechLabBarrack, BuildReactorBarrack, ResearchCombatShield, ResearchConcussiveShells
+from nidup.pysc2.agent.smart.orders import SmartOrder, BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildFactory, NoOrder, BuildTechLabBarrack, BuildReactorBarrack, ResearchCombatShield, ResearchConcussiveShells, BuildMarine, BuildMarauder
 
 
 class BuildOrder:
@@ -106,10 +106,25 @@ class BuildOrderFactory:
                 BuildTechLabBarrack(location, 1),
                 BuildBarrack(location),
                 ResearchCombatShield(location),
+                BuildMarauder(location),
                 BuildReactorBarrack(location, 2),
                 BuildReactorBarrack(location, 3),
                 BuildSupplyDepot(location),
+                BuildMarauder(location),
+                BuildMarine(location),
+                BuildMarine(location),
+                BuildMarauder(location),
+                BuildMarine(location),
+                BuildMarine(location),
+                BuildMarine(location),
+                BuildMarine(location),
                 ResearchConcussiveShells(location),
+                #BuildMarine(location),
+                #BuildMarine(location),
+                #BuildMarine(location),
+                #BuildMarine(location),
+                #BuildMarauder(location),
+                #BuildMarauder(location),
                 #BuildBarrack(location, 4),
                 #BuildReactorBarrack(location, 4),
                 # BuildFactory(location)
