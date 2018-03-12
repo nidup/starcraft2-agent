@@ -94,7 +94,19 @@ The drawback is a slower start of the game due to blocking orders from the worke
 
 ![Image of HybridAttackReinforcementAgent 9](HybridAttackReinforcementAgent_8_supply_4_rax_1ref_1fac_1lab-worker-easy.png)
 
-Same build order but making the worker commander plays only every X game steps.
+Build order with 8 supply depots & 3 barracks & 1 refinery & 1 factory & 1 techlab barracks & 1 reactor barracks, ie, the MM ball.
+
+Very close build order but making the worker commander plays only every 30 game steps.
 
 The worker commander gives orders to improve the production, it's less important than build order and attack commanders and can be called less often to accelerate the early game execution.
+
+The build order commander has also been updated to return only executable orders and avoid to spend long time having enough resource to start to build a building for instance.
+
+These changes allows to harass sooner the enemy.
+
+![Image of HybridAttackReinforcementAgent 10](HybridAttackReinforcementAgent_8_supply_4_rax_1ref_1fac_1lab-worker-easy-2.png)
+
+Same variant but with a slightly different build order, 8 supply depots & 4 barracks & 1 refinery & 1 factory & 1 techlab barracks & 1 reactor barracks, ie, the MM ball.
+
+![Image of HybridAttackReinforcementAgent 11](HybridAttackReinforcementAgent_8_supply_4_rax_1ref_1fac_1lab-worker-easy-3.png)
 

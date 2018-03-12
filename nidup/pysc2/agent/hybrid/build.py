@@ -1,8 +1,7 @@
 
-from nidup.pysc2.agent.order import Order
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location, BuildingCounter
-from nidup.pysc2.agent.smart.orders import BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildFactory, NoOrder, BuildTechLabBarrack
+from nidup.pysc2.agent.smart.orders import SmartOrder, BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildFactory, NoOrder, BuildTechLabBarrack, BuildReactorBarrack
 
 
 class BuildOrder:
@@ -15,8 +14,9 @@ class BuildOrder:
         self.expected_refineries = 1
         self.expected_factories = 1 # second one is not buildable when playing bottom down
         self.expected_techlab_barrack = 1
+        self.expected_reactor_barrack = 1
 
-    def current(self, observations: Observations) -> Order:
+    def current(self, observations: Observations) -> SmartOrder:
         counter = BuildingCounter()
         if not self.current_order.done(observations) and not isinstance(self.current_order, NoOrder):
             return self.current_order
@@ -34,6 +34,8 @@ class BuildOrder:
             self.current_order = BuildFactory(self.location)
         elif self.expected_techlab_barrack > counter.techlab_barracks_count(observations):
             self.current_order = BuildTechLabBarrack(self.location)
+        elif self.expected_reactor_barrack > counter.reactor_barracks_count(observations):
+            self.current_order = BuildReactorBarrack(self.location)
         else:
             self.current_order = NoOrder()
         return self.current_order

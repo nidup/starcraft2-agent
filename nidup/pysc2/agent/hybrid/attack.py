@@ -66,13 +66,14 @@ class StateBuilder:
     def build_state(self, location: Location, observations: Observations) -> []:
         counter = BuildingCounter()
 
-        current_state = np.zeros(8)
+        current_state = np.zeros(9)
         current_state[0] = counter.command_center_count(observations)
         current_state[1] = counter.supply_depots_count(observations)
         current_state[2] = counter.barracks_count(observations)
         current_state[3] = counter.factories_count(observations)
         current_state[4] = counter.techlab_barracks_count(observations)
-        current_state[5] = observations.player().food_army()
+        current_state[5] = counter.reactor_barracks_count(observations)
+        current_state[6] = observations.player().food_army()
 
         hot_squares = np.zeros(4)
         enemy_y, enemy_x = (observations.minimap().player_relative() == _PLAYER_HOSTILE).nonzero()

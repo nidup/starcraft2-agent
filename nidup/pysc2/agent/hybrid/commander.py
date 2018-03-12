@@ -18,16 +18,16 @@ class HybridGameCommander(Commander):
         self.build_order_commander = BuildOrderCommander(base_location, agent_name)
         self.attack_commander = QLearningAttackCommander(base_location, agent_name)
 
-    def order(self, observations: Observations)-> Order:
-        order = self.worker_commander.order(observations)
+    def order(self, observations: Observations, step_index: int)-> Order:
+        order = self.worker_commander.order(observations, step_index)
         if not isinstance(order, NoOrder):
             return order
 
-        order = self.build_order_commander.order(observations)
+        order = self.build_order_commander.order(observations, step_index)
         if not isinstance(order, NoOrder):
             return order
 
-        return self.attack_commander.order(observations)
+        return self.attack_commander.order(observations, step_index)
 
 
 class WorkerCommander(Commander):
@@ -48,9 +48,11 @@ class WorkerCommander(Commander):
         self.current_order = self.control_group_order
         self.extra_scv_to_build_orders = []
         self._plan_to_build_scv_mineral_harvesters(4)
+        self.last_played_step = 0
+        self.number_steps_between_order = 30
 
-    def order(self, observations: Observations)-> Order:
-        if not self.current_order:
+    def order(self, observations: Observations, step_index: int)-> Order:
+        if not self.current_order and self._can_play(step_index):
             if self.idle_scv_to_mineral.doable(observations):
                 if self.idle_scv_to_mineral.done(observations):
                     self.idle_scv_to_mineral = SendIdleSCVToMineral(self.base_location)
@@ -65,6 +67,7 @@ class WorkerCommander(Commander):
                 self.current_order = self._scv_to_build_order(observations)
 
         elif self.current_order and self.current_order.done(observations):
+            self._update_last_played_step(step_index)
             self.current_order = None
             return CenterCameraOnCommandCenter(self.base_location)
 
@@ -89,6 +92,14 @@ class WorkerCommander(Commander):
                 return order
         return None
 
+    def _update_last_played_step(self, step: int):
+        self.last_played_step = step
+        #print("worker played "+str(step))
+        #print(self.current_order)
+
+    def _can_play(self, step: int) -> bool:
+        return self.last_played_step + self.number_steps_between_order < step
+
 
 class BuildOrderCommander(Commander):
 
@@ -99,7 +110,7 @@ class BuildOrderCommander(Commander):
         self.build_orders = BuildOrder(self.location)
         self.current_order = None
 
-    def order(self, observations: Observations)-> Order:
+    def order(self, observations: Observations, step_index: int)-> Order:
         if self.build_orders.finished(observations):
             return NoOrder()
         elif self.current_order and self.current_order.done(observations):
@@ -107,7 +118,11 @@ class BuildOrderCommander(Commander):
             return CenterCameraOnCommandCenter(self.location)
         else:
             self.current_order = self.build_orders.current(observations)
-            return self.current_order
+            if self.current_order.doable(observations):
+                return self.current_order
+            else:
+                self.current_order = None
+        return NoOrder()
 
 
 class QLearningAttackCommander(Commander):
@@ -127,7 +142,7 @@ class QLearningAttackCommander(Commander):
         self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
         QLearningTableStorage().load(self.qlearn, self.agent_name)
 
-    def order(self, observations: Observations)-> Order:
+    def order(self, observations: Observations, step_index: int)-> Order:
         if observations.last():
             self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
             QLearningTableStorage().save(self.qlearn, self.agent_name)

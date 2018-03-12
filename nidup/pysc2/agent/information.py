@@ -110,8 +110,16 @@ class BuildingCounter:
     def techlab_barracks_count(self, observations: Observations) -> int:
         unit_type = observations.screen().unit_type()
         unit_type_ids = UnitTypeIds()
-        techlabs_y, tachlabs_x = (unit_type == unit_type_ids.terran_barracks_techlab()).nonzero()
+        techlabs_y, techlabs_x = (unit_type == unit_type_ids.terran_barracks_techlab()).nonzero()
         if techlabs_y.any():
+            return 1
+        return 0
+
+    def reactor_barracks_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        reactor_y, reactor_x = (unit_type == unit_type_ids.terran_barracks_reactor()).nonzero()
+        if reactor_y.any():
             return 1
         return 0
 

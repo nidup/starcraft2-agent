@@ -25,7 +25,7 @@ class HybridAttackReinforcementAgent(BaseAgent):
         elif observations.last():
             game_results = GameResultsTable(self.name())
             game_results.append(observations.reward(), observations.score_cumulative())
-        return self.commander.order(observations).execute(observations)
+        return self.commander.order(observations, self.steps).execute(observations)
 
     def name(self) -> str:
         return __name__ + "." + self.__class__.__name__
@@ -46,7 +46,7 @@ class ReinforcementMarineAgent(BaseAgent):
             game_results = GameResultsTable(self.name())
             game_results.append(observations.reward(), observations.score_cumulative())
 
-        return self.commander.order(observations).execute(observations)
+        return self.commander.order(observations, self.steps).execute(observations)
 
     def name(self) -> str:
         return __name__ + "." + self.__class__.__name__
@@ -68,7 +68,7 @@ class BuildOrderAgent(BaseAgent):
             game_results.append(observations.reward(), observations.score_cumulative())
         if self.debug:
             time.sleep(0.5)
-        return self.commander.order(observations).execute(observations)
+        return self.commander.order(observations, self.steps).execute(observations)
 
     def name(self) -> str:
         return __name__ + "." + self.__class__.__name__
@@ -85,7 +85,7 @@ class ScoutingAgent(BaseAgent):
         if observations.first():
             base_location = Location(observations)
             self.commander = ScoutingCommander(base_location, self.infinite_scouting)
-        return self.commander.order(observations).execute(observations)
+        return self.commander.order(observations, self.steps).execute(observations)
 
 
 class SCVHarvesterAgent(BaseAgent):

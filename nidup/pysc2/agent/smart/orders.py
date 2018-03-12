@@ -16,6 +16,9 @@ class SmartOrder(Order):
         self.action_ids = TerranActionIds()
         self.unit_type_ids = UnitTypeIds()
 
+    def doable(self, observations: Observations) -> bool:
+        raise NotImplementedError("Should be implemented by concrete order")
+
     def done(self, observations: Observations) -> bool:
         raise NotImplementedError("Should be implemented by concrete order")
 
@@ -109,6 +112,9 @@ class PrepareSCVControlGroupsOrder(SmartOrder):
         }
         self.scv_index_in_all_group = 0
         self.current_group_index = 1
+
+    def doable(self, observations: Observations) -> bool:
+        return True
 
     def done(self, observations: Observations) -> bool:
         return self.step == 6
@@ -210,6 +216,9 @@ class BuildBarrack(SmartOrder):
         self.scv_groups = SCVControlGroups()
         self.max_barracks = max_barracks
 
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 150
+
     def done(self, observations: Observations) -> bool:
         return self.step == 2
 
@@ -247,6 +256,9 @@ class BuildTechLabBarrack(SmartOrder):
         self.step = 0
         self.scv_groups = SCVControlGroups()
         self.max_techlab = max_techlab
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 50 and observations.player().vespene() >= 25
 
     def done(self, observations: Observations) -> bool:
         return self.step == 2
@@ -287,6 +299,56 @@ class BuildTechLabBarrack(SmartOrder):
         return BuildingPositionsFromCommandCenter().barracks()[0]
 
 
+class BuildReactorBarrack(SmartOrder):
+
+    def __init__(self, base_location: Location, max_reactor: int = 1):
+        SmartOrder.__init__(self, base_location)
+        self.step = 0
+        self.scv_groups = SCVControlGroups()
+        self.max_reactor = max_reactor
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 50 and observations.player().vespene() >= 50
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.step == 1:
+            return self._select_barrack()
+        elif self.step == 2:
+            return self._build_reactor(observations)
+        return self.actions.no_op()
+
+    def _select_barrack(self) -> actions.FunctionCall:
+        cc_y, cc_x = self.location.command_center_first_position()
+        difference_from_cc = self.difference_from_command_center()
+        target = self.location.transform_distance(
+            round(cc_x.mean()),
+            difference_from_cc[0],
+            round(cc_y.mean()),
+            difference_from_cc[1],
+        )
+        return self.actions.select_point(target)
+
+    def _build_reactor(self, observations: Observations) -> actions.FunctionCall:
+        if self.action_ids.build_reactor_barracks() in observations.available_actions():
+            cc_y, cc_x = self.location.command_center_first_position()
+            difference_from_cc = self.difference_from_command_center()
+            target = self.location.transform_distance(
+                round(cc_x.mean()),
+                difference_from_cc[0],
+                round(cc_y.mean()),
+                difference_from_cc[1],
+            )
+            return self.actions.build_reactor_barracks(target)
+        return self.actions.no_op()
+
+    def difference_from_command_center(self) -> []:
+        return BuildingPositionsFromCommandCenter().barracks()[1]
+
+
 class BuildFactory(SmartOrder):
 
     def __init__(self, location: Location, max_factories: int = 2):
@@ -294,6 +356,9 @@ class BuildFactory(SmartOrder):
         self.step = 0
         self.max_factories = max_factories
         self.scv_groups = SCVControlGroups()
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 150 and observations.player().vespene() >= 100
 
     def done(self, observations: Observations) -> bool:
         return self.step == 2
@@ -332,6 +397,9 @@ class BuildSupplyDepot(SmartOrder):
         self.max_supplies = max_supplies
         self.scv_groups = SCVControlGroups()
 
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 100
+
     def done(self, observations: Observations) -> bool:
         return self.step == 2
 
@@ -368,6 +436,9 @@ class BuildRefinery(SmartOrder):
         self.step = 0
         self.refinery_index = refinery_index
         self.scv_groups = SCVControlGroups()
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 75
 
     def done(self, observations: Observations) -> bool:
         return self.step == 2
@@ -418,6 +489,9 @@ class FillRefineryOnceBuilt(SmartOrder):
         self.step = 0
         self.refinery_index = refinery_index
         self.scv_groups = SCVControlGroups()
+
+    def doable(self, observations: Observations) -> bool:
+        return True
 
     def done(self, observations: Observations) -> bool:
         return self.step == 3
@@ -476,6 +550,9 @@ class SendIdleSCVToMineral(SmartOrder):
         SmartOrder.__init__(self, base_location)
         self.step = 0
 
+    def doable(self, observations: Observations) -> bool:
+        return True
+
     def done(self, observations: Observations) -> bool:
         return self.step == 2
 
@@ -495,6 +572,9 @@ class BuildSCV(SmartOrder):
     def __init__(self, location: Location):
         SmartOrder.__init__(self, location)
         self.step = 0
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 50
 
     def done(self, observations: Observations) -> bool:
         return self.step == 2
@@ -529,6 +609,9 @@ class BuildMarine(SmartOrder):
         SmartOrder.__init__(self, location)
         self.step = 0
 
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 50
+
     def done(self, observations: Observations) -> bool:
         return self.step == 2
 
@@ -559,6 +642,9 @@ class BuildMarauder(SmartOrder):
     def __init__(self, location: Location):
         SmartOrder.__init__(self, location)
         self.step = 0
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 100 and observations.player().vespene() >= 25
 
     def done(self, observations: Observations) -> bool:
         return self.step == 2
@@ -593,6 +679,9 @@ class Attack(SmartOrder):
         self.x = x
         self.y = y
 
+    def doable(self, observations: Observations) -> bool:
+        return True
+
     def done(self, observations: Observations) -> bool:
         return self.step == 2
 
@@ -625,11 +714,14 @@ class Attack(SmartOrder):
         return self.actions.no_op()
 
 
-class NoOrder(Order):
+class NoOrder(SmartOrder):
 
     def __init__(self):
-        Order.__init__(self)
+        SmartOrder.__init__(self, None)
         self.step = 0
+
+    def doable(self, observations: Observations) -> bool:
+        return True
 
     def done(self, observations: Observations) -> bool:
         return self.step == 1

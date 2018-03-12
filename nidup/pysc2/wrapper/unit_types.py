@@ -8,6 +8,7 @@ _TERRAN_FACTORY = 27
 _TERRAN_SCV = 45
 _TERRAN_ORBITALCOMMAND = 132
 _TERRAN_BARRACKSTECHLAB = 37
+_TERRAN_BARRACKSREACTOR = 38
 _NEUTRAL_MINERAL_FIELD = 341
 _NEUTRAL_VESPENE_GEYSER = 342
 
@@ -25,6 +26,9 @@ class UnitTypeIds:
 
     def terran_barracks_techlab(self) -> int:
         return _TERRAN_BARRACKSTECHLAB
+
+    def terran_barracks_reactor(self) -> int:
+        return _TERRAN_BARRACKSREACTOR
 
     def terran_command_center(self) -> int:
         return _TERRAN_COMMANDCENTER

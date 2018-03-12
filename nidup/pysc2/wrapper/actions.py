@@ -6,6 +6,7 @@ _ATTACK_SCREEN = actions.FUNCTIONS.Attack_screen.id
 _BUILD_SUPPLYDEPOT = actions.FUNCTIONS.Build_SupplyDepot_screen.id
 _BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
 _BUILD_TECHLAB_BARRACKS = actions.FUNCTIONS.Build_TechLab_screen.id
+_BUILD_REACTOR_BARRACKS = actions.FUNCTIONS.Build_Reactor_screen.id
 _BUILD_REFINERY = actions.FUNCTIONS.Build_Refinery_screen.id
 _BUILD_FACTORY = actions.FUNCTIONS.Build_Factory_screen.id
 _HARVEST_GATHER = actions.FUNCTIONS.Harvest_Gather_screen.id
@@ -50,6 +51,9 @@ class TerranActionIds:
 
     def build_techlab_barracks(self) -> int:
         return _BUILD_TECHLAB_BARRACKS
+
+    def build_reactor_barracks(self) -> int:
+        return _BUILD_REACTOR_BARRACKS
 
     def harvest_gather(self) -> int:
         return _HARVEST_GATHER
@@ -111,6 +115,9 @@ class TerranActions:
     def build_techlab_barracks(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_BUILD_TECHLAB_BARRACKS, [_NOT_QUEUED, target])
 
+    def build_reactor_barracks(self, target) -> actions.FunctionCall:
+        return actions.FunctionCall(_BUILD_REACTOR_BARRACKS, [_NOT_QUEUED, target])
+
     def harvest_gather(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_HARVEST_GATHER, [_QUEUED, target])
 
@@ -171,7 +178,7 @@ class TerranActions:
         return actions.FunctionCall(_TRAIN_MARINE, [_QUEUED])
 
     def train_marauder(self) -> actions.FunctionCall:
-        return actions.FunctionCall(_TRAIN_MARAUDER, [_NOT_QUEUED])
+        return actions.FunctionCall(_TRAIN_MARAUDER, [_QUEUED])
 
     def train_scv(self) -> actions.FunctionCall:
         return actions.FunctionCall(_TRAIN_SCV, [_NOT_QUEUED])
