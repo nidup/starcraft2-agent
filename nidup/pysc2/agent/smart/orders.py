@@ -58,18 +58,19 @@ class BuildingPositionsFromCommandCenter:
             [15, -35]
         ]
 
+    # keeping space for techlab/reactor on each
     def barracks(self) -> []:
         return [
             [15, -10],
-            [30, -20], # keep space for techlab on first barracks
-            [15, 10],
-            [30, 10],
+            [30, -20],
+            [20, 10],
+            [30, 20],
         ]
 
     def factories(self) -> []:
         return [
-            [15, 25],
-            [30, 25],
+            [10, 25],
+            [30, 25], # check it, could not work
         ]
 
     def vespene_geysers(self) -> []:
@@ -251,11 +252,11 @@ class BuildBarrack(SmartOrder):
 
 class BuildTechLabBarrack(SmartOrder):
 
-    def __init__(self, base_location: Location, max_techlab: int = 1):
+    def __init__(self, base_location: Location, barrack_index: int):
         SmartOrder.__init__(self, base_location)
         self.step = 0
         self.scv_groups = SCVControlGroups()
-        self.max_techlab = max_techlab
+        self.barrack_index = barrack_index
 
     def doable(self, observations: Observations) -> bool:
         return observations.player().minerals() >= 50 and observations.player().vespene() >= 25
@@ -264,26 +265,30 @@ class BuildTechLabBarrack(SmartOrder):
         return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
-        self.step = self.step + 1
-        if self.step == 1:
-            return self._select_barrack()
-        elif self.step == 2:
+        if self.step == 0:
+            return self._select_barrack(observations)
+        elif self.step == 1:
             return self._build_techlab(observations)
         return self.actions.no_op()
 
-    def _select_barrack(self) -> actions.FunctionCall:
-        cc_y, cc_x = self.location.command_center_first_position()
-        difference_from_cc = self.difference_from_command_center()
-        target = self.location.transform_distance(
-            round(cc_x.mean()),
-            difference_from_cc[0],
-            round(cc_y.mean()),
-            difference_from_cc[1],
-        )
-        return self.actions.select_point(target)
+    def _select_barrack(self, observations: Observations) -> actions.FunctionCall:
+        barrack_count = BuildingCounter().barracks_count(observations)
+        if barrack_count >= 1:
+            self.step = self.step + 1
+            cc_y, cc_x = self.location.command_center_first_position()
+            difference_from_cc = self.difference_from_command_center()
+            target = self.location.transform_distance(
+                round(cc_x.mean()),
+                difference_from_cc[0],
+                round(cc_y.mean()),
+                difference_from_cc[1],
+            )
+            return self.actions.select_point(target)
+        return self.actions.no_op()
 
     def _build_techlab(self, observations: Observations) -> actions.FunctionCall:
         if self.action_ids.build_techlab_barracks() in observations.available_actions():
+            self.step = self.step + 1
             cc_y, cc_x = self.location.command_center_first_position()
             difference_from_cc = self.difference_from_command_center()
             target = self.location.transform_distance(
@@ -296,16 +301,16 @@ class BuildTechLabBarrack(SmartOrder):
         return self.actions.no_op()
 
     def difference_from_command_center(self) -> []:
-        return BuildingPositionsFromCommandCenter().barracks()[0]
+        return BuildingPositionsFromCommandCenter().barracks()[self.barrack_index - 1]
 
 
 class BuildReactorBarrack(SmartOrder):
 
-    def __init__(self, base_location: Location, max_reactor: int = 1):
+    def __init__(self, base_location: Location, barrack_index: int):
         SmartOrder.__init__(self, base_location)
         self.step = 0
         self.scv_groups = SCVControlGroups()
-        self.max_reactor = max_reactor
+        self.barrack_index = barrack_index
 
     def doable(self, observations: Observations) -> bool:
         return observations.player().minerals() >= 50 and observations.player().vespene() >= 50
@@ -314,26 +319,30 @@ class BuildReactorBarrack(SmartOrder):
         return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
-        self.step = self.step + 1
-        if self.step == 1:
-            return self._select_barrack()
-        elif self.step == 2:
+        if self.step == 0:
+            return self._select_barrack(observations)
+        elif self.step == 1:
             return self._build_reactor(observations)
         return self.actions.no_op()
 
-    def _select_barrack(self) -> actions.FunctionCall:
-        cc_y, cc_x = self.location.command_center_first_position()
-        difference_from_cc = self.difference_from_command_center()
-        target = self.location.transform_distance(
-            round(cc_x.mean()),
-            difference_from_cc[0],
-            round(cc_y.mean()),
-            difference_from_cc[1],
-        )
-        return self.actions.select_point(target)
+    def _select_barrack(self, observations: Observations) -> actions.FunctionCall:
+        barrack_count = BuildingCounter().barracks_count(observations)
+        if barrack_count >= 2: # always build on second and third barracks
+            self.step = self.step + 1
+            cc_y, cc_x = self.location.command_center_first_position()
+            difference_from_cc = self.difference_from_command_center()
+            target = self.location.transform_distance(
+                round(cc_x.mean()),
+                difference_from_cc[0],
+                round(cc_y.mean()),
+                difference_from_cc[1],
+            )
+            return self.actions.select_point(target)
+        return self.actions.no_op()
 
     def _build_reactor(self, observations: Observations) -> actions.FunctionCall:
         if self.action_ids.build_reactor_barracks() in observations.available_actions():
+            self.step = self.step + 1
             cc_y, cc_x = self.location.command_center_first_position()
             difference_from_cc = self.difference_from_command_center()
             target = self.location.transform_distance(
@@ -346,7 +355,7 @@ class BuildReactorBarrack(SmartOrder):
         return self.actions.no_op()
 
     def difference_from_command_center(self) -> []:
-        return BuildingPositionsFromCommandCenter().barracks()[1]
+        return BuildingPositionsFromCommandCenter().barracks()[self.barrack_index - 1]
 
 
 class BuildFactory(SmartOrder):
@@ -711,6 +720,84 @@ class Attack(SmartOrder):
             target = self.location.transform_location(int(self.x) + (x_offset * 8), int(self.y) + (y_offset * 8))
             return self.actions.attack_minimap(target)
 
+        return self.actions.no_op()
+
+
+# http://liquipedia.net/starcraft2/Tech_Lab_(Legacy_of_the_Void)
+class ResearchCombatShield(SmartOrder):
+
+    def __init__(self, base_location: Location):
+        SmartOrder.__init__(self, base_location)
+        self.step = 0
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 100 and observations.player().vespene() >= 100
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        if self.step == 0:
+            return self._select_tech_barrack(observations)
+        elif self.step == 1:
+            return self._research_combat_shield(observations)
+        return self.actions.no_op()
+
+    def _select_tech_barrack(self, observations: Observations) -> actions.FunctionCall:
+        techlab_barrack_count = BuildingCounter().techlab_barracks_count(observations)
+        if techlab_barrack_count >= 1:
+            self.step = self.step + 1
+            unit_type = observations.screen().unit_type()
+            center_y, center_x = (unit_type == self.unit_type_ids.terran_barracks_techlab()).nonzero()
+            center_x = round(center_x.mean())
+            center_y = round(center_y.mean())
+            target = [center_x, center_y]
+            return self.actions.select_point(target)
+        return self.actions.no_op()
+
+    def _research_combat_shield(self, observations: Observations) -> actions.FunctionCall:
+        if self.action_ids.research_combat_shield() in observations.available_actions():
+            self.step = self.step + 1
+            return self.actions.research_combat_shield()
+        return self.actions.no_op()
+
+
+# http://liquipedia.net/starcraft2/Tech_Lab_(Legacy_of_the_Void)
+class ResearchConcussiveShells(SmartOrder):
+
+    def __init__(self, base_location: Location):
+        SmartOrder.__init__(self, base_location)
+        self.step = 0
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 50 and observations.player().vespene() >= 50
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        if self.step == 0:
+            return self._select_tech_barrack(observations)
+        elif self.step == 1:
+            return self._research_concussive_shells(observations)
+        return self.actions.no_op()
+
+    def _select_tech_barrack(self, observations: Observations) -> actions.FunctionCall:
+        techlab_barrack_count = BuildingCounter().techlab_barracks_count(observations)
+        if techlab_barrack_count >= 1:
+            self.step = self.step + 1
+            unit_type = observations.screen().unit_type()
+            center_y, center_x = (unit_type == self.unit_type_ids.terran_barracks_techlab()).nonzero()
+            center_x = round(center_x.mean())
+            center_y = round(center_y.mean())
+            target = [center_x, center_y]
+            return self.actions.select_point(target)
+        return self.actions.no_op()
+
+    def _research_concussive_shells(self, observations: Observations) -> actions.FunctionCall:
+        if self.action_ids.research_concussive_shells() in observations.available_actions():
+            self.step = self.step + 1
+            return self.actions.research_concussive_shells()
         return self.actions.no_op()
 
 

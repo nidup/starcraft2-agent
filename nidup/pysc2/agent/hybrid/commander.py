@@ -5,9 +5,9 @@ from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location, BuildingCounter
 from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
-from nidup.pysc2.agent.smart.orders import NoOrder, PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, BuildSCV, SendIdleSCVToMineral
+from nidup.pysc2.agent.smart.orders import NoOrder, PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, BuildSCV, SendIdleSCVToMineral, BuildSupplyDepot
 from nidup.pysc2.agent.hybrid.attack import SmartActions, StateBuilder
-from nidup.pysc2.agent.hybrid.build import BuildOrder
+from nidup.pysc2.agent.hybrid.build import BuildOrderFactory
 
 
 class HybridGameCommander(Commander):
@@ -17,17 +17,26 @@ class HybridGameCommander(Commander):
         self.worker_commander = WorkerCommander(base_location)
         self.build_order_commander = BuildOrderCommander(base_location, agent_name)
         self.attack_commander = QLearningAttackCommander(base_location, agent_name)
+        self.current_order = None
 
     def order(self, observations: Observations, step_index: int)-> Order:
-        order = self.worker_commander.order(observations, step_index)
-        if not isinstance(order, NoOrder):
-            return order
 
-        order = self.build_order_commander.order(observations, step_index)
-        if not isinstance(order, NoOrder):
-            return order
+        if not self.current_order:
+            self.current_order = self.worker_commander.order(observations, step_index)
 
-        return self.attack_commander.order(observations, step_index)
+        elif self.current_order.done(observations):
+
+            self.current_order = self.worker_commander.order(observations, step_index)
+            if not isinstance(self.current_order, NoOrder):
+                return self.current_order
+
+            self.current_order = self.build_order_commander.order(observations, step_index)
+            if not isinstance(self.current_order, NoOrder):
+                return self.current_order
+
+            self.current_order = self.attack_commander.order(observations, step_index)
+
+        return self.current_order
 
 
 class WorkerCommander(Commander):
@@ -107,22 +116,32 @@ class BuildOrderCommander(Commander):
         Commander.__init__(self)
         self.location = location
         self.agent_name = agent_name
-        self.build_orders = BuildOrder(self.location)
+        self.build_orders = BuildOrderFactory().create3RaxRushTvX(location)
         self.current_order = None
 
     def order(self, observations: Observations, step_index: int)-> Order:
         if self.build_orders.finished(observations):
-            return NoOrder()
+            return self._extra_supply_depots(observations)
         elif self.current_order and self.current_order.done(observations):
             self.current_order = None
             return CenterCameraOnCommandCenter(self.location)
-        else:
-            self.current_order = self.build_orders.current(observations)
-            if self.current_order.doable(observations):
+        elif self.current_order and not self.current_order.done(observations):
+            return self.current_order
+        elif not self.current_order:
+            order = self.build_orders.current(observations)
+            if order.doable(observations):
+                self.current_order = order
                 return self.current_order
-            else:
-                self.current_order = None
         return NoOrder()
+
+    def _extra_supply_depots(self, observations: Observations) -> Order:
+        counter = BuildingCounter()
+        expectMore = 8 > counter.supply_depots_count(observations)
+        supplyAlmostFull = observations.player().food_cap() - observations.player().food_used() <= 2
+        if expectMore and supplyAlmostFull:
+            return BuildSupplyDepot(self.location)
+        else:
+            return NoOrder()
 
 
 class QLearningAttackCommander(Commander):

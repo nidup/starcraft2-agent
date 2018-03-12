@@ -16,6 +16,8 @@ _MOVE_SCREEN = actions.FUNCTIONS.Move_screen.id
 _MOVE_CAMERA = actions.FUNCTIONS.move_camera.id
 _NOOP = actions.FUNCTIONS.no_op.id
 _RALLY_UNITS_MINIMAP = actions.FUNCTIONS.Rally_Units_minimap.id
+_RESEARCH_COMBAT_SHIELD = actions.FUNCTIONS.Research_CombatShield_quick.id
+_RESEARCH_CONCUSSIVE_SHELLS = actions.FUNCTIONS.Research_ConcussiveShells_quick.id
 _SELECT_POINT = actions.FUNCTIONS.select_point.id
 _SELECT_IDLE_WORKER = actions.FUNCTIONS.select_idle_worker.id
 _SELECT_ARMY = actions.FUNCTIONS.select_army.id
@@ -75,6 +77,12 @@ class TerranActionIds:
 
     def rally_units_minimap(self) -> int:
         return _RALLY_UNITS_MINIMAP
+
+    def research_combat_shield(self) -> int:
+        return _RESEARCH_COMBAT_SHIELD
+
+    def research_concussive_shells(self) -> int:
+        return _RESEARCH_CONCUSSIVE_SHELLS
 
     def select_army(self) -> int:
         return _SELECT_ARMY
@@ -138,6 +146,12 @@ class TerranActions:
 
     def rally_units_minimap(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_RALLY_UNITS_MINIMAP, [_NOT_QUEUED, target])
+
+    def research_combat_shield(self) -> actions.FunctionCall:
+        return actions.FunctionCall(_RESEARCH_COMBAT_SHIELD, [_NOT_QUEUED])
+
+    def research_concussive_shells(self) -> actions.FunctionCall:
+        return actions.FunctionCall(_RESEARCH_CONCUSSIVE_SHELLS, [_NOT_QUEUED])
 
     def select_army(self) -> actions.FunctionCall:
         return actions.FunctionCall(_SELECT_ARMY, [_NOT_QUEUED])

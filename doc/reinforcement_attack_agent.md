@@ -110,3 +110,5 @@ Same variant but with a slightly different build order, 8 supply depots & 4 barr
 
 ![Image of HybridAttackReinforcementAgent 11](HybridAttackReinforcementAgent_8_supply_4_rax_1ref_1fac_1lab-worker-easy-3.png)
 
+Same variant but with a slightly different build order, 1 refinery & 3 barracks & 1 techlab & 2 reactors, ie, the MM ball.
+Adding some research like concussive shells and combat shields.
