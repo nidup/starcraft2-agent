@@ -6,6 +6,19 @@ import os
 from nidup.pysc2.wrapper.observations import ScoreDetails
 
 
+class FinishedGameInformationDetails:
+
+    def __init__(self, last_step: int, enemy_race: str):
+        self.last_step_data = last_step
+        self.enemy_race_data = enemy_race
+
+    def last_step(self) -> int:
+        return self.last_step_data
+
+    def enemy_race(self) -> str:
+        return self.enemy_race_data
+
+
 class GameResultsTable:
     def __init__(self, agent_name: str):
         self.agent_name = agent_name
@@ -15,13 +28,13 @@ class GameResultsTable:
                 "score", "idle_production_time", "idle_worker_time", "total_value_units", "total_value_structures",
                 "killed_value_units", "killed_value_structures", "collected_minerals", "collected_vespene",
                 "collection_rate_minerals", "collection_rate_vespene", "spent_minerals", "spent_vespene",
-                "enemy_race"
+                "last_step", "enemy_race"
             ],
             dtype=np.int8
         )
         self._load_file()
 
-    def append(self, reward: int, score: ScoreDetails, enemy_race: str = "unknown"):
+    def append(self, reward: int, score: ScoreDetails, details: FinishedGameInformationDetails):
         now = datetime.datetime.now()
         if reward > 0:
             row = [reward, 1, 0, 0]
@@ -43,7 +56,8 @@ class GameResultsTable:
             score.collection_rate_vespene(),
             score.spent_minerals(),
             score.spent_vespene(),
-            enemy_race
+            details.last_step(),
+            details.enemy_race()
         ]
         self.table = self.table.append(pd.Series(row, index=self.table.columns, name=now.isoformat()))
         self._write_file()

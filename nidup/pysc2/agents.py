@@ -4,7 +4,7 @@ from pysc2.agents.base_agent import BaseAgent
 from nidup.pysc2.agent.scripted.commander import GameCommander, ScoutingCommander, NoOrder
 from nidup.pysc2.agent.information import Location, EnemyDetector
 from nidup.pysc2.wrapper.observations import Observations
-from nidup.pysc2.learning.game_results import GameResultsTable
+from nidup.pysc2.learning.game_results import GameResultsTable, FinishedGameInformationDetails
 from nidup.pysc2.agent.smart.commander import QLearningCommander
 from nidup.pysc2.agent.hybrid.commander import HybridGameCommander
 from nidup.pysc2.agent.smart.orders import PrepareSCVControlGroupsOrder, BuildRefinery, FillRefineryOnceBuilt, BuildSCV
@@ -26,7 +26,8 @@ class HybridAttackReinforcementAgent(BaseAgent):
             self.commander = HybridGameCommander(base_location, self.name(), self.enemy_detector)
         elif observations.last():
             game_results = GameResultsTable(self.name())
-            game_results.append(observations.reward(), observations.score_cumulative(), self.enemy_detector.race())
+            game_info = FinishedGameInformationDetails(self.steps, self.enemy_detector.race())
+            game_results.append(observations.reward(), observations.score_cumulative(), game_info)
         return self.commander.order(observations, self.steps).execute(observations)
 
     def name(self) -> str:
@@ -46,7 +47,8 @@ class ReinforcementMarineAgent(BaseAgent):
             self.commander = QLearningCommander(self.name())
         elif observations.last():
             game_results = GameResultsTable(self.name())
-            game_results.append(observations.reward(), observations.score_cumulative())
+            game_info = FinishedGameInformationDetails(self.steps, "unknown")
+            game_results.append(observations.reward(), observations.score_cumulative(), game_info)
 
         return self.commander.order(observations, self.steps).execute(observations)
 
@@ -67,7 +69,8 @@ class BuildOrderAgent(BaseAgent):
             self.commander = GameCommander(base_location)
         elif observations.last():
             game_results = GameResultsTable(self.name())
-            game_results.append(observations.reward(), observations.score_cumulative())
+            game_info = FinishedGameInformationDetails(self.steps, "unknown")
+            game_results.append(observations.reward(), observations.score_cumulative(), game_info)
         if self.debug:
             time.sleep(0.5)
         return self.commander.order(observations, self.steps).execute(observations)

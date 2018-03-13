@@ -121,12 +121,12 @@ class BuildOrderFactory:
                 ResearchConcussiveShells(location),
 
                 # bigger timing push
-                BuildMarine(location),
-                BuildMarine(location),
-                BuildMarine(location),
-                BuildMarine(location),
-                BuildMarauder(location),
-                BuildMarauder(location),
+                # BuildMarine(location),
+                # BuildMarine(location),
+                # BuildMarine(location),
+                # BuildMarine(location),
+                # BuildMarauder(location),
+                # BuildMarauder(location),
                 #BuildBarrack(location, 4),
                 #BuildReactorBarrack(location, 4), NO REACTOR BUILT WHEN PLAY ON TOP GAME?
             ]
