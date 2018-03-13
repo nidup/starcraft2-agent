@@ -14,13 +14,14 @@ class GameResultsTable:
                 "reward", "win", "draw", "loss",
                 "score", "idle_production_time", "idle_worker_time", "total_value_units", "total_value_structures",
                 "killed_value_units", "killed_value_structures", "collected_minerals", "collected_vespene",
-                "collection_rate_minerals", "collection_rate_vespene", "spent_minerals", "spent_vespene"
+                "collection_rate_minerals", "collection_rate_vespene", "spent_minerals", "spent_vespene",
+                "enemy_race"
             ],
             dtype=np.int8
         )
         self._load_file()
 
-    def append(self, reward: int, score: ScoreDetails):
+    def append(self, reward: int, score: ScoreDetails, enemy_race: str = "unknown"):
         now = datetime.datetime.now()
         if reward > 0:
             row = [reward, 1, 0, 0]
@@ -42,6 +43,7 @@ class GameResultsTable:
             score.collection_rate_vespene(),
             score.spent_minerals(),
             score.spent_vespene(),
+            enemy_race
         ]
         self.table = self.table.append(pd.Series(row, index=self.table.columns, name=now.isoformat()))
         self._write_file()

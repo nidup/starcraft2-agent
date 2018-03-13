@@ -38,12 +38,56 @@ class GameResultChart:
         plt.legend(handles=[line_win, line_draw, line_loss])
         filepath = self._file_path(agent_name)
         plt.savefig(filepath)
+        plt.gcf().clear()
 
         return filepath
 
     def _file_path(self, agent_name: str) -> str:
         root_folder = 'data'
         filename = agent_name + '_results.png'
+        path = os.path.join(root_folder, filename)
+        return path
+
+
+class GameResultChartPerEnemyRace:
+
+    def draw(self, agent_name: str, enemy_race: str) -> str:
+        games = GameResultsTable(agent_name)
+
+        cumulated_percentage_win = []
+        cumulated_percentage_draw = []
+        cumulated_percentage_loss = []
+        count_cumulated_win_games = 0
+        count_cumulated_draw_games = 0
+        count_cumulated_loss_games = 0
+        total_parsed_games = 0
+        for index in range(len(games.table)):
+            if games.table.iloc[index]['enemy_race'] == enemy_race:
+                total_parsed_games = total_parsed_games + 1
+                count_cumulated_win_games = count_cumulated_win_games + games.table.iloc[index]['win']
+                count_cumulated_draw_games = count_cumulated_draw_games + games.table.iloc[index]['draw']
+                count_cumulated_loss_games = count_cumulated_loss_games + games.table.iloc[index]['loss']
+                cumulated_percentage_win.append(count_cumulated_win_games / total_parsed_games * 100)
+                cumulated_percentage_draw.append(count_cumulated_draw_games / total_parsed_games * 100)
+                cumulated_percentage_loss.append(count_cumulated_loss_games / total_parsed_games * 100)
+
+        line_win, = plt.plot(cumulated_percentage_win, label="Win %")
+        line_draw, = plt.plot(cumulated_percentage_draw, label="Draw %")
+        line_loss, = plt.plot(cumulated_percentage_loss, label="Loss %")
+
+        plt.title('Game results against '+enemy_race)
+        plt.xlabel('number of games')
+        plt.ylabel('percentage of games')
+        plt.legend(handles=[line_win, line_draw, line_loss])
+        filepath = self._file_path(agent_name, enemy_race)
+        plt.savefig(filepath)
+        plt.gcf().clear()
+
+        return filepath
+
+    def _file_path(self, agent_name: str, enemy_race: str) -> str:
+        root_folder = 'data'
+        filename = agent_name + '_results_' + enemy_race + '.png'
         path = os.path.join(root_folder, filename)
         return path
 
@@ -65,6 +109,7 @@ class ScoreDetailsChart:
         plt.legend(handles=[line_score])
         filepath = self._file_path(agent_name)
         plt.savefig(filepath)
+        plt.gcf().clear()
 
         return filepath
 

@@ -114,13 +114,24 @@ Variants & Evolution (Sequential Build Order)
 ---------------------------------------------
 
 Introducing a sequential build orders to replace the trigger build orders.
-The build order is 1 refinery & 3 barracks & 1 techlab & 2 reactors, then pushing with marines & marauders.
-Adding some research like concussive shells and combat shields.
+The build order is 1 refinery & 3 barracks & 1 techlab & 2 reactors.
+We also add some research like concussive shells and combat shields.
 
-![Image of HybridAttackReinforcementAgent 11](HybridAttackReinforcementAgent_3_rax_rush-easy1.png)
+![Image of HybridAttackReinforcementAgent 12](HybridAttackReinforcementAgent_3_rax_rush-easy1.png)
+
+Variants & Evolution (Sequential Build Order + Timing Push)
+-----------------------------------------------------------
 
 Changing the hybrid commander to delegate to attack commander only once the build orders is finished.
 
-Including unit building in the build orders with 3 marauders and 6 marines to do the first timing push, then constantly harass.
+Here, the build orders trains 6 marines & 3 marauders before to let the attack commander continues the game.
 
-![Image of HybridAttackReinforcementAgent 12](HybridAttackReinforcementAgent_3_rax_rush-easy2.png)
+This way, the attack commander starts with a first timing push, then constantly harass by training & attacking.
+
+When the army grow and the supply depots limit is raised, a new depot is automatically built.
+
+![Image of HybridAttackReinforcementAgent 13](HybridAttackReinforcementAgent_3_rax_rush-easy2.png)
+
+Re-enforcing the first push with 4 Marines and 2 Marauders for a bigger first push:
+
+![Image of HybridAttackReinforcementAgent 14](HybridAttackReinforcementAgent_3_rax_rush-easy3.png)

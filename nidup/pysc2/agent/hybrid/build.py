@@ -119,15 +119,15 @@ class BuildOrderFactory:
                 BuildMarine(location),
                 BuildMarine(location),
                 ResearchConcussiveShells(location),
-                #BuildMarine(location),
-                #BuildMarine(location),
-                #BuildMarine(location),
-                #BuildMarine(location),
-                #BuildMarauder(location),
-                #BuildMarauder(location),
+
+                # bigger timing push
+                BuildMarine(location),
+                BuildMarine(location),
+                BuildMarine(location),
+                BuildMarine(location),
+                BuildMarauder(location),
+                BuildMarauder(location),
                 #BuildBarrack(location, 4),
-                #BuildReactorBarrack(location, 4),
-                # BuildFactory(location)
-                # TODO how to auto build depots then?
+                #BuildReactorBarrack(location, 4), NO REACTOR BUILT WHEN PLAY ON TOP GAME?
             ]
         )

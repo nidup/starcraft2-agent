@@ -1,9 +1,10 @@
 
 from nidup.pysc2.wrapper.observations import Observations, ScreenFeatures, MinimapFeatures
-from nidup.pysc2.wrapper.unit_types import UnitTypeIds
+from nidup.pysc2.wrapper.unit_types import UnitTypeIds, AllUnitTypeIdsPerRace
 
 # Parameters
 _PLAYER_SELF = 1
+_PLAYER_ENEMY = 4
 
 
 class Location:
@@ -136,3 +137,34 @@ class BuildingCounter:
         factories_y, factories_x = (unit_type == unit_type_ids.terran_factory()).nonzero()
         factories_count = int(round(len(factories_y) / 137))
         return factories_count
+
+
+class EnemyDetector:
+
+    def __init__(self):
+        self.enemy_race = "unknown"
+
+    def race(self) -> str:
+        return self.enemy_race
+
+    def race_detected(self) -> bool:
+        return self.enemy_race != "unknown"
+
+    def detect_race(self, observations: Observations):
+
+        enemy_y, enemy_x = (observations.screen().player_relative() == _PLAYER_ENEMY).nonzero()
+        if enemy_y.any():
+            unit_type = observations.screen().unit_type()
+            for unit_id in AllUnitTypeIdsPerRace().zerg():
+                unit_y, unit_x = (unit_type == unit_id).nonzero()
+                if unit_y.any():
+                    self.enemy_race = "zerg"
+
+            unit_type = observations.screen().unit_type()
+            for unit_id in AllUnitTypeIdsPerRace().protoss():
+                unit_y, unit_x = (unit_type == unit_id).nonzero()
+                if unit_y.any():
+                    self.enemy_race = "protoss"
+
+            if not self.race_detected():
+                self.enemy_race = "terran"

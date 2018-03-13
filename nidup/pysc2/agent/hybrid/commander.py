@@ -3,21 +3,26 @@ from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
-from nidup.pysc2.agent.information import Location, BuildingCounter
-from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
+from nidup.pysc2.agent.information import Location, BuildingCounter, EnemyDetector
+from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter, MoveCameraOnMinimapTarget
 from nidup.pysc2.agent.smart.orders import NoOrder, PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, BuildSCV, SendIdleSCVToMineral, BuildSupplyDepot
 from nidup.pysc2.agent.hybrid.attack import SmartActions, StateBuilder
 from nidup.pysc2.agent.hybrid.build import BuildOrderFactory
 
+_PLAYER_ENEMY = 4
+
 
 class HybridGameCommander(Commander):
 
-    def __init__(self, base_location: Location, agent_name: str):
+    def __init__(self, base_location: Location, agent_name: str, enemy_detector: EnemyDetector):
         Commander.__init__(self)
         self.worker_commander = WorkerCommander(base_location)
+        self.enemy_detector = enemy_detector
+        self.scout_commander = ScoutCommander(base_location, self.enemy_detector)
         self.build_order_commander = BuildOrderCommander(base_location, agent_name)
         self.attack_commander = QLearningAttackCommander(base_location, agent_name)
         self.current_order = None
+        self.enemy_detector = enemy_detector
 
     def order(self, observations: Observations, step_index: int)-> Order:
 
@@ -25,6 +30,10 @@ class HybridGameCommander(Commander):
             self.current_order = self.worker_commander.order(observations, step_index)
 
         elif self.current_order.done(observations):
+
+            self.current_order = self.scout_commander.order(observations, step_index)
+            if not isinstance(self.current_order, NoOrder):
+                return self.current_order
 
             self.current_order = self.worker_commander.order(observations, step_index)
             if not isinstance(self.current_order, NoOrder):
@@ -51,12 +60,6 @@ class WorkerCommander(Commander):
         self.control_group_order = PrepareSCVControlGroupsOrder(base_location)
         self.fill_refinery_one_order = FillRefineryOnceBuilt(base_location, 1)
         self.fill_refinery_two_order = FillRefineryOnceBuilt(base_location, 2)
-        self.train_scv_order_one = BuildSCV(base_location)
-        self.train_scv_order_two = BuildSCV(base_location)
-        self.train_scv_order_three = BuildSCV(base_location)
-        self.train_scv_order_four = BuildSCV(base_location)
-        self.train_scv_order_five = BuildSCV(base_location)
-        self.train_scv_order_six = BuildSCV(base_location)
         self.idle_scv_to_mineral = SendIdleSCVToMineral(base_location)
         self.current_order = self.control_group_order
         self.extra_scv_to_build_orders = []
@@ -112,6 +115,43 @@ class WorkerCommander(Commander):
 
     def _can_play(self, step: int) -> bool:
         return self.last_played_step + self.number_steps_between_order < step
+
+
+class ScoutCommander(Commander):
+
+    def __init__(self, location: Location, enemy_detector: EnemyDetector):
+        Commander.__init__(self)
+        self.location = location
+        self.enemy_detector = enemy_detector
+        self.camera_order = None
+
+    def order(self, observations: Observations, step_index: int)-> Order:
+        if self.enemy_detector.race_detected():
+            return NoOrder()
+
+        elif self.camera_order:
+            self.enemy_detector.detect_race(observations)
+            self.camera_order = None
+            #print(self.enemy_detector.race())
+            return CenterCameraOnCommandCenter(self.location)
+
+        elif self._see_enemy_on_minimap(observations):
+            enemy_y, enemy_x = self._enemy_position_on_minimap(observations)
+            self.camera_order = MoveCameraOnMinimapTarget(self.location, enemy_x[0], enemy_y[0])
+            return self.camera_order
+
+        return NoOrder()
+
+    def _see_enemy_on_screen(self, observations: Observations) -> bool:
+        enemy_y, enemy_x = (observations.screen().player_relative() == _PLAYER_ENEMY).nonzero()
+        return enemy_y.any()
+
+    def _see_enemy_on_minimap(self, observations: Observations) -> bool:
+        enemy_y, enemy_x = self._enemy_position_on_minimap(observations)
+        return enemy_y.any()
+
+    def _enemy_position_on_minimap(self, observations: Observations) -> []:
+        return (observations.minimap().player_relative() == _PLAYER_ENEMY).nonzero()
 
 
 class BuildOrderCommander(Commander):

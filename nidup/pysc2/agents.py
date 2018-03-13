@@ -2,7 +2,7 @@
 import time
 from pysc2.agents.base_agent import BaseAgent
 from nidup.pysc2.agent.scripted.commander import GameCommander, ScoutingCommander, NoOrder
-from nidup.pysc2.agent.information import Location
+from nidup.pysc2.agent.information import Location, EnemyDetector
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.learning.game_results import GameResultsTable
 from nidup.pysc2.agent.smart.commander import QLearningCommander
@@ -15,16 +15,18 @@ class HybridAttackReinforcementAgent(BaseAgent):
     def __init__(self):
         super(HybridAttackReinforcementAgent, self).__init__()
         self.commander = None
+        self.enemy_detector = None
 
     def step(self, obs):
         super(HybridAttackReinforcementAgent, self).step(obs)
         observations = Observations(obs)
         if observations.first():
             base_location = Location(observations)
-            self.commander = HybridGameCommander(base_location, self.name())
+            self.enemy_detector = EnemyDetector()
+            self.commander = HybridGameCommander(base_location, self.name(), self.enemy_detector)
         elif observations.last():
             game_results = GameResultsTable(self.name())
-            game_results.append(observations.reward(), observations.score_cumulative())
+            game_results.append(observations.reward(), observations.score_cumulative(), self.enemy_detector.race())
         return self.commander.order(observations, self.steps).execute(observations)
 
     def name(self) -> str:
