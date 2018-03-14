@@ -3,7 +3,8 @@ import math
 import numpy as np
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.agent.information import Location, BuildingCounter
-from nidup.pysc2.agent.smart.orders import BuildMarine, BuildMarauder, Attack, NoOrder
+from nidup.pysc2.agent.smart.orders import BuildMarine, BuildMarauder, NoOrder
+from nidup.pysc2.agent.hybrid.attack_order_learning import QLearningAttack
 from nidup.pysc2.wrapper.observations import Observations
 
 _PLAYER_SELF = 1
@@ -46,7 +47,7 @@ class SmartActions:
         elif smart_action == ACTION_BUILD_MARAUDER:
             return BuildMarauder(self.location)
         elif smart_action == ACTION_ATTACK:
-            return Attack(self.location, int(x), int(y))
+            return QLearningAttack(self.location, int(x), int(y))
         elif smart_action == ACTION_DO_NOTHING:
             return NoOrder()
         else:

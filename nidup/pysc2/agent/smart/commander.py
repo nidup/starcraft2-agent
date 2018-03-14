@@ -6,7 +6,7 @@ from nidup.pysc2.agent.order import Order
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location
-from nidup.pysc2.agent.smart.orders import BuildBarrack, BuildSupplyDepot, BuildMarine, Attack, NoOrder, PrepareSCVControlGroupsOrder
+from nidup.pysc2.agent.smart.orders import BuildBarrack, BuildSupplyDepot, BuildMarine, DumbAttack, NoOrder, PrepareSCVControlGroupsOrder
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 _PLAYER_SELF = 1
@@ -55,7 +55,7 @@ class SmartActions:
         elif smart_action == ACTION_BUILD_MARINE:
             return BuildMarine(self.location)
         elif smart_action == ACTION_ATTACK:
-            return Attack(self.location, int(x), int(y))
+            return DumbAttack(self.location, int(x), int(y))
         elif smart_action == ACTION_DO_NOTHING:
             return NoOrder()
         else:

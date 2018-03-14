@@ -6,7 +6,7 @@ from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location, BuildingCounter, EnemyDetector
 from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter, MoveCameraOnMinimapTarget
 from nidup.pysc2.agent.smart.orders import NoOrder, PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, BuildSCV, SendIdleSCVToMineral, BuildSupplyDepot
-from nidup.pysc2.agent.hybrid.attack import SmartActions, StateBuilder
+from nidup.pysc2.agent.hybrid.army_learning import SmartActions, StateBuilder
 from nidup.pysc2.agent.hybrid.build import BuildOrderFactory
 
 _PLAYER_ENEMY = 4

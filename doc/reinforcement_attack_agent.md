@@ -119,8 +119,10 @@ We also add some research like concussive shells and combat shields.
 
 ![Image of HybridAttackReinforcementAgent 12](HybridAttackReinforcementAgent_3_rax_rush-easy1.png)
 
-Variants & Evolution (Sequential Build Order + Timing Push)
------------------------------------------------------------
+Variants & Evolution (Sequential Build Order + Assisted Timing Push)
+--------------------------------------------------------------------
+
+**Variant 1**
 
 Changing the hybrid commander to delegate to attack commander only once the build orders is finished.
 
@@ -132,6 +134,36 @@ When the army grow and the supply depots limit is raised, a new depot is automat
 
 ![Image of HybridAttackReinforcementAgent 13](HybridAttackReinforcementAgent_3_rax_rush-easy2.png)
 
+**Variant 2**
+
 Re-enforcing the first push with 4 Marines and 2 Marauders for a bigger first push:
 
 ![Image of HybridAttackReinforcementAgent 14](HybridAttackReinforcementAgent_3_rax_rush-easy3.png)
+
+**Variant 3**
+
+Fixing a bug in the QLearning state build leading to mis-learning and going back to 6 marines & 3 marauders timing push.
+
+Results are excellent there (the full training took Took 30191.962 seconds, ~8 hours for 2000000 steps).
+
+![Image of HybridAttackReinforcementAgent 15](HybridAttackReinforcementAgent_3_rax_rush-easy4.png)
+
+We can notice that this variant results slightly depends on the enemy's race.
+
+Very good against zerg, good against human, less good against protoss, here are the results for each race.
+
+A future evolution of the agent could definitely be to have a learning system on build orders.
+
+![Image of HybridAttackReinforcementAgent 17](HybridAttackReinforcementAgent_3_rax_rush-easy4_zerg.png)
+
+![Image of HybridAttackReinforcementAgent 16](HybridAttackReinforcementAgent_3_rax_rush-easy4_terran.png)
+
+![Image of HybridAttackReinforcementAgent 18](HybridAttackReinforcementAgent_3_rax_rush-easy4_protoss.png)
+
+Variants & Evolution (Sequential Build Order + Not Assisted Timing Push)
+------------------------------------------------------------------------
+
+We see that the agent quickly learns to do efficient timing push.
+
+We remove the building of marines & marauders from the build order to let the agent fully decides of the push timing and army size.
+

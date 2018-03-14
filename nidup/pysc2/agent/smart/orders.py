@@ -680,9 +680,9 @@ class BuildMarauder(SmartOrder):
         return self.actions.no_op()
 
 
-class Attack(SmartOrder):
+class DumbAttack(SmartOrder):
 
-    def __init__(self, location: Location, x , y):
+    def __init__(self, location: Location, x: int , y: int):
         SmartOrder.__init__(self, location)
         self.step = 0
         self.x = x
@@ -718,6 +718,7 @@ class Attack(SmartOrder):
             x_offset = random.randint(-1, 1)
             y_offset = random.randint(-1, 1)
             target = self.location.transform_location(int(self.x) + (x_offset * 8), int(self.y) + (y_offset * 8))
+
             return self.actions.attack_minimap(target)
 
         return self.actions.no_op()
