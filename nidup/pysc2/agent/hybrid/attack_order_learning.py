@@ -44,7 +44,6 @@ class QLearningAttack(SmartOrder):
             x_offset = random.randint(-1, 1)
             y_offset = random.randint(-1, 1)
             target = self.location.transform_location(int(self.x) + (x_offset * 8), int(self.y) + (y_offset * 8))
-            print(target)
 
             return self.actions.attack_minimap(target)
 

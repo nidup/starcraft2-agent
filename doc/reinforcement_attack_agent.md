@@ -152,7 +152,7 @@ We can notice that this variant results slightly depends on the enemy's race.
 
 Very good against zerg, good against human, less good against protoss, here are the results for each race.
 
-A future evolution of the agent could definitely be to have a learning system on build orders.
+A future evolution of the agent could definitely be to have a learning system depending on races.
 
 ![Image of HybridAttackReinforcementAgent 17](HybridAttackReinforcementAgent_3_rax_rush-easy4_zerg.png)
 
@@ -163,7 +163,42 @@ A future evolution of the agent could definitely be to have a learning system on
 Variants & Evolution (Sequential Build Order + Not Assisted Timing Push)
 ------------------------------------------------------------------------
 
-We see that the agent quickly learns to do efficient timing push.
+We see that the agent quickly learns how to do an efficient timing push.
 
-We remove the building of marines & marauders from the build order to let the agent fully decides of the push timing and army size.
+In this variant, we remove the training of marines & marauders from the build order and we let the agent fully decides when to do the first timing push with how many units.
+
+The result is almost as good as with the assisted timing push:
+
+![Image of HybridAttackReinforcementAgent 19](HybridAttackReinforcementAgent_3_rax_rush-easy5.png)
+
+We can still see disparity in game results per race and see that these results change during the training, getting better for a race then worst for this race later on but better for another race.
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	29	24	4	1	82.76	13.79	3.45
+terran	40	39	1	0	97.5	2.5	0.0
+protoss	28	22	4	2	78.57	14.29	7.14
+```
+
+Variants & Evolution (Sequential Build Order + Not Assisted Timing Push + Attack training per race)
+---------------------------------------------------------------------------------------------------
+
+Let's keep the same variant but completing the QLearning state to add the enemy race inside.
+
+The race can be unknown in early game, then zerg or protoss or terran.
+
+This change leads to a longer initial training but a more specialized attack agent.
+
+![Image of HybridAttackReinforcementAgent 20](HybridAttackReinforcementAgent_3_rax_rush-easy6.png)
+
+The results are quite similar, maybe because our agent does not have enough actions to make better strategy distinction or maybe because we're already getting closer to 90% against any race once the agent trained.
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	24	23	0	1	95.83	0	4.17
+terran	38	35	1	2	92.11	2.63	5.26
+protoss	33	28	0	5	84.85	0	15.15
+```
 

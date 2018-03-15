@@ -2,13 +2,10 @@
 import math
 import numpy as np
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.information import Location, BuildingCounter
+from nidup.pysc2.agent.information import Location, BuildingCounter, MinimapEnemyHotSquaresBuilder, EnemyDetector, RaceNames
 from nidup.pysc2.agent.smart.orders import BuildMarine, BuildMarauder, NoOrder
 from nidup.pysc2.agent.hybrid.attack_order_learning import QLearningAttack
 from nidup.pysc2.wrapper.observations import Observations
-
-_PLAYER_SELF = 1
-_PLAYER_HOSTILE = 4
 
 ACTION_DO_NOTHING = 'donothing'
 ACTION_BUILD_MARINE = 'buildmarine'
@@ -64,29 +61,35 @@ class SmartActions:
 
 class StateBuilder:
 
-    def build_state(self, location: Location, observations: Observations) -> []:
+    def build_state(self, location: Location, observations: Observations, enemy_detector: EnemyDetector) -> []:
         counter = BuildingCounter()
 
-        current_state = np.zeros(9)
+        base_state_items_length = 8
+        hot_squares_length = 4
+        current_state_length = base_state_items_length + hot_squares_length
+
+        current_state = np.zeros(current_state_length)
         current_state[0] = counter.command_center_count(observations)
         current_state[1] = counter.supply_depots_count(observations)
         current_state[2] = counter.barracks_count(observations)
         current_state[3] = counter.factories_count(observations)
         current_state[4] = counter.techlab_barracks_count(observations)
         current_state[5] = counter.reactor_barracks_count(observations)
-        current_state[6] = observations.player().food_army()
+        current_state[6] = self._enemy_race_id(enemy_detector)
+        current_state[7] = observations.player().food_army()
 
-        hot_squares = np.zeros(4)
-        enemy_y, enemy_x = (observations.minimap().player_relative() == _PLAYER_HOSTILE).nonzero()
-        for i in range(0, len(enemy_y)):
-            y = int(math.ceil((enemy_y[i] + 1) / 32))
-            x = int(math.ceil((enemy_x[i] + 1) / 32))
-            hot_squares[((y - 1) * 2) + (x - 1)] = 1
-
-        if not location.command_center_is_top_left():
-            hot_squares = hot_squares[::-1]
-
-        for i in range(0, 4):
-            current_state[i + 4] = hot_squares[i]
+        hot_squares = MinimapEnemyHotSquaresBuilder().minimap_four_squares(observations, location)
+        for i in range(0, hot_squares_length):
+            current_state[i + base_state_items_length] = hot_squares[i]
 
         return current_state
+
+    def _enemy_race_id(self, enemy_detector: EnemyDetector) -> int:
+        race = enemy_detector.race()
+        name_to_id = {
+            RaceNames().unknown(): 0,
+            RaceNames().protoss(): 1,
+            RaceNames().terran(): 2,
+            RaceNames().zerg(): 3,
+        }
+        return name_to_id[race]

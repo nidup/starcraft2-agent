@@ -1,7 +1,7 @@
 
 import sys
 from getopt import getopt
-from nidup.pysc2.dataviz.report import GameResultChart, GameResultChartPerEnemyRace, ScoreDetailsChart
+from nidup.pysc2.dataviz.report import GameResultChart, GameResultChartPerEnemyRace, ScoreDetailsChart, LastGamesStatsPerRaceTable
 
 
 def generate_game_results_report(agent_name: str):
@@ -14,8 +14,10 @@ def generate_game_results_report(agent_name: str):
         file_path = GameResultChartPerEnemyRace().draw(agent_name, race)
         print("GameResultChartPerEnemyRace (" + race + ") has been generated in "+file_path)
 
-    file_path = ScoreDetailsChart().draw(agent_name)
-    print("ScoreDetailsChart has been generated in "+file_path)
+    #file_path = ScoreDetailsChart().draw(agent_name)
+    #print("ScoreDetailsChart has been generated in "+file_path)
+
+    LastGamesStatsPerRaceTable().print(agent_name)
 
 
 if __name__ == '__main__':

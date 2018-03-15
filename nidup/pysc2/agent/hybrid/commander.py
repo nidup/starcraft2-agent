@@ -20,7 +20,7 @@ class HybridGameCommander(Commander):
         self.enemy_detector = enemy_detector
         self.scout_commander = ScoutCommander(base_location, self.enemy_detector)
         self.build_order_commander = BuildOrderCommander(base_location, agent_name)
-        self.attack_commander = QLearningAttackCommander(base_location, agent_name)
+        self.attack_commander = QLearningAttackCommander(base_location, agent_name, self.enemy_detector)
         self.current_order = None
         self.enemy_detector = enemy_detector
 
@@ -193,16 +193,16 @@ class BuildOrderCommander(Commander):
 
 class QLearningAttackCommander(Commander):
 
-    def __init__(self, location: Location, agent_name: str):
+    def __init__(self, location: Location, agent_name: str, enemy_detector: EnemyDetector):
         super(Commander, self).__init__()
         self.location = location
         self.agent_name = agent_name
+        self.enemy_detector = enemy_detector
         self.smart_actions = None
         self.qlearn = None
         self.previous_action = None
         self.previous_state = None
         self.previous_order = None
-        self.location = location
 
         self.smart_actions = SmartActions(self.location)
         self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
@@ -218,7 +218,7 @@ class QLearningAttackCommander(Commander):
             return NoOrder()
 
         if not self.previous_order or self.previous_order.done(observations):
-            current_state = StateBuilder().build_state(self.location, observations)
+            current_state = StateBuilder().build_state(self.location, observations, self.enemy_detector)
             if self.previous_action is not None:
                 self.qlearn.learn(str(self.previous_state), self.previous_action, 0, str(current_state))
             rl_action = self.qlearn.choose_action(str(current_state))

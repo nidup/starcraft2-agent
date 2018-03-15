@@ -4,7 +4,7 @@ from nidup.pysc2.learning.game_results import GameResultsTable
 
 class GameResultQueryBuilder:
 
-    def query(self, agent_name: str, filter: str) -> str:
+    def query(self, agent_name: str, filter: str):
         games = GameResultsTable(agent_name)
         available_filters = ['win', 'loss', 'draw']
         if not filter in available_filters:

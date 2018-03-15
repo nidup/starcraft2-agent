@@ -32,7 +32,7 @@ The build order and actions are enriched to train marines & marauders.
 [Here are more details on improvements](doc/reinforcement_attack_agent.md).
 
 Playing against [easy built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)
-![Image of HybridAttackReinforcementAgent 4](doc/HybridAttackReinforcementAgent_8_supply_4_rax_2ref_1fac_1lab-2-easy.png)
+![Image of HybridAttackReinforcementAgent 4](doc/HybridAttackReinforcementAgent_3_rax_rush-easy5.png)
 
 Data & Analysis
 ---------------
