@@ -44,7 +44,7 @@ class GameCommander(Commander):
         self.current_commander = self.scout_commander
 
     # TODO if NoOrder, move to next commander to avoid No Op
-    def order(self, observations: Observations)-> Order:
+    def order(self, observations: Observations, step_index: int)-> Order:
         if observations.first():
             self.current_order = self.current_commander.order(observations)
         elif self.current_order.done(observations):
@@ -67,7 +67,7 @@ class ScoutingCommander(Commander):
         Commander.__init__(self)
         self.scouting_order = Scouting(base_location, looping)
 
-    def order(self, observations: Observations) -> Order:
+    def order(self, observations: Observations, step_index: int) -> Order:
         if self.scouting_order.done(observations):
             return NoOrder()
         else:
@@ -106,7 +106,7 @@ class ProductionCommander(Commander):
             ]
         )
 
-    def order(self, observations: Observations)-> Order:
+    def order(self, observations: Observations, step_index: int)-> Order:
         if not self.build_orders.finished(observations):
             if not self.base_location.command_center_is_visible(observations.screen()):
                 current_order = CenterCameraOnCommandCenter(self.base_location)
@@ -132,7 +132,7 @@ class ArmyCommander(Commander):
             ]
         )
 
-    def order(self, observations: Observations)-> Order:
+    def order(self, observations: Observations, step_index: int)-> Order:
         current = self.attack_orders.current(observations)
         if current.executable(observations):
             return current

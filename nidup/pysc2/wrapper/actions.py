@@ -6,6 +6,7 @@ _ATTACK_SCREEN = actions.FUNCTIONS.Attack_screen.id
 _BUILD_SUPPLYDEPOT = actions.FUNCTIONS.Build_SupplyDepot_screen.id
 _BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
 _BUILD_TECHLAB_BARRACKS = actions.FUNCTIONS.Build_TechLab_screen.id
+_BUILD_REACTOR_BARRACKS = actions.FUNCTIONS.Build_Reactor_screen.id
 _BUILD_REFINERY = actions.FUNCTIONS.Build_Refinery_screen.id
 _BUILD_FACTORY = actions.FUNCTIONS.Build_Factory_screen.id
 _HARVEST_GATHER = actions.FUNCTIONS.Harvest_Gather_screen.id
@@ -15,6 +16,8 @@ _MOVE_SCREEN = actions.FUNCTIONS.Move_screen.id
 _MOVE_CAMERA = actions.FUNCTIONS.move_camera.id
 _NOOP = actions.FUNCTIONS.no_op.id
 _RALLY_UNITS_MINIMAP = actions.FUNCTIONS.Rally_Units_minimap.id
+_RESEARCH_COMBAT_SHIELD = actions.FUNCTIONS.Research_CombatShield_quick.id
+_RESEARCH_CONCUSSIVE_SHELLS = actions.FUNCTIONS.Research_ConcussiveShells_quick.id
 _SELECT_POINT = actions.FUNCTIONS.select_point.id
 _SELECT_IDLE_WORKER = actions.FUNCTIONS.select_idle_worker.id
 _SELECT_ARMY = actions.FUNCTIONS.select_army.id
@@ -23,6 +26,7 @@ _SELECT_RECT = actions.FUNCTIONS.select_rect.id
 _SELECT_CONTROL_GROUP = actions.FUNCTIONS.select_control_group.id
 _TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
 _TRAIN_MARAUDER = actions.FUNCTIONS.Train_Marauder_quick.id
+_TRAIN_SCV = actions.FUNCTIONS.Train_SCV_quick.id
 
 
 _NOT_QUEUED = [0]
@@ -50,6 +54,9 @@ class TerranActionIds:
     def build_techlab_barracks(self) -> int:
         return _BUILD_TECHLAB_BARRACKS
 
+    def build_reactor_barracks(self) -> int:
+        return _BUILD_REACTOR_BARRACKS
+
     def harvest_gather(self) -> int:
         return _HARVEST_GATHER
 
@@ -71,6 +78,12 @@ class TerranActionIds:
     def rally_units_minimap(self) -> int:
         return _RALLY_UNITS_MINIMAP
 
+    def research_combat_shield(self) -> int:
+        return _RESEARCH_COMBAT_SHIELD
+
+    def research_concussive_shells(self) -> int:
+        return _RESEARCH_CONCUSSIVE_SHELLS
+
     def select_army(self) -> int:
         return _SELECT_ARMY
 
@@ -85,6 +98,9 @@ class TerranActionIds:
 
     def train_marauder(self) -> int:
         return _TRAIN_MARAUDER
+
+    def train_scv(self) -> int:
+        return _TRAIN_SCV
 
 
 class TerranActions:
@@ -107,6 +123,9 @@ class TerranActions:
     def build_techlab_barracks(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_BUILD_TECHLAB_BARRACKS, [_NOT_QUEUED, target])
 
+    def build_reactor_barracks(self, target) -> actions.FunctionCall:
+        return actions.FunctionCall(_BUILD_REACTOR_BARRACKS, [_NOT_QUEUED, target])
+
     def harvest_gather(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_HARVEST_GATHER, [_QUEUED, target])
 
@@ -127,6 +146,12 @@ class TerranActions:
 
     def rally_units_minimap(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_RALLY_UNITS_MINIMAP, [_NOT_QUEUED, target])
+
+    def research_combat_shield(self) -> actions.FunctionCall:
+        return actions.FunctionCall(_RESEARCH_COMBAT_SHIELD, [_NOT_QUEUED])
+
+    def research_concussive_shells(self) -> actions.FunctionCall:
+        return actions.FunctionCall(_RESEARCH_CONCUSSIVE_SHELLS, [_NOT_QUEUED])
 
     def select_army(self) -> actions.FunctionCall:
         return actions.FunctionCall(_SELECT_ARMY, [_NOT_QUEUED])
@@ -167,4 +192,7 @@ class TerranActions:
         return actions.FunctionCall(_TRAIN_MARINE, [_QUEUED])
 
     def train_marauder(self) -> actions.FunctionCall:
-        return actions.FunctionCall(_TRAIN_MARAUDER, [_NOT_QUEUED])
+        return actions.FunctionCall(_TRAIN_MARAUDER, [_QUEUED])
+
+    def train_scv(self) -> actions.FunctionCall:
+        return actions.FunctionCall(_TRAIN_SCV, [_NOT_QUEUED])

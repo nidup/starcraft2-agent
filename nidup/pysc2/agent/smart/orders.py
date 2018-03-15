@@ -1,5 +1,4 @@
 
-import math
 import random
 from pysc2.lib import actions
 from nidup.pysc2.agent.order import Order
@@ -7,7 +6,6 @@ from nidup.pysc2.agent.information import Location, BuildingCounter
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
-from sklearn.cluster import KMeans
 
 
 class SmartOrder(Order):
@@ -17,6 +15,9 @@ class SmartOrder(Order):
         self.actions = TerranActions()
         self.action_ids = TerranActionIds()
         self.unit_type_ids = UnitTypeIds()
+
+    def doable(self, observations: Observations) -> bool:
+        raise NotImplementedError("Should be implemented by concrete order")
 
     def done(self, observations: Observations) -> bool:
         raise NotImplementedError("Should be implemented by concrete order")
@@ -30,17 +31,14 @@ class SCVControlGroups:
     def all_group_id(self) -> int:
         return 0
 
-    def builders_group_id(self) -> int:
+    def mineral_collectors_group_id(self) -> int:
         return 1
 
-    def mineral_collectors_group_id(self) -> int:
+    def refinery_one_collectors_group_id(self) -> int:
         return 2
 
-    def refinery_one_collectors_group_id(self) -> int:
-        return 3
-
     def refinery_two_collectors_group_id(self) -> int:
-        return 4
+        return 3
 
 
 class BuildingPositionsFromCommandCenter:
@@ -60,29 +58,40 @@ class BuildingPositionsFromCommandCenter:
             [15, -35]
         ]
 
+    # keeping space for techlab/reactor on each
     def barracks(self) -> []:
         return [
             [15, -10],
-            [30, -20], # keep space for techlab on first barracks
-            [15, 10],
-            [30, 10],
+            [30, -20],
+            [20, 10],
+            [30, 20],
         ]
 
     def factories(self) -> []:
         return [
-            [15, 25],
-            [30, 25],
+            [10, 25],
+            [30, 25], # check it, could not work
         ]
+
+    def vespene_geysers(self) -> []:
+        return [
+            [10, -22],
+            [-24, 12]
+        ]
+
+    def refineries(self) -> []:
+        return self.vespene_geysers()
+
 
 # Groups all scv to specialized group to facilitate the further selections of dedicated workers, at the end of this
 # order, control groups look like the following
 # print(observations.control_groups())
 # [[45 12] <- all scv
-#  [45  3] <- builder scv
-#  [45  3] <- mineral scv
+#  [45  6] <- mineral scv
 #  [45  3] <- vespene1 scv
 #  [45  3] <- vespene2 scv
 #  [0  0]  <- free control group
+#  [0  0]
 #  [0  0]
 #  [0  0]
 #  [0  0]
@@ -94,18 +103,19 @@ class PrepareSCVControlGroupsOrder(SmartOrder):
         self.step = 1
         groups = SCVControlGroups()
         self.all_scv_group_id = groups.all_group_id()
-        self.builder_group_id = groups.builders_group_id()
         self.mineral_group_id = groups.mineral_collectors_group_id()
         self.vespene_group1_id = groups.refinery_one_collectors_group_id()
         self.vespene_group2_id = groups.refinery_two_collectors_group_id()
         self.expected_group_sizes = {
-            self.builder_group_id: 3,
-            self.mineral_group_id: 3,
+            self.mineral_group_id: 6,
             self.vespene_group1_id: 3,
             self.vespene_group2_id: 3,
         }
         self.scv_index_in_all_group = 0
         self.current_group_index = 1
+
+    def doable(self, observations: Observations) -> bool:
+        return True
 
     def done(self, observations: Observations) -> bool:
         return self.step == 6
@@ -169,12 +179,6 @@ class SCVCommonActions:
     def select_a_group_of_scv(self, group_id: int) -> actions.FunctionCall:
         return self.actions.select_control_group(group_id)
 
-    def select_a_scv_from_the_current_selected_group(self, observations: Observations, group_id: int) -> actions.FunctionCall:
-        if self.action_ids.select_unit() in observations.available_actions():
-            group_size = observations.control_groups()[group_id][1]
-            random_scv_index = random.randint(0, group_size - 1)
-            return self.actions.select_unit(random_scv_index)
-
     def send_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
         if self.action_ids.harvest_gather() in observations.available_actions():
             unit_type = observations.screen().unit_type()
@@ -187,21 +191,21 @@ class SCVCommonActions:
                 return self.actions.harvest_gather(target)
         return self.actions.no_op()
 
-    def send_scv_to_refinery(self, observations: Observations) -> actions.FunctionCall:
+    def send_selected_scv_group_to_refinery(self, location: Location, observations: Observations, refinery_id: int) -> actions.FunctionCall:
         if self.action_ids.harvest_gather() in observations.available_actions():
-            unit_type = observations.screen().unit_type()
-            refinery_y, refinery_x = (unit_type == self.unit_type_ids.terran_refinery()).nonzero()
-            refinery_count = int(math.ceil(len(refinery_y) / 97))
-            if refinery_count > 0:
-                units = []
-                for i in range(0, len(refinery_y)):
-                    units.append((refinery_x[i], refinery_y[i]))
-                kmeans = KMeans(refinery_count)
-                kmeans.fit(units)
-                refinery1_x = int(kmeans.cluster_centers_[0][0])
-                refinery1_y = int(kmeans.cluster_centers_[0][1])
-                refinery_target = [refinery1_x, refinery1_y]
-                return self.actions.harvest_gather(refinery_target)
+            if refinery_id == 1:
+                difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[0]
+            else:
+                difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[1]
+            cc_y, cc_x = location.command_center_first_position()
+            target = location.transform_distance(
+                round(cc_x.mean()),
+                difference_from_cc[0],
+                round(cc_y.mean()),
+                difference_from_cc[1],
+            )
+            #print("send collector " + str(refinery_id) + " to refinery " + str(target[0]) + " " + str(target[1]))
+            return self.actions.harvest_gather(target)
         return self.actions.no_op()
 
 
@@ -213,24 +217,20 @@ class BuildBarrack(SmartOrder):
         self.scv_groups = SCVControlGroups()
         self.max_barracks = max_barracks
 
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 150
+
     def done(self, observations: Observations) -> bool:
-        return self.step == 4
+        return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
         self.step = self.step + 1
         if self.step == 1:
             return self._select_all_mineral_collecter_scv()
         elif self.step == 2:
-            return self._select_a_mineral_collecter_scv()
-        elif self.step == 3:
             return self._build_barracks(observations)
-        elif self.step == 4:
-            return self._send_collecter_scv_to_mineral(observations)
 
     def _select_all_mineral_collecter_scv(self) -> actions.FunctionCall:
-        return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
-
-    def _select_a_mineral_collecter_scv(self) -> actions.FunctionCall:
         return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
 
     def _build_barracks(self, observations: Observations) -> actions.FunctionCall:
@@ -249,42 +249,46 @@ class BuildBarrack(SmartOrder):
 
         return self.actions.no_op()
 
-    def _send_collecter_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
-        return SCVCommonActions().send_scv_to_mineral(observations)
-
 
 class BuildTechLabBarrack(SmartOrder):
 
-    def __init__(self, base_location: Location, max_techlab: int = 1):
+    def __init__(self, base_location: Location, barrack_index: int):
         SmartOrder.__init__(self, base_location)
         self.step = 0
         self.scv_groups = SCVControlGroups()
-        self.max_techlab = max_techlab
+        self.barrack_index = barrack_index
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 50 and observations.player().vespene() >= 25
 
     def done(self, observations: Observations) -> bool:
         return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
-        self.step = self.step + 1
-        if self.step == 1:
-            return self._select_barrack()
-        elif self.step == 2:
+        if self.step == 0:
+            return self._select_barrack(observations)
+        elif self.step == 1:
             return self._build_techlab(observations)
         return self.actions.no_op()
 
-    def _select_barrack(self) -> actions.FunctionCall:
-        cc_y, cc_x = self.location.command_center_first_position()
-        difference_from_cc = self.difference_from_command_center()
-        target = self.location.transform_distance(
-            round(cc_x.mean()),
-            difference_from_cc[0],
-            round(cc_y.mean()),
-            difference_from_cc[1],
-        )
-        return self.actions.select_point(target)
+    def _select_barrack(self, observations: Observations) -> actions.FunctionCall:
+        barrack_count = BuildingCounter().barracks_count(observations)
+        if barrack_count >= 1:
+            self.step = self.step + 1
+            cc_y, cc_x = self.location.command_center_first_position()
+            difference_from_cc = self.difference_from_command_center()
+            target = self.location.transform_distance(
+                round(cc_x.mean()),
+                difference_from_cc[0],
+                round(cc_y.mean()),
+                difference_from_cc[1],
+            )
+            return self.actions.select_point(target)
+        return self.actions.no_op()
 
     def _build_techlab(self, observations: Observations) -> actions.FunctionCall:
         if self.action_ids.build_techlab_barracks() in observations.available_actions():
+            self.step = self.step + 1
             cc_y, cc_x = self.location.command_center_first_position()
             difference_from_cc = self.difference_from_command_center()
             target = self.location.transform_distance(
@@ -297,7 +301,61 @@ class BuildTechLabBarrack(SmartOrder):
         return self.actions.no_op()
 
     def difference_from_command_center(self) -> []:
-        return BuildingPositionsFromCommandCenter().barracks()[0]
+        return BuildingPositionsFromCommandCenter().barracks()[self.barrack_index - 1]
+
+
+class BuildReactorBarrack(SmartOrder):
+
+    def __init__(self, base_location: Location, barrack_index: int):
+        SmartOrder.__init__(self, base_location)
+        self.step = 0
+        self.scv_groups = SCVControlGroups()
+        self.barrack_index = barrack_index
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 50 and observations.player().vespene() >= 50
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        if self.step == 0:
+            return self._select_barrack(observations)
+        elif self.step == 1:
+            return self._build_reactor(observations)
+        return self.actions.no_op()
+
+    def _select_barrack(self, observations: Observations) -> actions.FunctionCall:
+        barrack_count = BuildingCounter().barracks_count(observations)
+        if barrack_count >= 2: # always build on second and third barracks
+            self.step = self.step + 1
+            cc_y, cc_x = self.location.command_center_first_position()
+            difference_from_cc = self.difference_from_command_center()
+            target = self.location.transform_distance(
+                round(cc_x.mean()),
+                difference_from_cc[0],
+                round(cc_y.mean()),
+                difference_from_cc[1],
+            )
+            return self.actions.select_point(target)
+        return self.actions.no_op()
+
+    def _build_reactor(self, observations: Observations) -> actions.FunctionCall:
+        if self.action_ids.build_reactor_barracks() in observations.available_actions():
+            self.step = self.step + 1
+            cc_y, cc_x = self.location.command_center_first_position()
+            difference_from_cc = self.difference_from_command_center()
+            target = self.location.transform_distance(
+                round(cc_x.mean()),
+                difference_from_cc[0],
+                round(cc_y.mean()),
+                difference_from_cc[1],
+            )
+            return self.actions.build_reactor_barracks(target)
+        return self.actions.no_op()
+
+    def difference_from_command_center(self) -> []:
+        return BuildingPositionsFromCommandCenter().barracks()[self.barrack_index - 1]
 
 
 class BuildFactory(SmartOrder):
@@ -308,25 +366,20 @@ class BuildFactory(SmartOrder):
         self.max_factories = max_factories
         self.scv_groups = SCVControlGroups()
 
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 150 and observations.player().vespene() >= 100
+
     def done(self, observations: Observations) -> bool:
-        return self.step == 4
+        return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
-        #print("factory")
         self.step = self.step + 1
         if self.step == 1:
             return self._select_all_mineral_collecter_scv()
         elif self.step == 2:
-            return self._select_a_mineral_collecter_scv()
-        elif self.step == 3:
             return self._build_factory(observations)
-        elif self.step == 4:
-            return self._send_collecter_scv_to_mineral(observations)
 
     def _select_all_mineral_collecter_scv(self) -> actions.FunctionCall:
-        return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
-
-    def _select_a_mineral_collecter_scv(self) -> actions.FunctionCall:
         return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
 
     def _build_factory(self, observations: Observations) -> actions.FunctionCall:
@@ -344,9 +397,6 @@ class BuildFactory(SmartOrder):
                 return self.actions.build_factory(target)
         return self.actions.no_op()
 
-    def _send_collecter_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
-        return SCVCommonActions().send_scv_to_mineral(observations)
-
 
 class BuildSupplyDepot(SmartOrder):
 
@@ -356,24 +406,20 @@ class BuildSupplyDepot(SmartOrder):
         self.max_supplies = max_supplies
         self.scv_groups = SCVControlGroups()
 
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 100
+
     def done(self, observations: Observations) -> bool:
-        return self.step == 4
+        return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
         self.step = self.step + 1
         if self.step == 1:
             return self._select_all_mineral_collecter_scv()
         elif self.step == 2:
-            return self._select_a_mineral_collecter_scv()
-        elif self.step == 3:
             return self._build_supply_depot(observations)
-        elif self.step == 4:
-            return self._send_collecter_scv_to_mineral(observations)
 
     def _select_all_mineral_collecter_scv(self) -> actions.FunctionCall:
-        return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
-
-    def _select_a_mineral_collecter_scv(self) -> actions.FunctionCall:
         return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
 
     def _build_supply_depot(self, observations: Observations) -> actions.FunctionCall:
@@ -391,61 +437,178 @@ class BuildSupplyDepot(SmartOrder):
                 return self.actions.build_supply_depot(target)
         return self.actions.no_op()
 
-    def _send_collecter_scv_to_mineral(self, observations: Observations) -> actions.FunctionCall:
-        return SCVCommonActions().send_scv_to_mineral(observations)
-
 
 class BuildRefinery(SmartOrder):
 
-    def __init__(self, base_location: Location, max_refineries: int = 2):
+    def __init__(self, base_location: Location, refinery_index: int):
         SmartOrder.__init__(self, base_location)
         self.step = 0
-        self.refinery_target = None
-        self.max_refineries = max_refineries
+        self.refinery_index = refinery_index
         self.scv_groups = SCVControlGroups()
 
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 75
+
     def done(self, observations: Observations) -> bool:
-        return self.step == 3
+        return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
+        group_id = self._relevant_group_id()
         self.step = self.step + 1
-        group_id = self._relevant_group_id(observations)
         if self.step == 1:
             return self._select_all_refinery_collecter_scv(group_id)
         elif self.step == 2:
-            return self._select_a_refinery_collecter_scv(group_id)
-        elif self.step == 3:
             return self._build_refinery(observations)
         return self.actions.no_op()
 
-    def _relevant_group_id(self, observations: Observations) -> int:
-        if self._count_refineries(observations) == 0:
+    def _relevant_group_id(self) -> int:
+        if self.refinery_index == 1:
             return self.scv_groups.refinery_one_collectors_group_id()
         return self.scv_groups.refinery_two_collectors_group_id()
-
-    def _count_refineries(self, observations: Observations) -> int:
-        return BuildingCounter().refineries_count(observations)
 
     def _select_all_refinery_collecter_scv(self, group_id: int) -> actions.FunctionCall:
         return SCVCommonActions().select_a_group_of_scv(group_id)
 
-    def _select_a_refinery_collecter_scv(self, group_id: int) -> actions.FunctionCall:
-        return SCVCommonActions().select_a_group_of_scv(group_id)
-
     def _build_refinery(self, observations: Observations) -> actions.FunctionCall:
         if self.action_ids.build_refinery() in observations.available_actions():
-            unit_type = observations.screen().unit_type()
-            vespene_y, vespene_x = (unit_type == self.unit_type_ids.neutral_vespene_geyser()).nonzero()
-            vespene_geyser_count = int(math.ceil(len(vespene_y) / 97))
-            units = []
-            for i in range(0, len(vespene_y)):
-                units.append((vespene_x[i], vespene_y[i]))
-            kmeans = KMeans(vespene_geyser_count)
-            kmeans.fit(units)
-            vespene1_x = int(kmeans.cluster_centers_[0][0])
-            vespene1_y = int(kmeans.cluster_centers_[0][1])
-            self.refinery_target = [vespene1_x, vespene1_y]
-            return self.actions.build_refinery(self.refinery_target)
+            if self.refinery_index == 1:
+                difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[0]
+            else:
+                difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[1]
+            cc_y, cc_x = self.location.command_center_first_position()
+            target = self.location.transform_distance(
+                round(cc_x.mean()),
+                difference_from_cc[0],
+                round(cc_y.mean()),
+                difference_from_cc[1],
+            )
+            #print(
+            #    "build refinery "+str(self.refinery_index) + " on "+str(target[0])+ " "+str(target[1])
+            #    + " CC is "+ str(round(cc_x.mean())) + " " + str(round(cc_y.mean()))
+            #)
+
+            return self.actions.build_refinery(target)
+        return self.actions.no_op()
+
+
+class FillRefineryOnceBuilt(SmartOrder):
+
+    def __init__(self, base_location: Location, refinery_index: int):
+        SmartOrder.__init__(self, base_location)
+        self.step = 0
+        self.refinery_index = refinery_index
+        self.scv_groups = SCVControlGroups()
+
+    def doable(self, observations: Observations) -> bool:
+        return True
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 3
+
+    def doable(self, observations: Observations) -> bool:
+        refinery_count = BuildingCounter().refineries_count(observations)
+        return refinery_count >= self.refinery_index
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        if self.step == 0:
+            return self._select_refinery()
+        elif self.step == 1 and self._selected_refinery_is_built(observations):
+            #print("refinery is built, select collectors" + str(self.refinery_index))
+            return self._select_vespene_collectors()
+        elif self.step == 2:
+            return self._send_collectors_to_refinery(observations)
+
+        return self.actions.no_op()
+
+    def _select_refinery(self) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.refinery_index == 1:
+            difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[0]
+        else:
+            difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[1]
+        cc_y, cc_x = self.location.command_center_first_position()
+        target = self.location.transform_distance(
+            round(cc_x.mean()),
+            difference_from_cc[0],
+            round(cc_y.mean()),
+            difference_from_cc[1],
+        )
+        #print("select refinery " + str(target[0]) + " " + str(target[1]))
+        return self.actions.select_point(target)
+
+    def _selected_refinery_is_built(self, observations: Observations) -> bool:
+        return observations.single_select().is_built()
+
+    def _select_vespene_collectors(self) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.refinery_index == 1:
+            group_id = SCVControlGroups().refinery_one_collectors_group_id()
+        else:
+            group_id = SCVControlGroups().refinery_two_collectors_group_id()
+        return SCVCommonActions().select_a_group_of_scv(group_id)
+
+    def _send_collectors_to_refinery(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        #print(observations.multi_select())
+        return SCVCommonActions().send_selected_scv_group_to_refinery(self.location, observations, self.refinery_index)
+
+
+class SendIdleSCVToMineral(SmartOrder):
+
+    def __init__(self, base_location: Location):
+        SmartOrder.__init__(self, base_location)
+        self.step = 0
+
+    def doable(self, observations: Observations) -> bool:
+        return True
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().idle_worker_count() > 0
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.step == 1:
+            return self.actions.select_idle_worker()
+        elif self.step == 2:
+            return SCVCommonActions().send_scv_to_mineral(observations)
+
+
+class BuildSCV(SmartOrder):
+
+    def __init__(self, location: Location):
+        SmartOrder.__init__(self, location)
+        self.step = 0
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 50
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().food_used() < observations.player().food_cap()
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.step == 1:
+            return self._select_command_center(observations)
+        elif self.step == 2:
+            return self._train_scv(observations)
+
+    def _select_command_center(self, observations: Observations) -> actions.FunctionCall:
+        unit_type = observations.screen().unit_type()
+        cc_y, cc_x = (unit_type == self.unit_type_ids.terran_command_center()).nonzero()
+        if cc_y.any():
+            target = [round(cc_x.mean()), round(cc_y.mean())]
+            return self.actions.select_point(target)
+        return self.actions.no_op()
+
+    def _train_scv(self, observations: Observations) -> actions.FunctionCall:
+        if self.action_ids.train_scv() in observations.available_actions():
+            return self.actions.train_scv()
         return self.actions.no_op()
 
 
@@ -454,6 +617,9 @@ class BuildMarine(SmartOrder):
     def __init__(self, location: Location):
         SmartOrder.__init__(self, location)
         self.step = 0
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 50
 
     def done(self, observations: Observations) -> bool:
         return self.step == 2
@@ -486,6 +652,9 @@ class BuildMarauder(SmartOrder):
         SmartOrder.__init__(self, location)
         self.step = 0
 
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 100 and observations.player().vespene() >= 25
+
     def done(self, observations: Observations) -> bool:
         return self.step == 2
 
@@ -511,13 +680,16 @@ class BuildMarauder(SmartOrder):
         return self.actions.no_op()
 
 
-class Attack(SmartOrder):
+class DumbAttack(SmartOrder):
 
-    def __init__(self, location: Location, x , y):
+    def __init__(self, location: Location, x: int , y: int):
         SmartOrder.__init__(self, location)
         self.step = 0
         self.x = x
         self.y = y
+
+    def doable(self, observations: Observations) -> bool:
+        return True
 
     def done(self, observations: Observations) -> bool:
         return self.step == 2
@@ -546,16 +718,98 @@ class Attack(SmartOrder):
             x_offset = random.randint(-1, 1)
             y_offset = random.randint(-1, 1)
             target = self.location.transform_location(int(self.x) + (x_offset * 8), int(self.y) + (y_offset * 8))
+
             return self.actions.attack_minimap(target)
 
         return self.actions.no_op()
 
 
-class NoOrder(Order):
+# http://liquipedia.net/starcraft2/Tech_Lab_(Legacy_of_the_Void)
+class ResearchCombatShield(SmartOrder):
+
+    def __init__(self, base_location: Location):
+        SmartOrder.__init__(self, base_location)
+        self.step = 0
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 100 and observations.player().vespene() >= 100
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        if self.step == 0:
+            return self._select_tech_barrack(observations)
+        elif self.step == 1:
+            return self._research_combat_shield(observations)
+        return self.actions.no_op()
+
+    def _select_tech_barrack(self, observations: Observations) -> actions.FunctionCall:
+        techlab_barrack_count = BuildingCounter().techlab_barracks_count(observations)
+        if techlab_barrack_count >= 1:
+            self.step = self.step + 1
+            unit_type = observations.screen().unit_type()
+            center_y, center_x = (unit_type == self.unit_type_ids.terran_barracks_techlab()).nonzero()
+            center_x = round(center_x.mean())
+            center_y = round(center_y.mean())
+            target = [center_x, center_y]
+            return self.actions.select_point(target)
+        return self.actions.no_op()
+
+    def _research_combat_shield(self, observations: Observations) -> actions.FunctionCall:
+        if self.action_ids.research_combat_shield() in observations.available_actions():
+            self.step = self.step + 1
+            return self.actions.research_combat_shield()
+        return self.actions.no_op()
+
+
+# http://liquipedia.net/starcraft2/Tech_Lab_(Legacy_of_the_Void)
+class ResearchConcussiveShells(SmartOrder):
+
+    def __init__(self, base_location: Location):
+        SmartOrder.__init__(self, base_location)
+        self.step = 0
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 50 and observations.player().vespene() >= 50
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        if self.step == 0:
+            return self._select_tech_barrack(observations)
+        elif self.step == 1:
+            return self._research_concussive_shells(observations)
+        return self.actions.no_op()
+
+    def _select_tech_barrack(self, observations: Observations) -> actions.FunctionCall:
+        techlab_barrack_count = BuildingCounter().techlab_barracks_count(observations)
+        if techlab_barrack_count >= 1:
+            self.step = self.step + 1
+            unit_type = observations.screen().unit_type()
+            center_y, center_x = (unit_type == self.unit_type_ids.terran_barracks_techlab()).nonzero()
+            center_x = round(center_x.mean())
+            center_y = round(center_y.mean())
+            target = [center_x, center_y]
+            return self.actions.select_point(target)
+        return self.actions.no_op()
+
+    def _research_concussive_shells(self, observations: Observations) -> actions.FunctionCall:
+        if self.action_ids.research_concussive_shells() in observations.available_actions():
+            self.step = self.step + 1
+            return self.actions.research_concussive_shells()
+        return self.actions.no_op()
+
+
+class NoOrder(SmartOrder):
 
     def __init__(self):
-        Order.__init__(self)
+        SmartOrder.__init__(self, None)
         self.step = 0
+
+    def doable(self, observations: Observations) -> bool:
+        return True
 
     def done(self, observations: Observations) -> bool:
         return self.step == 1
