@@ -7,7 +7,9 @@ These agents have been built to work properly on the Simple64 map, as a Terran p
 
 They are not robust enough to play elsewhere.
 
-All the following data have been collected playing against the built-in AI, trying to progressively raise its difficulty mode.
+All the following data have been collected playing against the built-in AI.
+
+Idea is to progressively raise the built-in AI difficulty mode using a more rich / complex / adaptive agent.
 
 Agents can be installed following [this doc](doc/install.md).
 
@@ -16,23 +18,44 @@ Basic agents (scripted)
 
 Here are [few scripted agents](doc/scripted_agents.md) (built to discover the API).
 
-Reinforcement Marine Agent (Machine Learning)
----------------------------------------------
+Reinforcement Marine Agent (Machine Learning - Generation 1)
+------------------------------------------------------------
 
 This agent uses a Q-Learning table, a reduced set of actions (build supply depot, barrack, train marine & attack) and a sparse reward depending on the result of the episode.
 It has been slightly fine-tuned to be trained faster and win more games against the built-in AI.
-[Here are more details on training and attempts](doc/reinforcement_marine_agent.md).
+[Here are more details on training, attempts and evolution](doc/reinforcement_marine_agent.md).
 
-Hybrid Reinforcement Attack Agent (Machine Learning)
-----------------------------------------------------
+**Against [very-easy built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)**
+
+![Image of ReinforcementMarineAgent 3](doc/ReinforcementMarineAgent_enemyb1.png)
+
+Hybrid Reinforcement Attack Agent (Machine Learning - Generation 2)
+-------------------------------------------------------------------
 
 This agent uses the same Q-Learning approach but specialized on the train units & attack phase.
 The build order phase is scripted to reduce the set of actions and focus the training on the attack.
 The build order and actions are enriched to train marines & marauders.
-[Here are more details on improvements](doc/reinforcement_attack_agent.md).
+[Here are more details on training, attempts and evolution](doc/reinforcement_attack_agent.md).
 
-Playing against [easy built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)
-![Image of HybridAttackReinforcementAgent 4](doc/HybridAttackReinforcementAgent_3_rax_rush-easy5.png)
+**Against [easy built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)**
+
+![Image of HybridAttackReinforcementAgent 20](doc/HybridAttackReinforcementAgent_3_rax_rush-easy6.png)
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	24	23	0	1	95.83	0	4.17
+terran	38	35	1	2	92.11	2.63	5.26
+protoss	33	28	0	5	84.85	0	15.15
+```
+
+Multi Reinforcement Agent (Machine Learning - Generation 3)
+-----------------------------------------------------------
+
+This agent uses the same Q-Learning approach, however, it specializes learning on several aspects, as build orders and attack phases.
+
+[WIP]
+
 
 Data & Analysis
 ---------------

@@ -184,6 +184,8 @@ protoss	28	22	4	2	78.57	14.29	7.14
 Variants & Evolution (Sequential Build Order + Not Assisted Timing Push + Attack training per race)
 ---------------------------------------------------------------------------------------------------
 
+**Against [easy built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)**
+
 Let's keep the same variant but completing the QLearning state to add the enemy race inside.
 
 The race can be unknown in early game, then zerg or protoss or terran.
@@ -200,5 +202,21 @@ race	total	win	draw	loss	win %	draw %	loss %
 zerg	24	23	0	1	95.83	0	4.17
 terran	38	35	1	2	92.11	2.63	5.26
 protoss	33	28	0	5	84.85	0	15.15
+```
+
+**Against [medium built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)**
+
+It's now time to move on medium built-in AI 🚀
+
+![Image of HybridAttackReinforcementAgent 21](HybridAttackReinforcementAgent_3_rax_rush-medium.png)
+
+The results are not as bad as expected, as observed on previous training, the agent has lot of difficulty to play against protoss.
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	28	13	1	14	46.43	3.57	50.0
+terran	26	5	0	21	19.23	0	80.77
+protoss	41	0	0	41	0	0	100.0
 ```
 
