@@ -8,8 +8,35 @@ from nidup.pysc2.learning.game_results import GameResultsTable, FinishedGameInfo
 from nidup.pysc2.agent.smart.commander import QLearningCommander
 from nidup.pysc2.agent.hybrid.commander import HybridGameCommander
 from nidup.pysc2.agent.hybrid.orders import PrepareSCVControlGroupsOrder, BuildRefinery, FillRefineryOnceBuilt, BuildSCV
+from nidup.pysc2.agent.multi.commander import MultiGameCommander
 
 
+# Generation 3 - expecting good win ratio against medium built-in AI
+class MultiReinforcementAgent(BaseAgent):
+
+    def __init__(self):
+        super(MultiReinforcementAgent, self).__init__()
+        self.commander = None
+        self.enemy_detector = None
+
+    def step(self, obs):
+        super(MultiReinforcementAgent, self).step(obs)
+        observations = Observations(obs)
+        if observations.first():
+            base_location = Location(observations)
+            self.enemy_detector = EnemyDetector()
+            self.commander = MultiGameCommander(base_location, self.name(), self.enemy_detector)
+        elif observations.last():
+            game_results = GameResultsTable(self.name())
+            game_info = FinishedGameInformationDetails(self.steps, self.enemy_detector.race())
+            game_results.append(observations.reward(), observations.score_cumulative(), game_info)
+        return self.commander.order(observations, self.steps).execute(observations)
+
+    def name(self) -> str:
+        return __name__ + "." + self.__class__.__name__
+
+
+# Generation 2 - good win ratio against easy built-in AI
 class HybridAttackReinforcementAgent(BaseAgent):
 
     def __init__(self):
@@ -34,6 +61,7 @@ class HybridAttackReinforcementAgent(BaseAgent):
         return __name__ + "." + self.__class__.__name__
 
 
+# Generation 1 - good win ratio against very-easy built-in AI
 class ReinforcementMarineAgent(BaseAgent):
 
     def __init__(self):
