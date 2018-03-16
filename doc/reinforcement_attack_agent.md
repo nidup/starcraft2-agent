@@ -20,15 +20,15 @@ Playing against the default built-in AI (very-easy difficulty).
 
 Build order with 2 supply depots & 2 barracks (same than previous agent):
 
-![Image of HybridAttackReinforcementAgent 1](HybridAttackReinforcementAgent_2_supply_2_rax.png)
+![Image of HybridAttackReinforcementAgent 1](HybridAttackReinforcementAgent/2_supply_2_rax.png)
 
 Build order with 4 supply depots & 2 barracks to avoid supply limit and loss in mid-game:
 
-![Image of HybridAttackReinforcementAgent 2](HybridAttackReinforcementAgent_4_supply_2_rax.png)
+![Image of HybridAttackReinforcementAgent 2](HybridAttackReinforcementAgent/4_supply_2_rax.png)
 
 Build order with 10 supply depots & 4 barracks, ie, the marines ball:
 
-![Image of HybridAttackReinforcementAgent 3](HybridAttackReinforcementAgent_10_supply_4_rax.png)
+![Image of HybridAttackReinforcementAgent 3](HybridAttackReinforcementAgent/10_supply_4_rax.png)
 
 **Against [easy built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)**
 
@@ -38,7 +38,7 @@ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.HybridAtt
 
 Build order with 10 supply depots & 4 barracks, ie, the marines ball:
 
-![Image of HybridAttackReinforcementAgent 4](HybridAttackReinforcementAgent_10_supply_4_rax-easy.png)
+![Image of HybridAttackReinforcementAgent 4](HybridAttackReinforcementAgent/10_supply_4_rax-easy.png)
 
 **Against [medium built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)**
 
@@ -48,7 +48,7 @@ python3.6 -m pysc2.bin.agent --map Simple64 --agent nidup.pysc2.agents.HybridAtt
 
 Build order with 10 supply depots & 4 barracks, ie, the marines ball:
 
-![Image of HybridAttackReinforcementAgent 5](HybridAttackReinforcementAgent_10_supply_4_rax-medium.png)
+![Image of HybridAttackReinforcementAgent 5](HybridAttackReinforcementAgent/10_supply_4_rax-medium.png)
 
 
 Variants & Evolution (Marines and Marauders)
@@ -60,17 +60,17 @@ Build order with 8 supply depots & 4 barracks & 2 refinery & 1 factory & 1 techl
 
 The build order is sequential and has to be finished to let the train & attack phase starts.
 
-![Image of HybridAttackReinforcementAgent 6](HybridAttackReinforcementAgent_8_supply_4_rax_2ref_1fac_1lab-easy.png)
+![Image of HybridAttackReinforcementAgent 6](HybridAttackReinforcementAgent/8_supply_4_rax_2ref_1fac_1lab-easy.png)
 
 The same build order, updated to make the build of the supply depots triggered only when needed:
 
-![Image of HybridAttackReinforcementAgent 7](HybridAttackReinforcementAgent_8_supply_4_rax_2ref_1fac_1lab-2-easy.png)
+![Image of HybridAttackReinforcementAgent 7](HybridAttackReinforcementAgent/8_supply_4_rax_2ref_1fac_1lab-2-easy.png)
 
 **Against [medium built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)**
 
 The same build order, updated to make the build of the supply depots triggered only when needed:
 
-![Image of HybridAttackReinforcementAgent 8](HybridAttackReinforcementAgent_8_supply_4_rax_2ref_1fac_1lab-2-medium.png)
+![Image of HybridAttackReinforcementAgent 8](HybridAttackReinforcementAgent/8_supply_4_rax_2ref_1fac_1lab-2-medium.png)
 
 
 Variants & Evolution (Worker Commander)
@@ -92,7 +92,7 @@ At each step, the hybrid commander:
 
 The drawback is a slower start of the game due to blocking orders from the worker commander and the build order commander.
 
-![Image of HybridAttackReinforcementAgent 9](HybridAttackReinforcementAgent_8_supply_4_rax_1ref_1fac_1lab-worker-easy.png)
+![Image of HybridAttackReinforcementAgent 9](HybridAttackReinforcementAgent/8_supply_4_rax_1ref_1fac_1lab-worker-easy.png)
 
 Build order with 8 supply depots & 3 barracks & 1 refinery & 1 factory & 1 techlab barracks & 1 reactor barracks, ie, the MM ball.
 
@@ -104,11 +104,11 @@ The build order commander has also been updated to return only executable orders
 
 These changes allows to harass sooner the enemy.
 
-![Image of HybridAttackReinforcementAgent 10](HybridAttackReinforcementAgent_8_supply_4_rax_1ref_1fac_1lab-worker-easy-2.png)
+![Image of HybridAttackReinforcementAgent 10](HybridAttackReinforcementAgent/8_supply_4_rax_1ref_1fac_1lab-worker-easy-2.png)
 
 Same variant but with a slightly different build order, 8 supply depots & 4 barracks & 1 refinery & 1 factory & 1 techlab barracks & 1 reactor barracks, ie, the MM ball.
 
-![Image of HybridAttackReinforcementAgent 11](HybridAttackReinforcementAgent_8_supply_4_rax_1ref_1fac_1lab-worker-easy-3.png)
+![Image of HybridAttackReinforcementAgent 11](HybridAttackReinforcementAgent/8_supply_4_rax_1ref_1fac_1lab-worker-easy-3.png)
 
 Variants & Evolution (Sequential Build Order)
 ---------------------------------------------
@@ -117,7 +117,7 @@ Introducing a sequential build orders to replace the trigger build orders.
 The build order is 1 refinery & 3 barracks & 1 techlab & 2 reactors.
 We also add some research like concussive shells and combat shields.
 
-![Image of HybridAttackReinforcementAgent 12](HybridAttackReinforcementAgent_3_rax_rush-easy1.png)
+![Image of HybridAttackReinforcementAgent 12](HybridAttackReinforcementAgent/3_rax_rush-easy1.png)
 
 Variants & Evolution (Sequential Build Order + Assisted Timing Push)
 --------------------------------------------------------------------
@@ -132,13 +132,13 @@ This way, the attack commander starts with a first timing push, then constantly 
 
 When the army grow and the supply depots limit is raised, a new depot is automatically built.
 
-![Image of HybridAttackReinforcementAgent 13](HybridAttackReinforcementAgent_3_rax_rush-easy2.png)
+![Image of HybridAttackReinforcementAgent 13](HybridAttackReinforcementAgent/3_rax_rush-easy2.png)
 
 **Variant 2**
 
 Re-enforcing the first push with 4 Marines and 2 Marauders for a bigger first push:
 
-![Image of HybridAttackReinforcementAgent 14](HybridAttackReinforcementAgent_3_rax_rush-easy3.png)
+![Image of HybridAttackReinforcementAgent 14](HybridAttackReinforcementAgent/3_rax_rush-easy3.png)
 
 **Variant 3**
 
@@ -146,7 +146,7 @@ Fixing a bug in the QLearning state build leading to mis-learning and going back
 
 Results are excellent there (the full training took Took 30191.962 seconds, ~8 hours for 2000000 steps).
 
-![Image of HybridAttackReinforcementAgent 15](HybridAttackReinforcementAgent_3_rax_rush-easy4.png)
+![Image of HybridAttackReinforcementAgent 15](HybridAttackReinforcementAgent/3_rax_rush-easy4.png)
 
 We can notice that this variant results slightly depends on the enemy's race.
 
@@ -154,11 +154,11 @@ Very good against zerg, good against human, less good against protoss, here are 
 
 A future evolution of the agent could definitely be to have a learning system depending on races.
 
-![Image of HybridAttackReinforcementAgent 17](HybridAttackReinforcementAgent_3_rax_rush-easy4_zerg.png)
+![Image of HybridAttackReinforcementAgent 17](HybridAttackReinforcementAgent/3_rax_rush-easy4_zerg.png)
 
-![Image of HybridAttackReinforcementAgent 16](HybridAttackReinforcementAgent_3_rax_rush-easy4_terran.png)
+![Image of HybridAttackReinforcementAgent 16](HybridAttackReinforcementAgent/3_rax_rush-easy4_terran.png)
 
-![Image of HybridAttackReinforcementAgent 18](HybridAttackReinforcementAgent_3_rax_rush-easy4_protoss.png)
+![Image of HybridAttackReinforcementAgent 18](HybridAttackReinforcementAgent/3_rax_rush-easy4_protoss.png)
 
 Variants & Evolution (Sequential Build Order + Not Assisted Timing Push)
 ------------------------------------------------------------------------
@@ -169,7 +169,7 @@ In this variant, we remove the training of marines & marauders from the build or
 
 The result is almost as good as with the assisted timing push:
 
-![Image of HybridAttackReinforcementAgent 19](HybridAttackReinforcementAgent_3_rax_rush-easy5.png)
+![Image of HybridAttackReinforcementAgent 19](HybridAttackReinforcementAgent/3_rax_rush-easy5.png)
 
 We can still see disparity in game results per race and see that these results change during the training, getting better for a race then worst for this race later on but better for another race.
 
@@ -192,7 +192,7 @@ The race can be unknown in early game, then zerg or protoss or terran.
 
 This change leads to a longer initial training but a more specialized attack agent.
 
-![Image of HybridAttackReinforcementAgent 20](HybridAttackReinforcementAgent_3_rax_rush-easy6.png)
+![Image of HybridAttackReinforcementAgent 20](HybridAttackReinforcementAgent/3_rax_rush-easy6.png)
 
 The results are quite similar, maybe because our agent does not have enough actions to make better strategy distinction or maybe because we're already getting closer to 90% against any race once the agent trained.
 
@@ -208,7 +208,7 @@ protoss	33	28	0	5	84.85	0	15.15
 
 It's now time to move on medium built-in AI 🚀
 
-![Image of HybridAttackReinforcementAgent 21](HybridAttackReinforcementAgent_3_rax_rush-medium.png)
+![Image of HybridAttackReinforcementAgent 21](HybridAttackReinforcementAgent/3_rax_rush-medium.png)
 
 The results are not as bad as expected, as observed on previous training, the agent has lot of difficulty to play against protoss.
 
