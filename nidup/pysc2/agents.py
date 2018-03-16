@@ -7,7 +7,7 @@ from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.learning.game_results import GameResultsTable, FinishedGameInformationDetails
 from nidup.pysc2.agent.smart.commander import QLearningCommander
 from nidup.pysc2.agent.hybrid.commander import HybridGameCommander
-from nidup.pysc2.agent.smart.orders import PrepareSCVControlGroupsOrder, BuildRefinery, FillRefineryOnceBuilt, BuildSCV
+from nidup.pysc2.agent.hybrid.orders import PrepareSCVControlGroupsOrder, BuildRefinery, FillRefineryOnceBuilt, BuildSCV
 
 
 class HybridAttackReinforcementAgent(BaseAgent):

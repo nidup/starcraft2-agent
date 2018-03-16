@@ -43,10 +43,9 @@ class GameCommander(Commander):
         self.army_commander = ArmyCommander(base_location)
         self.current_commander = self.scout_commander
 
-    # TODO if NoOrder, move to next commander to avoid No Op
     def order(self, observations: Observations, step_index: int)-> Order:
         if observations.first():
-            self.current_order = self.current_commander.order(observations)
+            self.current_order = self.current_commander.order(observations, step_index)
         elif self.current_order.done(observations):
             if self.current_commander == self.scout_commander:
                 self.current_commander = self.production_commander
@@ -54,8 +53,7 @@ class GameCommander(Commander):
                 self.current_commander = self.army_commander
             elif self.current_commander == self.army_commander:
                 self.current_commander = self.scout_commander
-            self.current_order = self.current_commander.order(observations)
-        #print(self.current_order)
+            self.current_order = self.current_commander.order(observations, step_index)
         return self.current_order
 
 
