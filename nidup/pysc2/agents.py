@@ -8,7 +8,7 @@ from nidup.pysc2.learning.game_results import GameResultsTable, FinishedGameInfo
 from nidup.pysc2.agent.smart.commander import QLearningCommander
 from nidup.pysc2.agent.hybrid.commander import HybridGameCommander
 from nidup.pysc2.agent.hybrid.orders import PrepareSCVControlGroupsOrder, BuildRefinery, FillRefineryOnceBuilt, BuildSCV
-from nidup.pysc2.agent.multi.commander import MultiGameCommander
+from nidup.pysc2.agent.multi.commander.main import MultiGameCommander
 
 
 # Generation 3 - expecting good win ratio against medium built-in AI

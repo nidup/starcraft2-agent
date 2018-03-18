@@ -1,5 +1,7 @@
 
 import numpy as np
+from nidup.pysc2.agent.commander import Commander
+from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.agent.information import Location, BuildingCounter, MinimapEnemyHotSquaresBuilder, EnemyDetector, RaceNames
 from nidup.pysc2.agent.multi.order.common import NoOrder
@@ -93,3 +95,41 @@ class StateBuilder:
             RaceNames().zerg(): 3,
         }
         return name_to_id[race]
+
+
+class QLearningAttackCommander(Commander):
+
+    def __init__(self, location: Location, agent_name: str, enemy_detector: EnemyDetector):
+        super(Commander, self).__init__()
+        self.location = location
+        self.agent_name = agent_name
+        self.enemy_detector = enemy_detector
+        self.smart_actions = None
+        self.qlearn = None
+        self.previous_action = None
+        self.previous_state = None
+        self.previous_order = None
+
+        self.smart_actions = SmartActions(self.location)
+        self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
+        QLearningTableStorage().load(self.qlearn, self.agent_name)
+
+    def order(self, observations: Observations, step_index: int)-> Order:
+        if observations.last():
+            self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
+            QLearningTableStorage().save(self.qlearn, self.agent_name)
+            self.previous_action = None
+            self.previous_state = None
+            self.previous_order = None
+            return NoOrder()
+
+        if not self.previous_order or self.previous_order.done(observations):
+            current_state = StateBuilder().build_state(self.location, observations, self.enemy_detector)
+            if self.previous_action is not None:
+                self.qlearn.learn(str(self.previous_state), self.previous_action, 0, str(current_state))
+            rl_action = self.qlearn.choose_action(str(current_state))
+            self.previous_state = current_state
+            self.previous_action = rl_action
+            self.previous_order = self.smart_actions.order(rl_action)
+
+        return self.previous_order

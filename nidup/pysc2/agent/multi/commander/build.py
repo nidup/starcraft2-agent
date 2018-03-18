@@ -1,4 +1,9 @@
 
+from nidup.pysc2.agent.commander import Commander
+from nidup.pysc2.agent.order import Order
+from nidup.pysc2.agent.information import BuildingCounter, EnemyDetector
+from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
+from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location
 from nidup.pysc2.agent.multi.order.common import SmartOrder
@@ -97,3 +102,41 @@ class BuildOrderFactory:
                 #BuildReactorBarrack(location, 4), NO REACTOR BUILT WHEN PLAY ON TOP GAME?
             ]
         )
+
+
+class BuildOrderCommander(Commander):
+
+    def __init__(self, location: Location, agent_name: str, enemy_detector: EnemyDetector):
+        Commander.__init__(self)
+        self.location = location
+        self.agent_name = agent_name
+        self.enemy_detector = enemy_detector
+        self.build_orders = BuildOrderFactory().create3RaxRushTvXWithFirstUnitsPush(location)
+        self.current_order = None
+
+    def order(self, observations: Observations, step_index: int)-> Order:
+        if self.build_orders.finished(observations):
+            return self._extra_supply_depots(observations)
+        elif self.current_order and self.current_order.done(observations):
+            self.current_order = None
+            return CenterCameraOnCommandCenter(self.location)
+        elif self.current_order and not self.current_order.done(observations):
+            return self.current_order
+        elif not self.current_order:
+            order = self.build_orders.current(observations)
+            if order.doable(observations):
+                self.current_order = order
+                return self.current_order
+        return NoOrder()
+
+    def build_is_finished(self, observations: Observations) -> bool:
+        return self.build_orders.finished(observations)
+
+    def _extra_supply_depots(self, observations: Observations) -> Order:
+        counter = BuildingCounter()
+        expectMore = 8 > counter.supply_depots_count(observations)
+        supplyAlmostFull = observations.player().food_cap() - observations.player().food_used() <= 2
+        if expectMore and supplyAlmostFull:
+            return BuildSupplyDepot(self.location)
+        else:
+            return NoOrder()
