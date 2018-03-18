@@ -43,9 +43,9 @@ class GameCommander(Commander):
         self.army_commander = ArmyCommander(base_location)
         self.current_commander = self.scout_commander
 
-    def order(self, observations: Observations, step_index: int)-> Order:
+    def order(self, observations: Observations)-> Order:
         if observations.first():
-            self.current_order = self.current_commander.order(observations, step_index)
+            self.current_order = self.current_commander.order(observations)
         elif self.current_order.done(observations):
             if self.current_commander == self.scout_commander:
                 self.current_commander = self.production_commander
@@ -53,7 +53,7 @@ class GameCommander(Commander):
                 self.current_commander = self.army_commander
             elif self.current_commander == self.army_commander:
                 self.current_commander = self.scout_commander
-            self.current_order = self.current_commander.order(observations, step_index)
+            self.current_order = self.current_commander.order(observations)
         return self.current_order
 
 
@@ -65,7 +65,7 @@ class ScoutingCommander(Commander):
         Commander.__init__(self)
         self.scouting_order = Scouting(base_location, looping)
 
-    def order(self, observations: Observations, step_index: int) -> Order:
+    def order(self, observations: Observations) -> Order:
         if self.scouting_order.done(observations):
             return NoOrder()
         else:
@@ -104,7 +104,7 @@ class ProductionCommander(Commander):
             ]
         )
 
-    def order(self, observations: Observations, step_index: int)-> Order:
+    def order(self, observations: Observations)-> Order:
         if not self.build_orders.finished(observations):
             if not self.base_location.command_center_is_visible(observations.screen()):
                 current_order = CenterCameraOnCommandCenter(self.base_location)
@@ -130,7 +130,7 @@ class ArmyCommander(Commander):
             ]
         )
 
-    def order(self, observations: Observations, step_index: int)-> Order:
+    def order(self, observations: Observations)-> Order:
         current = self.attack_orders.current(observations)
         if current.executable(observations):
             return current

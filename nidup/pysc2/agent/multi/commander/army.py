@@ -114,7 +114,7 @@ class QLearningAttackCommander(Commander):
         self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
         QLearningTableStorage().load(self.qlearn, self._commander_name())
 
-    def order(self, observations: Observations, step_index: int)-> Order:
+    def order(self, observations: Observations)-> Order:
         if observations.last():
             self.previous_action = None
             self.previous_state = None

@@ -3,7 +3,7 @@ from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
-from nidup.pysc2.agent.information import Location, BuildingCounter, EnemyDetector
+from nidup.pysc2.agent.information import Location, BuildingCounter, EnemyDetector, EpisodeDetails
 from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter, MoveCameraOnMinimapTarget
 from nidup.pysc2.agent.hybrid.orders import NoOrder, PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, BuildSCV, SendIdleSCVToMineral, BuildSupplyDepot
 from nidup.pysc2.agent.hybrid.army_learning import SmartActions, StateBuilder
@@ -14,9 +14,9 @@ _PLAYER_ENEMY = 4
 
 class HybridGameCommander(Commander):
 
-    def __init__(self, base_location: Location, agent_name: str, enemy_detector: EnemyDetector):
+    def __init__(self, base_location: Location, agent_name: str, enemy_detector: EnemyDetector, episode_details: EpisodeDetails):
         Commander.__init__(self)
-        self.worker_commander = WorkerCommander(base_location)
+        self.worker_commander = WorkerCommander(base_location, episode_details)
         self.enemy_detector = enemy_detector
         self.scout_commander = ScoutCommander(base_location, self.enemy_detector)
         self.build_order_commander = BuildOrderCommander(base_location, agent_name)
@@ -24,28 +24,28 @@ class HybridGameCommander(Commander):
         self.current_order = None
         self.enemy_detector = enemy_detector
 
-    def order(self, observations: Observations, step_index: int)-> Order:
+    def order(self, observations: Observations)-> Order:
 
         if not self.current_order:
-            self.current_order = self.worker_commander.order(observations, step_index)
+            self.current_order = self.worker_commander.order(observations)
 
         elif self.current_order.done(observations):
 
-            self.current_order = self.scout_commander.order(observations, step_index)
+            self.current_order = self.scout_commander.order(observations)
             if not isinstance(self.current_order, NoOrder):
                 return self.current_order
 
-            self.current_order = self.worker_commander.order(observations, step_index)
+            self.current_order = self.worker_commander.order(observations)
             if not isinstance(self.current_order, NoOrder):
                 return self.current_order
 
-            self.current_order = self.build_order_commander.order(observations, step_index)
+            self.current_order = self.build_order_commander.order(observations)
             if not isinstance(self.current_order, NoOrder):
                 return self.current_order
 
             # wait for the former build order to be finished
             if self.build_order_commander.build_is_finished(observations):
-                self.current_order = self.attack_commander.order(observations, step_index)
+                self.current_order = self.attack_commander.order(observations)
             else:
                 return self.current_order
 
@@ -54,7 +54,7 @@ class HybridGameCommander(Commander):
 
 class WorkerCommander(Commander):
 
-    def __init__(self, base_location: Location):
+    def __init__(self, base_location: Location, episode_details: EpisodeDetails):
         Commander.__init__(self)
         self.base_location = base_location
         self.control_group_order = PrepareSCVControlGroupsOrder(base_location)
@@ -66,9 +66,10 @@ class WorkerCommander(Commander):
         self._plan_to_build_scv_mineral_harvesters(4)
         self.last_played_step = 0
         self.number_steps_between_order = 30
+        self.episode_details = episode_details
 
-    def order(self, observations: Observations, step_index: int)-> Order:
-        if not self.current_order and self._can_play(step_index):
+    def order(self, observations: Observations)-> Order:
+        if not self.current_order and self._can_play():
             if self.idle_scv_to_mineral.doable(observations):
                 if self.idle_scv_to_mineral.done(observations):
                     self.idle_scv_to_mineral = SendIdleSCVToMineral(self.base_location)
@@ -83,7 +84,7 @@ class WorkerCommander(Commander):
                 self.current_order = self._scv_to_build_order(observations)
 
         elif self.current_order and self.current_order.done(observations):
-            self._update_last_played_step(step_index)
+            self._update_last_played_step()
             self.current_order = None
             return CenterCameraOnCommandCenter(self.base_location)
 
@@ -108,13 +109,11 @@ class WorkerCommander(Commander):
                 return order
         return None
 
-    def _update_last_played_step(self, step: int):
-        self.last_played_step = step
-        #print("worker played "+str(step))
-        #print(self.current_order)
+    def _update_last_played_step(self):
+        self.last_played_step = self.episode_details.episode_step()
 
-    def _can_play(self, step: int) -> bool:
-        return self.last_played_step + self.number_steps_between_order < step
+    def _can_play(self) -> bool:
+        return self.last_played_step + self.number_steps_between_order < self.episode_details.episode_step()
 
 
 class ScoutCommander(Commander):
@@ -125,7 +124,7 @@ class ScoutCommander(Commander):
         self.enemy_detector = enemy_detector
         self.camera_order = None
 
-    def order(self, observations: Observations, step_index: int)-> Order:
+    def order(self, observations: Observations)-> Order:
         if self.enemy_detector.race_detected():
             return NoOrder()
 
@@ -163,7 +162,7 @@ class BuildOrderCommander(Commander):
         self.build_orders = BuildOrderFactory().create3RaxRushTvX(location)
         self.current_order = None
 
-    def order(self, observations: Observations, step_index: int)-> Order:
+    def order(self, observations: Observations)-> Order:
         if self.build_orders.finished(observations):
             return self._extra_supply_depots(observations)
         elif self.current_order and self.current_order.done(observations):
@@ -208,7 +207,7 @@ class QLearningAttackCommander(Commander):
         self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
         QLearningTableStorage().load(self.qlearn, self.agent_name)
 
-    def order(self, observations: Observations, step_index: int)-> Order:
+    def order(self, observations: Observations)-> Order:
         if observations.last():
             self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
             QLearningTableStorage().save(self.qlearn, self.agent_name)

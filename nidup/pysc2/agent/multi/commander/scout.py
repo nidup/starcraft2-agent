@@ -19,7 +19,7 @@ class ScoutCommander(Commander):
         self.scout_order = ScoutWithScv(location)
         self.camera_order = None
 
-    def order(self, observations: Observations, step_index: int)-> Order:
+    def order(self, observations: Observations)-> Order:
         if self.enemy_detector.race_detected():
             return NoOrder()
 

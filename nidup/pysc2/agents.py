@@ -18,21 +18,22 @@ class MultiReinforcementAgent(BaseAgent):
         super(MultiReinforcementAgent, self).__init__()
         self.commander = None
         self.enemy_detector = None
-        self.episode_details = EpisodeDetails()
+        self.episode_details = None
 
     def step(self, obs):
         super(MultiReinforcementAgent, self).step(obs)
-        self.episode_details.increment_episode_step()
         observations = Observations(obs)
         if observations.first():
             base_location = Location(observations)
             self.enemy_detector = EnemyDetector()
+            self.episode_details = EpisodeDetails()
             self.commander = MultiGameCommander(base_location, self.name(), self.enemy_detector, self.episode_details)
         elif observations.last():
             game_results = GameResultsTable(self.name())
             game_info = FinishedGameInformationDetails(self.episode_details.episode_step(), self.enemy_detector.race())
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
-        return self.commander.order(observations, self.steps).execute(observations)
+        self.episode_details.increment_episode_step()
+        return self.commander.order(observations).execute(observations)
 
     def name(self) -> str:
         return __name__ + "." + self.__class__.__name__
@@ -45,6 +46,7 @@ class HybridAttackReinforcementAgent(BaseAgent):
         super(HybridAttackReinforcementAgent, self).__init__()
         self.commander = None
         self.enemy_detector = None
+        self.episode_details = None
 
     def step(self, obs):
         super(HybridAttackReinforcementAgent, self).step(obs)
@@ -52,12 +54,14 @@ class HybridAttackReinforcementAgent(BaseAgent):
         if observations.first():
             base_location = Location(observations)
             self.enemy_detector = EnemyDetector()
-            self.commander = HybridGameCommander(base_location, self.name(), self.enemy_detector)
+            self.episode_details = EpisodeDetails()
+            self.commander = HybridGameCommander(base_location, self.name(), self.enemy_detector, self.episode_details)
         elif observations.last():
             game_results = GameResultsTable(self.name())
             game_info = FinishedGameInformationDetails(self.steps, self.enemy_detector.race())
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
-        return self.commander.order(observations, self.steps).execute(observations)
+        self.episode_details.increment_episode_step()
+        return self.commander.order(observations).execute(observations)
 
     def name(self) -> str:
         return __name__ + "." + self.__class__.__name__
@@ -80,7 +84,7 @@ class ReinforcementMarineAgent(BaseAgent):
             game_info = FinishedGameInformationDetails(self.steps, "unknown")
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
 
-        return self.commander.order(observations, self.steps).execute(observations)
+        return self.commander.order(observations).execute(observations)
 
     def name(self) -> str:
         return __name__ + "." + self.__class__.__name__
@@ -103,7 +107,7 @@ class BuildOrderAgent(BaseAgent):
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
         if self.debug:
             time.sleep(0.5)
-        return self.commander.order(observations, self.steps).execute(observations)
+        return self.commander.order(observations).execute(observations)
 
     def name(self) -> str:
         return __name__ + "." + self.__class__.__name__
@@ -120,7 +124,7 @@ class ScoutingAgent(BaseAgent):
         if observations.first():
             base_location = Location(observations)
             self.commander = ScoutingCommander(base_location, self.infinite_scouting)
-        return self.commander.order(observations, self.steps).execute(observations)
+        return self.commander.order(observations).execute(observations)
 
 
 class SCVHarvesterAgent(BaseAgent):

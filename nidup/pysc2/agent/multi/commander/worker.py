@@ -2,7 +2,7 @@
 from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.wrapper.observations import Observations
-from nidup.pysc2.agent.information import Location
+from nidup.pysc2.agent.information import Location, EpisodeDetails
 from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
 from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.agent.multi.order.worker import PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, SendIdleSCVToMineral
@@ -11,7 +11,7 @@ from nidup.pysc2.agent.multi.order.train import BuildSCV
 
 class WorkerCommander(Commander):
 
-    def __init__(self, base_location: Location):
+    def __init__(self, base_location: Location, episode_details: EpisodeDetails):
         Commander.__init__(self)
         self.base_location = base_location
         self.control_group_order = PrepareSCVControlGroupsOrder(base_location)
@@ -23,9 +23,10 @@ class WorkerCommander(Commander):
         self._plan_to_build_scv_mineral_harvesters(4)
         self.last_played_step = 0
         self.number_steps_between_order = 30
+        self.episode_details = episode_details
 
-    def order(self, observations: Observations, step_index: int)-> Order:
-        if not self.current_order and self._can_play(step_index):
+    def order(self, observations: Observations)-> Order:
+        if not self.current_order and self._can_play():
             if self.idle_scv_to_mineral.doable(observations):
                 if self.idle_scv_to_mineral.done(observations):
                     self.idle_scv_to_mineral = SendIdleSCVToMineral(self.base_location)
@@ -40,7 +41,7 @@ class WorkerCommander(Commander):
                 self.current_order = self._scv_to_build_order(observations)
 
         elif self.current_order and self.current_order.done(observations):
-            self._update_last_played_step(step_index)
+            self._update_last_played_step()
             self.current_order = None
             return CenterCameraOnCommandCenter(self.base_location)
 
@@ -65,8 +66,8 @@ class WorkerCommander(Commander):
                 return order
         return None
 
-    def _update_last_played_step(self, step: int):
-        self.last_played_step = step
+    def _update_last_played_step(self):
+        self.last_played_step = self.episode_details.episode_step()
 
-    def _can_play(self, step: int) -> bool:
-        return self.last_played_step + self.number_steps_between_order < step
+    def _can_play(self) -> bool:
+        return self.last_played_step + self.number_steps_between_order < self.episode_details.episode_step()

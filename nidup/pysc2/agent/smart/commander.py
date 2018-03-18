@@ -117,7 +117,7 @@ class QLearningCommander(Commander):
         self.previous_order = None
         self.location = None
 
-    def order(self, observations: Observations, step_index: int)-> Order:
+    def order(self, observations: Observations)-> Order:
         if observations.last():
             self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
             QLearningTableStorage().save(self.qlearn, self.agent_name)

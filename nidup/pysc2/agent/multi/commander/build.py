@@ -114,7 +114,7 @@ class BuildOrderCommander(Commander):
         self.build_orders = BuildOrderFactory().create3RaxRushTvXWithFirstUnitsPush(location)
         self.current_order = None
 
-    def order(self, observations: Observations, step_index: int)-> Order:
+    def order(self, observations: Observations)-> Order:
         if self.build_orders.finished(observations):
             return self._extra_supply_depots(observations)
         elif self.current_order and self.current_order.done(observations):
