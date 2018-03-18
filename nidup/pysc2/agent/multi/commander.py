@@ -5,9 +5,12 @@ from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location, BuildingCounter, EnemyDetector
 from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter, MoveCameraOnMinimapTarget
-from nidup.pysc2.agent.multi.orders import NoOrder, PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, BuildSCV, SendIdleSCVToMineral, BuildSupplyDepot
-from nidup.pysc2.agent.multi.army_learning import SmartActions, StateBuilder
-from nidup.pysc2.agent.multi.build import BuildOrderFactory
+from nidup.pysc2.agent.multi.order.common import NoOrder
+from nidup.pysc2.agent.multi.order.worker import PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, SendIdleSCVToMineral
+from nidup.pysc2.agent.multi.order.train import BuildSCV
+from nidup.pysc2.agent.multi.order.build import BuildSupplyDepot
+from nidup.pysc2.agent.multi.learning.army import SmartActions, StateBuilder
+from nidup.pysc2.agent.multi.learning.build import BuildOrderFactory
 
 _PLAYER_ENEMY = 4
 
@@ -160,7 +163,7 @@ class BuildOrderCommander(Commander):
         Commander.__init__(self)
         self.location = location
         self.agent_name = agent_name
-        self.build_orders = BuildOrderFactory().create3RaxRushTvX(location)
+        self.build_orders = BuildOrderFactory().create3RaxRushTvXWithFirstUnitsPush(location)
         self.current_order = None
 
     def order(self, observations: Observations, step_index: int)-> Order:

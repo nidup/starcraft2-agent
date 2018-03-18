@@ -2,7 +2,9 @@
 import numpy as np
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.agent.information import Location, BuildingCounter, MinimapEnemyHotSquaresBuilder, EnemyDetector, RaceNames
-from nidup.pysc2.agent.multi.orders import BuildMarine, BuildMarauder, NoOrder, DumbAttack
+from nidup.pysc2.agent.multi.order.common import NoOrder
+from nidup.pysc2.agent.multi.order.attack import DumbAttack
+from nidup.pysc2.agent.multi.order.train import BuildMarine, BuildMarauder
 from nidup.pysc2.wrapper.observations import Observations
 
 ACTION_DO_NOTHING = 'donothing'
