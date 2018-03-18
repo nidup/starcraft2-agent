@@ -30,6 +30,10 @@ class MultiGameCommander(Commander):
         if not self.current_order:
             self.current_order = self.worker_commander.order(observations, step_index)
 
+        elif observations.last():
+            self.attack_commander.learn_on_last_episode_step(observations)
+            return NoOrder()
+
         elif self.current_order.done(observations):
 
             self.current_order = self.scout_commander.order(observations, step_index)

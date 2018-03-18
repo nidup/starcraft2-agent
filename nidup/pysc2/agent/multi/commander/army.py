@@ -112,12 +112,10 @@ class QLearningAttackCommander(Commander):
 
         self.smart_actions = SmartActions(self.location)
         self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
-        QLearningTableStorage().load(self.qlearn, self.agent_name)
+        QLearningTableStorage().load(self.qlearn, self._commander_name())
 
     def order(self, observations: Observations, step_index: int)-> Order:
         if observations.last():
-            self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
-            QLearningTableStorage().save(self.qlearn, self.agent_name)
             self.previous_action = None
             self.previous_state = None
             self.previous_order = None
@@ -133,3 +131,10 @@ class QLearningAttackCommander(Commander):
             self.previous_order = self.smart_actions.order(rl_action)
 
         return self.previous_order
+
+    def learn_on_last_episode_step(self, observations: Observations):
+        self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
+        QLearningTableStorage().save(self.qlearn, self._commander_name())
+
+    def _commander_name(self) -> str:
+        return self.agent_name + "." + __name__ + "." + self.__class__.__name__
