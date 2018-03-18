@@ -103,6 +103,15 @@ class TerranActionIds:
         return _TRAIN_SCV
 
 
+class ActionQueueParameter:
+
+    def queued(self) -> []:
+        return _QUEUED
+
+    def not_queued(self) -> []:
+        return _NOT_QUEUED
+
+
 class TerranActions:
 
     def attack_minimap(self, target) -> actions.FunctionCall:
@@ -132,8 +141,8 @@ class TerranActions:
     def move_camera(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_MOVE_CAMERA, [target])
 
-    def move_minimap(self, target) -> actions.FunctionCall:
-        return actions.FunctionCall(_MOVE_MINIMAP, [_NOT_QUEUED, target])
+    def move_minimap(self, target: [], queued: [] = _NOT_QUEUED) -> actions.FunctionCall:
+        return actions.FunctionCall(_MOVE_MINIMAP, [queued, target])
 
     def move_screen(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, target])

@@ -9,6 +9,7 @@ from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.agent.multi.order.worker import PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, SendIdleSCVToMineral
 from nidup.pysc2.agent.multi.order.train import BuildSCV
 from nidup.pysc2.agent.multi.order.build import BuildSupplyDepot
+from nidup.pysc2.agent.multi.order.scout import ScoutWithScv
 from nidup.pysc2.agent.multi.learning.army import SmartActions, StateBuilder
 from nidup.pysc2.agent.multi.learning.build import BuildOrderFactory
 
@@ -126,16 +127,19 @@ class ScoutCommander(Commander):
         Commander.__init__(self)
         self.location = location
         self.enemy_detector = enemy_detector
+        self.scout_order = ScoutWithScv(location)
         self.camera_order = None
 
     def order(self, observations: Observations, step_index: int)-> Order:
         if self.enemy_detector.race_detected():
             return NoOrder()
 
+        if not self.scout_order.done(observations):
+            return self.scout_order
+
         elif self.camera_order:
             self.enemy_detector.detect_race(observations)
             self.camera_order = None
-            #print(self.enemy_detector.race())
             return CenterCameraOnCommandCenter(self.location)
 
         elif self._see_enemy_on_minimap(observations):

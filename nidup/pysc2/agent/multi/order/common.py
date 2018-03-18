@@ -61,6 +61,9 @@ class SCVControlGroups:
     def refinery_two_collectors_group_id(self) -> int:
         return 3
 
+    def scouting_group_id(self) -> int:
+        return 4
+
 
 class SCVCommonActions:
 

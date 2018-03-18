@@ -9,11 +9,11 @@ from nidup.pysc2.agent.multi.order.common import SmartOrder, SCVControlGroups, S
 # order, control groups look like the following
 # print(observations.control_groups())
 # [[45 12] <- all scv
-#  [45  6] <- mineral scv
+#  [45  5] <- mineral scv
 #  [45  3] <- vespene1 scv
 #  [45  3] <- vespene2 scv
+#  [45  1] <- scout scv
 #  [0  0]  <- free control group
-#  [0  0]
 #  [0  0]
 #  [0  0]
 #  [0  0]
@@ -28,10 +28,12 @@ class PrepareSCVControlGroupsOrder(SmartOrder):
         self.mineral_group_id = groups.mineral_collectors_group_id()
         self.vespene_group1_id = groups.refinery_one_collectors_group_id()
         self.vespene_group2_id = groups.refinery_two_collectors_group_id()
+        self.scouting_group_id = groups.scouting_group_id()
         self.expected_group_sizes = {
-            self.mineral_group_id: 6,
+            self.mineral_group_id: 5,
             self.vespene_group1_id: 3,
             self.vespene_group2_id: 3,
+            self.scouting_group_id: 1,
         }
         self.scv_index_in_all_group = 0
         self.current_group_index = 1
