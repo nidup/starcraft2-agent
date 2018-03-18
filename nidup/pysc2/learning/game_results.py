@@ -8,12 +8,12 @@ from nidup.pysc2.wrapper.observations import ScoreDetails
 
 class FinishedGameInformationDetails:
 
-    def __init__(self, last_step: int, enemy_race: str):
-        self.last_step_data = last_step
+    def __init__(self, last_episode_step: int, enemy_race: str):
+        self.last_episode_step_data = last_episode_step
         self.enemy_race_data = enemy_race
 
-    def last_step(self) -> int:
-        return self.last_step_data
+    def last_episode_step(self) -> int:
+        return self.last_episode_step_data
 
     def enemy_race(self) -> str:
         return self.enemy_race_data
@@ -28,7 +28,7 @@ class GameResultsTable:
                 "score", "idle_production_time", "idle_worker_time", "total_value_units", "total_value_structures",
                 "killed_value_units", "killed_value_structures", "collected_minerals", "collected_vespene",
                 "collection_rate_minerals", "collection_rate_vespene", "spent_minerals", "spent_vespene",
-                "last_step", "enemy_race"
+                "last_episode_step", "enemy_race"
             ],
             dtype=np.int8
         )
@@ -56,7 +56,7 @@ class GameResultsTable:
             score.collection_rate_vespene(),
             score.spent_minerals(),
             score.spent_vespene(),
-            details.last_step(),
+            details.last_episode_step(),
             details.enemy_race()
         ]
         self.table = self.table.append(pd.Series(row, index=self.table.columns, name=now.isoformat()))

@@ -2,7 +2,7 @@
 import time
 from pysc2.agents.base_agent import BaseAgent
 from nidup.pysc2.agent.scripted.commander import GameCommander, ScoutingCommander, NoOrder
-from nidup.pysc2.agent.information import Location, EnemyDetector
+from nidup.pysc2.agent.information import Location, EnemyDetector, EpisodeDetails
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.learning.game_results import GameResultsTable, FinishedGameInformationDetails
 from nidup.pysc2.agent.smart.commander import QLearningCommander
@@ -18,17 +18,19 @@ class MultiReinforcementAgent(BaseAgent):
         super(MultiReinforcementAgent, self).__init__()
         self.commander = None
         self.enemy_detector = None
+        self.episode_details = EpisodeDetails()
 
     def step(self, obs):
         super(MultiReinforcementAgent, self).step(obs)
+        self.episode_details.increment_episode_step()
         observations = Observations(obs)
         if observations.first():
             base_location = Location(observations)
             self.enemy_detector = EnemyDetector()
-            self.commander = MultiGameCommander(base_location, self.name(), self.enemy_detector)
+            self.commander = MultiGameCommander(base_location, self.name(), self.enemy_detector, self.episode_details)
         elif observations.last():
             game_results = GameResultsTable(self.name())
-            game_info = FinishedGameInformationDetails(self.steps, self.enemy_detector.race())
+            game_info = FinishedGameInformationDetails(self.episode_details.episode_step(), self.enemy_detector.race())
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
         return self.commander.order(observations, self.steps).execute(observations)
 

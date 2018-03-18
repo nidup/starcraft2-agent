@@ -3,7 +3,7 @@ from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.wrapper.observations import Observations
-from nidup.pysc2.agent.information import Location, BuildingCounter, EnemyDetector
+from nidup.pysc2.agent.information import Location, BuildingCounter, EnemyDetector, EpisodeDetails
 from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter, MoveCameraOnMinimapTarget
 from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.agent.multi.order.worker import PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, SendIdleSCVToMineral
@@ -18,12 +18,13 @@ _PLAYER_ENEMY = 4
 
 class MultiGameCommander(Commander):
 
-    def __init__(self, base_location: Location, agent_name: str, enemy_detector: EnemyDetector):
+    def __init__(self, base_location: Location, agent_name: str, enemy_detector: EnemyDetector, episode_details: EpisodeDetails):
         Commander.__init__(self)
         self.worker_commander = WorkerCommander(base_location)
         self.enemy_detector = enemy_detector
+        self.episode_details = episode_details
         self.scout_commander = ScoutCommander(base_location, self.enemy_detector)
-        self.build_order_commander = BuildOrderCommander(base_location, agent_name)
+        self.build_order_commander = BuildOrderCommander(base_location, agent_name, self.enemy_detector)
         self.attack_commander = QLearningAttackCommander(base_location, agent_name, self.enemy_detector)
         self.current_order = None
         self.enemy_detector = enemy_detector
@@ -114,8 +115,6 @@ class WorkerCommander(Commander):
 
     def _update_last_played_step(self, step: int):
         self.last_played_step = step
-        #print("worker played "+str(step))
-        #print(self.current_order)
 
     def _can_play(self, step: int) -> bool:
         return self.last_played_step + self.number_steps_between_order < step
@@ -163,10 +162,11 @@ class ScoutCommander(Commander):
 
 class BuildOrderCommander(Commander):
 
-    def __init__(self, location: Location, agent_name: str):
+    def __init__(self, location: Location, agent_name: str, enemy_detector: EnemyDetector):
         Commander.__init__(self)
         self.location = location
         self.agent_name = agent_name
+        self.enemy_detector = enemy_detector
         self.build_orders = BuildOrderFactory().create3RaxRushTvXWithFirstUnitsPush(location)
         self.current_order = None
 
