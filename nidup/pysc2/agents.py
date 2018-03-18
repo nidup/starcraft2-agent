@@ -29,8 +29,13 @@ class MultiReinforcementAgent(BaseAgent):
             self.episode_details = EpisodeDetails()
             self.commander = MultiGameCommander(base_location, self.name(), self.enemy_detector, self.episode_details)
         elif observations.last():
+            self.commander.learn_on_last_episode_step(observations)
             game_results = GameResultsTable(self.name())
-            game_info = FinishedGameInformationDetails(self.episode_details.episode_step(), self.enemy_detector.race())
+            game_info = FinishedGameInformationDetails(
+                self.episode_details.episode_step(),
+                self.enemy_detector.race(),
+                self.commander.build_order_commander.current_build_orders().name()
+            )
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
         self.episode_details.increment_episode_step()
         return self.commander.order(observations).execute(observations)
@@ -58,7 +63,7 @@ class HybridAttackReinforcementAgent(BaseAgent):
             self.commander = HybridGameCommander(base_location, self.name(), self.enemy_detector, self.episode_details)
         elif observations.last():
             game_results = GameResultsTable(self.name())
-            game_info = FinishedGameInformationDetails(self.steps, self.enemy_detector.race())
+            game_info = FinishedGameInformationDetails(self.steps, self.enemy_detector.race(), "unknown")
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
         self.episode_details.increment_episode_step()
         return self.commander.order(observations).execute(observations)
@@ -81,7 +86,7 @@ class ReinforcementMarineAgent(BaseAgent):
             self.commander = QLearningCommander(self.name())
         elif observations.last():
             game_results = GameResultsTable(self.name())
-            game_info = FinishedGameInformationDetails(self.steps, "unknown")
+            game_info = FinishedGameInformationDetails(self.steps, "unknown", "unknown")
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
 
         return self.commander.order(observations).execute(observations)
@@ -103,7 +108,7 @@ class BuildOrderAgent(BaseAgent):
             self.commander = GameCommander(base_location)
         elif observations.last():
             game_results = GameResultsTable(self.name())
-            game_info = FinishedGameInformationDetails(self.steps, "unknown")
+            game_info = FinishedGameInformationDetails(self.steps, "unknown", "unknown")
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
         if self.debug:
             time.sleep(0.5)

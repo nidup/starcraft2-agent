@@ -27,11 +27,15 @@ class MultiGameCommander(Commander):
 
     def order(self, observations: Observations)-> Order:
 
+        #if self.enemy_detector.race_detected():
+        #    print("race detected") #115
+        #    print(self.episode_details.episode_step())
+        #    exit(2)
+
         if not self.current_order:
             self.current_order = self.worker_commander.order(observations)
 
         elif observations.last():
-            self.attack_commander.learn_on_last_episode_step(observations)
             return NoOrder()
 
         elif self.current_order.done(observations):
@@ -46,6 +50,8 @@ class MultiGameCommander(Commander):
 
             self.current_order = self.build_order_commander.order(observations)
             if not isinstance(self.current_order, NoOrder):
+                #print("build order") # 43
+                #print(self.episode_details.episode_step())
                 return self.current_order
 
             # wait for the former build order to be finished
@@ -55,3 +61,8 @@ class MultiGameCommander(Commander):
                 return self.current_order
 
         return self.current_order
+
+    def learn_on_last_episode_step(self, observations: Observations):
+        print(self.episode_details.episode_step())
+        self.attack_commander.learn_on_last_episode_step(observations)
+        self.build_order_commander.learn_on_last_episode_step(observations)

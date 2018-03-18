@@ -7,11 +7,11 @@ from nidup.pysc2.wrapper.observations import Observations
 
 class BuildBarrack(SmartOrder):
 
-    def __init__(self, location: Location, max_barracks: int = 4):
+    def __init__(self, location: Location, barrack_index: int):
         SmartOrder.__init__(self, location)
         self.step = 0
         self.scv_groups = SCVControlGroups()
-        self.max_barracks = max_barracks
+        self.barrack_index = barrack_index
 
     def doable(self, observations: Observations) -> bool:
         return observations.player().minerals() >= 150
@@ -20,26 +20,26 @@ class BuildBarrack(SmartOrder):
         return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
-        self.step = self.step + 1
-        if self.step == 1:
+        if self.step == 0:
             return self._select_all_mineral_collecter_scv()
-        elif self.step == 2:
+        elif self.step == 1:
             return self._build_barracks(observations)
 
     def _select_all_mineral_collecter_scv(self) -> actions.FunctionCall:
+        self.step = self.step + 1
         return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
 
     def _build_barracks(self, observations: Observations) -> actions.FunctionCall:
         cc_y, cc_x = self.location.command_center_first_position()
-        barracks_count = BuildingCounter().barracks_count(observations)
-        if barracks_count < self.max_barracks and self.action_ids.build_barracks() in observations.available_actions():
+        if self.action_ids.build_barracks() in observations.available_actions():
             if cc_y.any():
+                self.step = self.step + 1
                 current_count_to_difference_from_cc = BuildingPositionsFromCommandCenter().barracks()
                 target = self.location.transform_distance(
                     round(cc_x.mean()),
-                    current_count_to_difference_from_cc[barracks_count][0],
+                    current_count_to_difference_from_cc[self.barrack_index - 1][0],
                     round(cc_y.mean()),
-                    current_count_to_difference_from_cc[barracks_count][1],
+                    current_count_to_difference_from_cc[self.barrack_index - 1][1],
                 )
                 return self.actions.build_barracks(target)
 
