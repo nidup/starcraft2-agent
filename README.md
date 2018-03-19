@@ -71,5 +71,5 @@ $ python3.6 generate_report.py --agent-name nidup.pysc2.agents.ReinforcementMari
 
 Query the game results:
 ```
-$ python3.6 generate_report.py --agent-name nidup.pysc2.agents.ReinforcementMarineAgent --filter win
+$ python3.6 query_results.py --agent-name nidup.pysc2.agents.ReinforcementMarineAgent --filter win
 ```

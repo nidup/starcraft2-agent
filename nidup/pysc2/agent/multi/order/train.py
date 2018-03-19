@@ -93,7 +93,7 @@ class BuildMarauder(SmartOrder):
         if self.step == 1:
             return self.select_barracks(observations)
         elif self.step == 2:
-            return self.train_marine(observations)
+            return self.train_marauder(observations)
 
     def select_barracks(self, observations: Observations) -> actions.FunctionCall:
         unit_type = observations.screen().unit_type()
@@ -104,7 +104,75 @@ class BuildMarauder(SmartOrder):
             return self.actions.select_point_all(target)
         return self.actions.no_op()
 
-    def train_marine(self, observations: Observations) -> actions.FunctionCall:
+    def train_marauder(self, observations: Observations) -> actions.FunctionCall:
         if self.action_ids.train_marauder() in observations.available_actions():
             return self.actions.train_marauder()
+        return self.actions.no_op()
+
+
+class BuildHellion(SmartOrder):
+
+    def __init__(self, location: Location):
+        SmartOrder.__init__(self, location)
+        self.step = 0
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 100
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.step == 1:
+            return self.select_factory(observations)
+        elif self.step == 2:
+            return self.train_hellion(observations)
+
+    def select_factory(self, observations: Observations) -> actions.FunctionCall:
+        unit_type = observations.screen().unit_type()
+        factory_y, factory_x = (unit_type == self.unit_type_ids.terran_factory()).nonzero()
+        if factory_y.any():
+            i = random.randint(0, len(factory_y) - 1)
+            target = [factory_x[i], factory_y[i]]
+            return self.actions.select_point_all(target)
+        return self.actions.no_op()
+
+    def train_hellion(self, observations: Observations) -> actions.FunctionCall:
+        if self.action_ids.train_hellion() in observations.available_actions():
+            return self.actions.train_hellion()
+        return self.actions.no_op()
+
+
+class BuildMedivac(SmartOrder):
+
+    def __init__(self, location: Location):
+        SmartOrder.__init__(self, location)
+        self.step = 0
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 100 and observations.player().vespene() >= 100
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        self.step = self.step + 1
+        if self.step == 1:
+            return self.select_starports(observations)
+        elif self.step == 2:
+            return self.train_medivac(observations)
+
+    def select_starports(self, observations: Observations) -> actions.FunctionCall:
+        unit_type = observations.screen().unit_type()
+        starport_y, starport_x = (unit_type == self.unit_type_ids.terran_starport()).nonzero()
+        if starport_y.any():
+            i = random.randint(0, len(starport_y) - 1)
+            target = [starport_x[i], starport_y[i]]
+            return self.actions.select_point_all(target)
+        return self.actions.no_op()
+
+    def train_medivac(self, observations: Observations) -> actions.FunctionCall:
+        if self.action_ids.train_medivac() in observations.available_actions():
+            return self.actions.train_medivac()
         return self.actions.no_op()

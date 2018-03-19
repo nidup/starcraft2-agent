@@ -128,13 +128,18 @@ class BuildingPositionsFromCommandCenter:
             [15, -10],
             [30, -20],
             [20, 10],
-            [30, 20],
+            #[30, 20],
         ]
 
     def factories(self) -> []:
         return [
             [10, 25],
             [30, 25], # check it, could not work
+        ]
+
+    def starports(self) -> []:
+        return [
+            [30, 20], # check it, same than 4th barracks
         ]
 
     def vespene_geysers(self) -> []:

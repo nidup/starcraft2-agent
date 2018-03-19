@@ -60,6 +60,8 @@ class MultiGameCommander(Commander):
             else:
                 return self.current_order
 
+        #print(self.current_order)
+
         return self.current_order
 
     def learn_on_last_episode_step(self, observations: Observations):

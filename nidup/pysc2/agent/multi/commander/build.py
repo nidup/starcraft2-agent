@@ -9,8 +9,8 @@ from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.information import Location
 from nidup.pysc2.agent.multi.order.common import SmartOrder
-from nidup.pysc2.agent.multi.order.build import BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildTechLabBarrack, BuildReactorBarrack
-from nidup.pysc2.agent.multi.order.train import BuildMarine, BuildMarauder
+from nidup.pysc2.agent.multi.order.build import BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildTechLabBarrack, BuildReactorBarrack, BuildFactory, BuildStarport
+from nidup.pysc2.agent.multi.order.train import BuildMarine, BuildMarauder, BuildHellion, BuildMedivac
 from nidup.pysc2.agent.multi.order.research import ResearchCombatShield, ResearchConcussiveShells
 
 
@@ -52,6 +52,12 @@ class BuildOrdersCodes:
 
     def t3RaxRushTvXFormerPush(self) -> str:
         return "3 Rax rush - TvX All-In - With Former Push"
+
+    def t1Rax1Fact1PortTvX(self) -> str:
+        return "1 Rax 1 Fact 1 Port"
+
+    def t3Rax1Fact1PortMMMTvX(self) -> str:
+        return "1 Rax 1 Fact 1 Port - TvX MMM All-In"
 
 
 class BuildOrderFactory:
@@ -116,6 +122,58 @@ class BuildOrderFactory:
                     #BuildReactorBarrack(location, 4), NO REACTOR BUILT WHEN PLAY ON TOP GAME?
                 ]
             )
+        # http://liquipedia.net/starcraft2/1Rax_1Fact_1Port
+        elif code == BuildOrdersCodes().t1Rax1Fact1PortTvX():
+            return OrderedBuildOrder(
+                location,
+                BuildOrdersCodes().t1Rax1Fact1PortTvX(),
+                [
+                    BuildSupplyDepot(location),
+                    BuildRefinery(location, 1),
+                    BuildBarrack(location, 1),
+                    BuildFactory(location, 1),
+                    BuildMarine(location),
+                    BuildSupplyDepot(location),
+                    #BuildReactorBarrack(location, 1),
+                    BuildRefinery(location, 2),
+                    BuildHellion(location),
+                    BuildStarport(location, 1),
+                    BuildMedivac(location)
+                ]
+            )
+        # https://lotv.spawningtool.com/build/65735/ + MMM
+        elif code == BuildOrdersCodes().t3Rax1Fact1PortMMMTvX():
+            return OrderedBuildOrder(
+                location,
+                BuildOrdersCodes().t3Rax1Fact1PortMMMTvX(),
+                [
+                    BuildSupplyDepot(location),
+                    BuildRefinery(location, 1),
+                    BuildBarrack(location, 1),
+                    BuildSupplyDepot(location),
+                    BuildBarrack(location, 3), # avoid to be blocked by a vcs when building 1 + 2 barracks
+                    BuildTechLabBarrack(location, 1),
+                    BuildBarrack(location, 2),
+                    ResearchCombatShield(location),
+                    BuildMarauder(location),
+                    BuildReactorBarrack(location, 3),
+                    BuildReactorBarrack(location, 2),
+                    BuildSupplyDepot(location),
+                    BuildMarauder(location),
+                    BuildMarine(location),
+                    BuildMarine(location),
+                    BuildFactory(location, 1),
+                    BuildStarport(location, 1),
+                    BuildMarauder(location),
+                    BuildMarine(location),
+                    BuildMarine(location),
+                    BuildMarine(location),
+                    BuildMarine(location),
+                    BuildMedivac(location),
+                    ResearchConcussiveShells(location),
+                ]
+            )
+
 
         raise NotImplementedError("Can't create a build orders with code " + code)
 
@@ -130,6 +188,7 @@ class BuildOrderCommander(Commander):
         self.build_orders = None
         self.current_order = None
         self.build_orders_selector = QLearningBuildOrdersSelector(self._commander_name(), self.enemy_detector)
+        self.debug = True
 
     def order(self, observations: Observations)-> Order:
         # don't start before to know the enemy's race
@@ -137,8 +196,10 @@ class BuildOrderCommander(Commander):
             return NoOrder()
         elif not self.build_orders:
             print(self.enemy_detector.race())
-            self.build_orders = self.build_orders_selector.select_build_order(self.location)
-            #self.build_orders = BuildOrderFactory().create(BuildOrdersCodes().t3RaxRushTvX(), self.location)
+            if self.debug:
+                self.build_orders = BuildOrderFactory().create(BuildOrdersCodes().t3Rax1Fact1PortMMMTvX(), self.location)
+            else:
+                self.build_orders = self.build_orders_selector.select_build_order(self.location)
 
         if self.build_orders.finished(observations):
             return self._extra_supply_depots(observations)
@@ -158,7 +219,8 @@ class BuildOrderCommander(Commander):
         return self.build_orders and self.build_orders.finished(observations)
 
     def learn_on_last_episode_step(self, observations: Observations):
-        self.build_orders_selector.learn_on_last_episode_step(observations)
+        if not self.debug:
+            self.build_orders_selector.learn_on_last_episode_step(observations)
 
     def current_build_orders(self) -> OrderedBuildOrder:
         return self.build_orders

@@ -6,12 +6,14 @@ from nidup.pysc2.agent.order import Order
 from nidup.pysc2.agent.information import Location, BuildingCounter, MinimapEnemyHotSquaresBuilder, EnemyDetector, RaceNames
 from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.agent.multi.order.attack import DumbAttack
-from nidup.pysc2.agent.multi.order.train import BuildMarine, BuildMarauder
+from nidup.pysc2.agent.multi.order.train import BuildMarine, BuildMarauder, BuildHellion, BuildMedivac
 from nidup.pysc2.wrapper.observations import Observations
 
 ACTION_DO_NOTHING = 'donothing'
 ACTION_BUILD_MARINE = 'buildmarine'
 ACTION_BUILD_MARAUDER = 'buildmarauder'
+ACTION_BUILD_HELLION = 'buildhellion'
+ACTION_BUILD_MEDIVAC = 'buildmedivac'
 ACTION_ATTACK = 'attack'
 
 
@@ -22,7 +24,9 @@ class SmartActions:
         self.actions = [
             ACTION_DO_NOTHING,
             ACTION_BUILD_MARINE,
-            ACTION_BUILD_MARAUDER
+            ACTION_BUILD_MARAUDER,
+            ACTION_BUILD_HELLION,
+            ACTION_BUILD_MEDIVAC,
         ]
         # split the mini-map into four quadrants keep the action space small to make it easier for the agent to learn
         attack_actions = []
@@ -45,6 +49,10 @@ class SmartActions:
             return BuildMarine(self.location)
         elif smart_action == ACTION_BUILD_MARAUDER:
             return BuildMarauder(self.location)
+        elif smart_action == ACTION_BUILD_HELLION:
+            return BuildHellion(self.location)
+        elif smart_action == ACTION_BUILD_MEDIVAC:
+            return BuildMedivac(self.location)
         elif smart_action == ACTION_ATTACK:
             return DumbAttack(self.location, int(x), int(y))
         elif smart_action == ACTION_DO_NOTHING:
@@ -66,7 +74,7 @@ class StateBuilder:
     def build_state(self, location: Location, observations: Observations, enemy_detector: EnemyDetector) -> []:
         counter = BuildingCounter()
 
-        base_state_items_length = 8
+        base_state_items_length = 9
         hot_squares_length = 4
         current_state_length = base_state_items_length + hot_squares_length
 
@@ -77,8 +85,9 @@ class StateBuilder:
         current_state[3] = counter.factories_count(observations)
         current_state[4] = counter.techlab_barracks_count(observations)
         current_state[5] = counter.reactor_barracks_count(observations)
-        current_state[6] = self._enemy_race_id(enemy_detector)
-        current_state[7] = observations.player().food_army()
+        current_state[6] = counter.starports_count(observations)
+        current_state[7] = self._enemy_race_id(enemy_detector)
+        current_state[8] = observations.player().food_army()
 
         hot_squares = MinimapEnemyHotSquaresBuilder().minimap_four_squares(observations, location)
         for i in range(0, hot_squares_length):
@@ -127,7 +136,7 @@ class QLearningAttackCommander(Commander):
         return self.previous_order
 
     def learn_on_last_episode_step(self, observations: Observations):
-        if self.previous_state:
+        if self.previous_action:
             print("learn attack terminal")
             print(str(self.previous_state))
             print(self.previous_action)

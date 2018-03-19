@@ -156,11 +156,11 @@ class BuildReactorBarrack(SmartOrder):
 
 class BuildFactory(SmartOrder):
 
-    def __init__(self, location: Location, max_factories: int = 2):
+    def __init__(self, location: Location, factory_index: int):
         SmartOrder.__init__(self, location)
         self.step = 0
-        self.max_factories = max_factories
         self.scv_groups = SCVControlGroups()
+        self.factory_index = factory_index
 
     def doable(self, observations: Observations) -> bool:
         return observations.player().minerals() >= 150 and observations.player().vespene() >= 100
@@ -169,28 +169,68 @@ class BuildFactory(SmartOrder):
         return self.step == 2
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
-        self.step = self.step + 1
-        if self.step == 1:
+        if self.step == 0:
             return self._select_all_mineral_collecter_scv()
-        elif self.step == 2:
+        elif self.step == 1:
             return self._build_factory(observations)
 
     def _select_all_mineral_collecter_scv(self) -> actions.FunctionCall:
+        self.step = self.step + 1
         return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
 
     def _build_factory(self, observations: Observations) -> actions.FunctionCall:
         cc_y, cc_x = self.location.command_center_first_position()
-        factories_count = BuildingCounter().factories_count(observations)
-        if factories_count < self.max_factories and self.action_ids.build_factory() in observations.available_actions():
+        if self.action_ids.build_factory() in observations.available_actions():
             if cc_y.any():
+                self.step = self.step + 1
                 current_count_to_difference_from_cc = BuildingPositionsFromCommandCenter().factories()
                 target = self.location.transform_distance(
                     round(cc_x.mean()),
-                    current_count_to_difference_from_cc[factories_count][0],
+                    current_count_to_difference_from_cc[self.factory_index - 1][0],
                     round(cc_y.mean()),
-                    current_count_to_difference_from_cc[factories_count][1],
+                    current_count_to_difference_from_cc[self.factory_index - 1][1],
                 )
                 return self.actions.build_factory(target)
+        return self.actions.no_op()
+
+
+class BuildStarport(SmartOrder):
+
+    def __init__(self, location: Location, starport_index: int):
+        SmartOrder.__init__(self, location)
+        self.step = 0
+        self.scv_groups = SCVControlGroups()
+        self.starport_index = starport_index
+
+    def doable(self, observations: Observations) -> bool:
+        return observations.player().minerals() >= 150 and observations.player().vespene() >= 100
+
+    def done(self, observations: Observations) -> bool:
+        return self.step == 2
+
+    def execute(self, observations: Observations) -> actions.FunctionCall:
+        if self.step == 0:
+            return self._select_all_mineral_collecter_scv()
+        elif self.step == 1:
+            return self._build_starport(observations)
+
+    def _select_all_mineral_collecter_scv(self) -> actions.FunctionCall:
+        self.step = self.step + 1
+        return SCVCommonActions().select_a_group_of_scv(self.scv_groups.mineral_collectors_group_id())
+
+    def _build_starport(self, observations: Observations) -> actions.FunctionCall:
+        cc_y, cc_x = self.location.command_center_first_position()
+        if self.action_ids.build_starport() in observations.available_actions():
+            if cc_y.any():
+                self.step = self.step + 1
+                current_count_to_difference_from_cc = BuildingPositionsFromCommandCenter().starports()
+                target = self.location.transform_distance(
+                    round(cc_x.mean()),
+                    current_count_to_difference_from_cc[self.starport_index - 1][0],
+                    round(cc_y.mean()),
+                    current_count_to_difference_from_cc[self.starport_index - 1][1],
+                )
+                return self.actions.build_starport(target)
         return self.actions.no_op()
 
 
@@ -250,10 +290,9 @@ class BuildRefinery(SmartOrder):
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
         group_id = self._relevant_group_id()
-        self.step = self.step + 1
-        if self.step == 1:
+        if self.step == 0:
             return self._select_all_refinery_collecter_scv(group_id)
-        elif self.step == 2:
+        elif self.step == 1:
             return self._build_refinery(observations)
         return self.actions.no_op()
 
@@ -263,10 +302,12 @@ class BuildRefinery(SmartOrder):
         return self.scv_groups.refinery_two_collectors_group_id()
 
     def _select_all_refinery_collecter_scv(self, group_id: int) -> actions.FunctionCall:
+        self.step = self.step + 1
         return SCVCommonActions().select_a_group_of_scv(group_id)
 
     def _build_refinery(self, observations: Observations) -> actions.FunctionCall:
         if self.action_ids.build_refinery() in observations.available_actions():
+            self.step = self.step + 1
             if self.refinery_index == 1:
                 difference_from_cc = BuildingPositionsFromCommandCenter().vespene_geysers()[0]
             else:

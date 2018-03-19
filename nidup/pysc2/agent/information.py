@@ -152,6 +152,12 @@ class BuildingCounter:
         factories_count = int(round(len(factories_y) / 137))
         return factories_count
 
+    def starports_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        starports_y, starports_x = (unit_type == unit_type_ids.terran_starport()).nonzero()
+        starports_count = int(round(len(starports_y) / 137))
+        return starports_count
 
 class RaceNames:
 
