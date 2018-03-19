@@ -48,16 +48,16 @@ class OrderedBuildOrder:
 class BuildOrdersCodes:
 
     def t3RaxRushTvX(self) -> str:
-        return "3 Rax rush - TvX All-In"
+        return "3-Rax-rush-TvX-All-In"
 
     def t3RaxRushTvXFormerPush(self) -> str:
-        return "3 Rax rush - TvX All-In - With Former Push"
+        return "3-Rax-rush-TvX-All-In -With-Former-Push"
 
     def t1Rax1Fact1PortTvX(self) -> str:
-        return "1 Rax 1 Fact 1 Port"
+        return "1 Rax-1-Fact-1-Port"
 
     def t3Rax1Fact1PortMMMTvX(self) -> str:
-        return "1 Rax 1 Fact 1 Port - TvX MMM All-In"
+        return "3-Rax-1-Fact-1 Port-TvX-MMM-All-In"
 
 
 class BuildOrderFactory:
@@ -174,7 +174,6 @@ class BuildOrderFactory:
                 ]
             )
 
-
         raise NotImplementedError("Can't create a build orders with code " + code)
 
 
@@ -188,7 +187,7 @@ class BuildOrderCommander(Commander):
         self.build_orders = None
         self.current_order = None
         self.build_orders_selector = QLearningBuildOrdersSelector(self._commander_name(), self.enemy_detector)
-        self.debug = True
+        self.debug = False
 
     def order(self, observations: Observations)-> Order:
         # don't start before to know the enemy's race
@@ -261,7 +260,9 @@ class BuildOrdersActions:
     def __init__(self):
         self.build_orders_codes = [
             BuildOrdersCodes().t3RaxRushTvXFormerPush(),
-            BuildOrdersCodes().t3RaxRushTvX()
+            BuildOrdersCodes().t3RaxRushTvX(),
+            BuildOrdersCodes().t1Rax1Fact1PortTvX(),
+            BuildOrdersCodes().t3Rax1Fact1PortMMMTvX()
         ]
 
     def all(self) -> []:

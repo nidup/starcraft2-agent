@@ -78,6 +78,7 @@ class StateBuilder:
         hot_squares_length = 4
         current_state_length = base_state_items_length + hot_squares_length
 
+        # TODO can be simplified a lot if actions comes from BO, also means we split per BO
         current_state = np.zeros(current_state_length)
         current_state[0] = counter.command_center_count(observations)
         current_state[1] = counter.supply_depots_count(observations)

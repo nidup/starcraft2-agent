@@ -4,6 +4,7 @@ import matplotlib as mpl
 mpl.use('Agg') # https://stackoverflow.com/questions/4931376/generating-matplotlib-graphs-without-a-running-x-server
 import matplotlib.pyplot as plt
 import os
+from nidup.pysc2.agent.multi.commander.build import BuildOrdersActions
 
 
 class GameResultChart:
@@ -88,6 +89,53 @@ class GameResultChartPerEnemyRace:
     def _file_path(self, agent_name: str, enemy_race: str) -> str:
         root_folder = 'data'
         filename = agent_name + '_results_' + enemy_race + '.png'
+        path = os.path.join(root_folder, filename)
+        return path
+
+
+class BuildOrdersChartPerEnemyRace:
+
+    def draw(self, agent_name: str, enemy_race: str) -> str:
+
+        if not agent_name == "nidup.pysc2.agents.MultiReinforcementAgent":
+            print("Agent "+agent_name+" is not supported by this report")
+
+        games = GameResultsTable(agent_name)
+
+        cumulated_percentage_per_build_order = {}
+        count_cumulated_per_build_order = {}
+        build_orders_codes = BuildOrdersActions().all()
+        for build_order_code in build_orders_codes:
+            cumulated_percentage_per_build_order[build_order_code] = []
+            count_cumulated_per_build_order[build_order_code] = 0
+
+        total_parsed_games = 0
+        for index in range(len(games.table)):
+            if games.table.iloc[index]['enemy_race'] == enemy_race:
+                total_parsed_games = total_parsed_games + 1
+                build_order = games.table.iloc[index]['build_order']
+                count_cumulated_per_build_order[build_order] = count_cumulated_per_build_order[build_order] + 1
+                for each_build_order_code in build_orders_codes:
+                    cumulated_percentage_per_build_order[each_build_order_code].append(count_cumulated_per_build_order[each_build_order_code] / total_parsed_games * 100)
+
+        lines = []
+        for build_order_code in build_orders_codes:
+            line, = plt.plot(cumulated_percentage_per_build_order[build_order_code], label=build_order_code)
+            lines.append(line)
+
+        plt.title('Build orders against '+enemy_race)
+        plt.xlabel('number of games')
+        plt.ylabel('percentage of games')
+        plt.legend(handles=lines)
+        filepath = self._file_path(agent_name, enemy_race)
+        plt.savefig(filepath)
+        plt.gcf().clear()
+
+        return filepath
+
+    def _file_path(self, agent_name: str, enemy_race: str) -> str:
+        root_folder = 'data'
+        filename = agent_name + '_build_orders_' + enemy_race + '.png'
         path = os.path.join(root_folder, filename)
         return path
 
