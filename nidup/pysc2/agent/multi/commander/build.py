@@ -48,16 +48,16 @@ class OrderedBuildOrder:
 class BuildOrdersCodes:
 
     def t3RaxRushTvX(self) -> str:
-        return "3-Rax-rush-TvX-All-In"
+        return "3Rax-rush-TvX-AllIn"
 
     def t3RaxRushTvXFormerPush(self) -> str:
-        return "3-Rax-rush-TvX-All-In -With-Former-Push"
+        return "3Rax-rush-TvX-AllIn-With-Former-Push"
 
     def t1Rax1Fact1PortTvX(self) -> str:
-        return "1 Rax-1-Fact-1-Port"
+        return "1Rax-1Fact-1Port-TvX"
 
     def t3Rax1Fact1PortMMMTvX(self) -> str:
-        return "3-Rax-1-Fact-1 Port-TvX-MMM-All-In"
+        return "3Rax-1Fact-1Port-TvX-MMM-AllIn"
 
 
 class BuildOrderFactory:
