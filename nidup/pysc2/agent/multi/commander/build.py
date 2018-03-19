@@ -187,7 +187,7 @@ class BuildOrderCommander(Commander):
         self.build_orders = None
         self.current_order = None
         self.build_orders_selector = QLearningBuildOrdersSelector(self._commander_name(), self.enemy_detector)
-        self.debug = False
+        self.debug = True
 
     def order(self, observations: Observations)-> Order:
         # don't start before to know the enemy's race
@@ -196,7 +196,7 @@ class BuildOrderCommander(Commander):
         elif not self.build_orders:
             print(self.enemy_detector.race())
             if self.debug:
-                self.build_orders = BuildOrderFactory().create(BuildOrdersCodes().t3Rax1Fact1PortMMMTvX(), self.location)
+                self.build_orders = BuildOrderFactory().create(BuildOrdersCodes().t3RaxRushTvX(), self.location)
             else:
                 self.build_orders = self.build_orders_selector.select_build_order(self.location)
 
