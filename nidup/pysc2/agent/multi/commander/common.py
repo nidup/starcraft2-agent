@@ -38,7 +38,6 @@ class TrainActionsSetRegistry:
             TrainActionsSet(
                 "MM",
                 [
-                    TrainActionsCodes().do_nothing(),
                     TrainActionsCodes().train_marine(),
                     TrainActionsCodes().train_marauder(),
                 ]
@@ -46,7 +45,6 @@ class TrainActionsSetRegistry:
             TrainActionsSet(
                 "MMM",
                 [
-                    TrainActionsCodes().do_nothing(),
                     TrainActionsCodes().train_marine(),
                     TrainActionsCodes().train_marauder(),
                     TrainActionsCodes().train_medivac()
@@ -55,7 +53,6 @@ class TrainActionsSetRegistry:
             TrainActionsSet(
                 "MH",
                 [
-                    TrainActionsCodes().do_nothing(),
                     TrainActionsCodes().train_marine(),
                     TrainActionsCodes().train_hellion(),
                 ]

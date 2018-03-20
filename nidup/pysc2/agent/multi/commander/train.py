@@ -3,7 +3,7 @@ import numpy as np
 from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.information import Location, BuildingCounter, EnemyDetector, RaceNames,EpisodeDetails
+from nidup.pysc2.agent.information import Location, EnemyDetector, RaceNames, EpisodeDetails
 from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.agent.multi.order.train import BuildMarine, BuildMarauder, BuildHellion, BuildMedivac
 from nidup.pysc2.wrapper.observations import Observations
