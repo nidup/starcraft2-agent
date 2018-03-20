@@ -23,7 +23,7 @@ def generate_game_results_report(agent_name: str):
     #file_path = ScoreDetailsChart().draw(agent_name)
     #print("ScoreDetailsChart has been generated in "+file_path)
 
-    LastGamesStatsPerRaceTable().print(agent_name)
+    LastGamesStatsPerRaceTable().print(agent_name, 100)
 
 
 if __name__ == '__main__':

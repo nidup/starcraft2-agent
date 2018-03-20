@@ -64,7 +64,7 @@ class MultiGameCommander(Commander):
 
                 self.current_order = self.training_commander.order(observations)
                 if not isinstance(self.current_order, NoOrder):
-                    print("train")
+                    #print("train")
                     return self.current_order
 
                 self.current_order = self.attack_commander.order(observations)

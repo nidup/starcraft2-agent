@@ -59,3 +59,13 @@ And also a equivalent use of any build orders against Protoss (as the agent loos
 
 ![Image of MultiReinforcementAgent 3](MultiReinforcementAgent/build_orders_selection_protoss.png)
 
+
+Variant & Evolution (QLearning on Build Orders, Units Training, Attack Quadrants, Attack Base)
+----------------------------------------------------------------------------------------------
+
+We split here the QLearning as 4 dedicated "brains":
+ - Build Orders (BO) choice depending on race, rewarded on the game results
+ - Training of units depending on race and selected BO, rewarded on the game results
+ - Attack of one of the four game quadrants rewarded on destroyed buildings
+ - Attack in a game quadrant rewarded on destroyed buildings & unit
+

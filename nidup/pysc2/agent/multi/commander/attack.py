@@ -5,7 +5,7 @@ from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.agent.information import Location, MinimapEnemyHotSquaresBuilder, EnemyDetector, RaceNames
 from nidup.pysc2.agent.multi.order.common import NoOrder
-from nidup.pysc2.agent.multi.order.attack import DumbAttack
+from nidup.pysc2.agent.multi.order.attack import QLearningAttack, QLearningAttackOffsetsProvider
 from nidup.pysc2.wrapper.observations import Observations
 
 ACTION_DO_NOTHING = 'donothing'
@@ -14,8 +14,9 @@ ACTION_ATTACK = 'attack'
 
 class AttackActions:
 
-    def __init__(self, location: Location):
+    def __init__(self, location: Location, offsets_provider: QLearningAttackOffsetsProvider):
         self.location = location
+        self.offsets_provider = offsets_provider
         self.actions = [
             ACTION_DO_NOTHING
         ]
@@ -37,7 +38,7 @@ class AttackActions:
     def order(self, action_id: str) -> Order:
         smart_action, x, y = self._split_action(action_id)
         if smart_action == ACTION_ATTACK:
-            return DumbAttack(self.location, int(x), int(y))
+            return QLearningAttack(self.location, self.offsets_provider, int(x), int(y))
         elif smart_action == ACTION_DO_NOTHING:
             return NoOrder()
         else:
@@ -90,7 +91,8 @@ class AttackCommander(Commander):
         self.previous_action = None
         self.previous_state = None
         self.previous_order = None
-        self.smart_actions = AttackActions(self.location)
+        self.attack_offsets_provider = QLearningAttackOffsetsProvider(agent_name, location)
+        self.smart_actions = AttackActions(self.location, self.attack_offsets_provider)
         self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
         QLearningTableStorage().load(self.qlearn, self._commander_name())
 
@@ -111,14 +113,15 @@ class AttackCommander(Commander):
 
     def learn_on_last_episode_step(self, observations: Observations):
         if self.previous_action:
-            print("learn attack terminal")
-            print(str(self.previous_state))
-            print(self.previous_action)
+            #print("learn attack terminal")
+            #print(str(self.previous_state))
+            #print(self.previous_action)
             self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
             QLearningTableStorage().save(self.qlearn, self._commander_name())
             self.previous_action = None
             self.previous_state = None
             self.previous_order = None
+            self.attack_offsets_provider.save_learning_at_the_end_of_an_episode()
 
     def _commander_name(self) -> str:
         return self.agent_name + "." + self.__class__.__name__
