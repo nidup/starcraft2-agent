@@ -12,19 +12,18 @@ from nidup.pysc2.agent.multi.order.common import SmartOrder
 from nidup.pysc2.agent.multi.order.build import BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildTechLabBarrack, BuildReactorBarrack, BuildFactory, BuildStarport
 from nidup.pysc2.agent.multi.order.train import BuildMarine, BuildMarauder, BuildHellion, BuildMedivac
 from nidup.pysc2.agent.multi.order.research import ResearchCombatShield, ResearchConcussiveShells
-from nidup.pysc2.agent.multi.commander.common import TrainActionsCodes
+from nidup.pysc2.agent.multi.commander.common import TrainActionsSet, TrainActionsSetRegistry
 
 
 class OrderedBuildOrder:
 
-    def __init__(self, location: Location, name: str, ordered_orders: [], training_name: str, training_actions: []):
+    def __init__(self, location: Location, name: str, ordered_orders: [], train_actions_set: TrainActionsSet):
         self.location = location
         self.name_data = name
         self.current_order = None
         self.current_order_index = 0
         self.ordered_orders = ordered_orders
-        self.training_name_data = training_name
-        self.training_actions = training_actions
+        self.training_actions = train_actions_set
 
     def current(self, observations: Observations) -> SmartOrder:
         if not self.current_order:
@@ -43,10 +42,7 @@ class OrderedBuildOrder:
     def name(self) -> str:
         return self.name_data
 
-    def available_training_name(self) -> str:
-        return self.training_name_data
-
-    def available_training_actions(self) -> []:
+    def training_actions_set(self) -> TrainActionsSet:
         return self.training_actions
 
     def _next_order(self):
@@ -72,6 +68,7 @@ class BuildOrdersCodes:
 class BuildOrderFactory:
 
     def create(self, code: str, location: Location) -> OrderedBuildOrder:
+        actions_set_registry = TrainActionsSetRegistry()
         # https://lotv.spawningtool.com/build/65735/
         if code == BuildOrdersCodes().t3RaxRushTvX():
             return OrderedBuildOrder(
@@ -91,12 +88,7 @@ class BuildOrderFactory:
                     BuildSupplyDepot(location),
                     ResearchConcussiveShells(location),
                 ],
-                "MM",
-                [
-                    TrainActionsCodes().do_nothing(),
-                    TrainActionsCodes().train_marine(),
-                    TrainActionsCodes().train_marauder()
-                ]
+                actions_set_registry.actions_set("MM")
             )
         # https://lotv.spawningtool.com/build/65735/
         elif code == BuildOrdersCodes().t3RaxRushTvXFormerPush():
@@ -126,12 +118,7 @@ class BuildOrderFactory:
                     BuildMarine(location),
                     ResearchConcussiveShells(location),
                 ],
-                "MM",
-                [
-                    TrainActionsCodes().do_nothing(),
-                    TrainActionsCodes().train_marine(),
-                    TrainActionsCodes().train_marauder()
-                ]
+                actions_set_registry.actions_set("MM")
             )
         # http://liquipedia.net/starcraft2/1Rax_1Fact_1Port
         elif code == BuildOrdersCodes().t1Rax1Fact1PortTvX():
@@ -151,13 +138,7 @@ class BuildOrderFactory:
                     BuildStarport(location, 1),
                     BuildMedivac(location)
                 ],
-                "MMM",
-                [
-                    TrainActionsCodes().do_nothing(),
-                    TrainActionsCodes().train_marine(),
-                    TrainActionsCodes().train_marauder(),
-                    TrainActionsCodes().train_medivac()
-                ]
+                actions_set_registry.actions_set("MMM")
             )
         # https://lotv.spawningtool.com/build/65735/ + MMM
         elif code == BuildOrdersCodes().t3Rax1Fact1PortMMMTvX():
@@ -190,13 +171,7 @@ class BuildOrderFactory:
                     BuildMedivac(location),
                     ResearchConcussiveShells(location),
                 ],
-                "MMM",
-                [
-                    TrainActionsCodes().do_nothing(),
-                    TrainActionsCodes().train_marine(),
-                    TrainActionsCodes().train_marauder(),
-                    TrainActionsCodes().train_medivac()
-                ]
+                actions_set_registry.actions_set("MMM")
             )
 
         raise NotImplementedError("Can't create a build orders with code " + code)

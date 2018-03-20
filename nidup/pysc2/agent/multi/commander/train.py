@@ -86,7 +86,7 @@ class TrainingCommander(Commander):
 
         if not self.qlearn:
             self.smart_actions = TrainActions(
-                self.location, self.build_orders.name(), self.build_orders.available_training_actions()
+                self.location, self.build_orders.name(), self.build_orders.training_actions_set().actions()
             )
             self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
             QLearningTableStorage().load(self.qlearn, self._qlearning_name())
@@ -127,7 +127,7 @@ class TrainingCommander(Commander):
         return self.agent_name + "." + self.__class__.__name__
 
     def _qlearning_name(self) -> str:
-        return self._commander_name() + "." + self.build_orders.available_training_name()
+        return self._commander_name() + "." + self.build_orders.training_actions_set().code()
 
     def _update_last_played_step(self):
         self.last_played_step = self.episode_details.episode_step()
