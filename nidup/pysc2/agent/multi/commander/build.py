@@ -12,16 +12,19 @@ from nidup.pysc2.agent.multi.order.common import SmartOrder
 from nidup.pysc2.agent.multi.order.build import BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildTechLabBarrack, BuildReactorBarrack, BuildFactory, BuildStarport
 from nidup.pysc2.agent.multi.order.train import BuildMarine, BuildMarauder, BuildHellion, BuildMedivac
 from nidup.pysc2.agent.multi.order.research import ResearchCombatShield, ResearchConcussiveShells
+from nidup.pysc2.agent.multi.commander.common import TrainActionsCodes
 
 
 class OrderedBuildOrder:
 
-    def __init__(self, location: Location, name: str, ordered_orders: []):
+    def __init__(self, location: Location, name: str, ordered_orders: [], training_name: str, training_actions: []):
         self.location = location
         self.name_data = name
         self.current_order = None
         self.current_order_index = 0
         self.ordered_orders = ordered_orders
+        self.training_name_data = training_name
+        self.training_actions = training_actions
 
     def current(self, observations: Observations) -> SmartOrder:
         if not self.current_order:
@@ -39,6 +42,12 @@ class OrderedBuildOrder:
 
     def name(self) -> str:
         return self.name_data
+
+    def available_training_name(self) -> str:
+        return self.training_name_data
+
+    def available_training_actions(self) -> []:
+        return self.training_actions
 
     def _next_order(self):
         self.current_order = self.ordered_orders[self.current_order_index]
@@ -81,6 +90,12 @@ class BuildOrderFactory:
                     BuildReactorBarrack(location, 3),
                     BuildSupplyDepot(location),
                     ResearchConcussiveShells(location),
+                ],
+                "MM",
+                [
+                    TrainActionsCodes().do_nothing(),
+                    TrainActionsCodes().train_marine(),
+                    TrainActionsCodes().train_marauder()
                 ]
             )
         # https://lotv.spawningtool.com/build/65735/
@@ -110,16 +125,12 @@ class BuildOrderFactory:
                     BuildMarine(location),
                     BuildMarine(location),
                     ResearchConcussiveShells(location),
-
-                    # bigger timing push
-                    # BuildMarine(location),
-                    # BuildMarine(location),
-                    # BuildMarine(location),
-                    # BuildMarine(location),
-                    # BuildMarauder(location),
-                    # BuildMarauder(location),
-                    #BuildBarrack(location, 4),
-                    #BuildReactorBarrack(location, 4), NO REACTOR BUILT WHEN PLAY ON TOP GAME?
+                ],
+                "MM",
+                [
+                    TrainActionsCodes().do_nothing(),
+                    TrainActionsCodes().train_marine(),
+                    TrainActionsCodes().train_marauder()
                 ]
             )
         # http://liquipedia.net/starcraft2/1Rax_1Fact_1Port
@@ -139,6 +150,13 @@ class BuildOrderFactory:
                     BuildHellion(location),
                     BuildStarport(location, 1),
                     BuildMedivac(location)
+                ],
+                "MMM",
+                [
+                    TrainActionsCodes().do_nothing(),
+                    TrainActionsCodes().train_marine(),
+                    TrainActionsCodes().train_marauder(),
+                    TrainActionsCodes().train_medivac()
                 ]
             )
         # https://lotv.spawningtool.com/build/65735/ + MMM
@@ -151,13 +169,13 @@ class BuildOrderFactory:
                     BuildRefinery(location, 1),
                     BuildBarrack(location, 1),
                     BuildSupplyDepot(location),
-                    BuildBarrack(location, 3), # avoid to be blocked by a vcs when building 1 + 2 barracks
-                    BuildTechLabBarrack(location, 1),
                     BuildBarrack(location, 2),
+                    BuildTechLabBarrack(location, 1),
+                    BuildBarrack(location, 3),
                     ResearchCombatShield(location),
                     BuildMarauder(location),
-                    BuildReactorBarrack(location, 3),
                     BuildReactorBarrack(location, 2),
+                    BuildReactorBarrack(location, 3),
                     BuildSupplyDepot(location),
                     BuildMarauder(location),
                     BuildMarine(location),
@@ -171,6 +189,13 @@ class BuildOrderFactory:
                     BuildMarine(location),
                     BuildMedivac(location),
                     ResearchConcussiveShells(location),
+                ],
+                "MMM",
+                [
+                    TrainActionsCodes().do_nothing(),
+                    TrainActionsCodes().train_marine(),
+                    TrainActionsCodes().train_marauder(),
+                    TrainActionsCodes().train_medivac()
                 ]
             )
 

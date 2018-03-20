@@ -29,6 +29,9 @@ class MultiGameCommander(Commander):
 
     def order(self, observations: Observations)-> Order:
 
+        if self.build_order_commander.current_build_orders() and not self.training_commander.current_build_orders():
+            self.training_commander.configure_build_orders(self.build_order_commander.current_build_orders())
+
         #if self.enemy_detector.race_detected():
         #    print("race detected") #115
         #    print(self.episode_details.episode_step())

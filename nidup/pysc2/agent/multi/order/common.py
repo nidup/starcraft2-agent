@@ -126,8 +126,8 @@ class BuildingPositionsFromCommandCenter:
     def barracks(self) -> []:
         return [
             [15, -10],
-            [30, -20],
             [20, 10],
+            [30, -20],
             #[30, 20],
         ]
 
