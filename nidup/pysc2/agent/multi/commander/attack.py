@@ -28,8 +28,17 @@ class AttackActions:
                     attack_actions.append(ACTION_ATTACK + '_' + str(mm_x - 16) + '_' + str(mm_y - 16))
         # remove the player's base quadrant
         del attack_actions[0]
+
         # keep only enemy's base 1 and base 2 quadrants (natural expansion)
-        del attack_actions[1]
+        #del attack_actions[1]
+        # before
+        # zerg	100	49	48	3	49.0	48.0	3.0
+        # after
+        # zerg	20	12	7	1	60.0	35.0	5.0
+        # rewarding
+        # zerg	50	37	13	0	74.0	26.0	0
+
+        # after 1500 game in very easy
         self.actions = self.actions + attack_actions
 
     def all(self) -> []:
@@ -56,13 +65,12 @@ class AttackActions:
 class AttackStateBuilder:
 
     def build_state(self, location: Location, observations: Observations, enemy_detector: EnemyDetector) -> []:
-        base_state_items_length = 2
+        base_state_items_length = 1
         hot_squares_length = 4
         current_state_length = base_state_items_length + hot_squares_length
 
         current_state = np.zeros(current_state_length)
-        current_state[0] = self._enemy_race_id(enemy_detector)
-        current_state[1] = observations.player().food_army()
+        current_state[0] = observations.player().food_army()
 
         hot_squares = MinimapEnemyHotSquaresBuilder().minimap_four_squares(observations, location)
         for i in range(0, hot_squares_length):
@@ -95,6 +103,7 @@ class AttackCommander(Commander):
         self.smart_actions = AttackActions(self.location, self.attack_offsets_provider)
         self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
         QLearningTableStorage().load(self.qlearn, self._commander_name())
+        self.previous_killed_building_score = 0
 
     def order(self, observations: Observations)-> Order:
         if observations.last():
@@ -102,12 +111,17 @@ class AttackCommander(Commander):
 
         if not self.previous_order or self.previous_order.done(observations):
             current_state = AttackStateBuilder().build_state(self.location, observations, self.enemy_detector)
+            killed_building_score = observations.score_cumulative().killed_value_units()
             if self.previous_action is not None:
-                self.qlearn.learn(str(self.previous_state), self.previous_action, 0, str(current_state))
+                reward = 0
+                if killed_building_score > self.previous_killed_building_score:
+                    reward += 0.8
+                self.qlearn.learn(str(self.previous_state), self.previous_action, reward, str(current_state))
             rl_action = self.qlearn.choose_action(str(current_state))
             self.previous_state = current_state
             self.previous_action = rl_action
             self.previous_order = self.smart_actions.order(rl_action)
+            self.previous_killed_building_score = killed_building_score
 
         return self.previous_order
 
@@ -116,7 +130,8 @@ class AttackCommander(Commander):
             #print("learn attack terminal")
             #print(str(self.previous_state))
             #print(self.previous_action)
-            self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
+            # TODO no terminal learning
+            #self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
             QLearningTableStorage().save(self.qlearn, self._commander_name())
             self.previous_action = None
             self.previous_state = None
