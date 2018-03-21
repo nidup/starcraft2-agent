@@ -69,3 +69,18 @@ We split here the QLearning as 4 dedicated "brains":
  - Attack of one of the four game quadrants rewarded on destroyed buildings
  - Attack in a game quadrant rewarded on destroyed buildings & unit
 
+We observe here the agent struggles to learn, as it looses way too much games, it seems does not learn good enough pattern.
+
+Watching replays we see it attacks by very small waves of units that are progressively detroyed.
+
+Then it looses the episode due to a enemy's push or economically because enemy builds a B2 and sometimes B3.
+
+![Image of MultiReinforcementAgent 4](MultiReinforcementAgent/4_qlearning_brains.png)
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	32	4	2	26	12.5	6.25	81.25
+terran	30	1	4	25	3.33	13.33	83.33
+protoss	38	3	1	34	7.89	2.63	89.47
+```
