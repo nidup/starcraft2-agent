@@ -14,10 +14,10 @@ def generate_game_results_report(agent_name: str):
         file_path = GameResultChartPerEnemyRace().draw(agent_name, race)
         print("GameResultChartPerEnemyRace (" + race + ") has been generated in "+file_path)
 
-    enemy_races = ['terran', 'protoss', 'zerg']
-    for race in enemy_races:
-        file_path = BuildOrdersChartPerEnemyRace().draw(agent_name, race)
-        print("BuildOrdersChartPerEnemyRace (" + race + ") has been generated in "+file_path)
+    #enemy_races = ['terran', 'protoss', 'zerg']
+    #for race in enemy_races:
+    #   file_path = BuildOrdersChartPerEnemyRace().draw(agent_name, race)
+    #   print("BuildOrdersChartPerEnemyRace (" + race + ") has been generated in "+file_path)
 
 
     #file_path = ScoreDetailsChart().draw(agent_name)

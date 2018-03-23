@@ -31,14 +31,8 @@ class AttackActions:
 
         # keep only enemy's base 1 and base 2 quadrants (natural expansion)
         #del attack_actions[1]
-        # before
-        # zerg	100	49	48	3	49.0	48.0	3.0
-        # after
-        # zerg	20	12	7	1	60.0	35.0	5.0
-        # rewarding
-        # zerg	50	37	13	0	74.0	26.0	0
 
-        # after 1500 game in very easy
+        # ['donothing', 'attack_15_47', 'attack_47_15', 'attack_47_47']
         self.actions = self.actions + attack_actions
 
     def all(self) -> []:

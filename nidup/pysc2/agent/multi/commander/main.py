@@ -9,6 +9,7 @@ from nidup.pysc2.agent.multi.commander.scout import ScoutCommander
 from nidup.pysc2.agent.multi.commander.attack import AttackCommander
 from nidup.pysc2.agent.multi.commander.train import TrainingCommander
 from nidup.pysc2.agent.multi.commander.build import BuildOrderCommander
+from nidup.pysc2.agent.multi.commander.goal import GoalCommander
 
 _PLAYER_ENEMY = 4
 
@@ -21,16 +22,17 @@ class MultiGameCommander(Commander):
         self.enemy_detector = enemy_detector
         self.episode_details = episode_details
         self.scout_commander = ScoutCommander(base_location, enemy_detector)
-        self.build_order_commander = BuildOrderCommander(base_location, agent_name, enemy_detector)
-        self.training_commander = TrainingCommander(base_location, agent_name, enemy_detector, episode_details)
+        #self.build_order_commander = BuildOrderCommander(base_location, agent_name, enemy_detector)
+        #self.training_commander = TrainingCommander(base_location, agent_name, enemy_detector, episode_details)
         self.attack_commander = AttackCommander(base_location, agent_name, enemy_detector)
+        self.goal_commander = GoalCommander(base_location, agent_name, enemy_detector, self.attack_commander)
         self.current_order = None
         self.enemy_detector = enemy_detector
 
     def order(self, observations: Observations)-> Order:
 
-        if self.build_order_commander.current_build_orders() and not self.training_commander.current_build_orders():
-            self.training_commander.configure_build_orders(self.build_order_commander.current_build_orders())
+        #if self.build_order_commander.current_build_orders() and not self.training_commander.current_build_orders():
+        #    self.training_commander.configure_build_orders(self.build_order_commander.current_build_orders())
 
         #if self.enemy_detector.race_detected():
         #    print("race detected") #115
@@ -53,23 +55,25 @@ class MultiGameCommander(Commander):
             if not isinstance(self.current_order, NoOrder):
                 return self.current_order
 
-            self.current_order = self.build_order_commander.order(observations)
+            self.current_order = self.goal_commander.order(observations)
             if not isinstance(self.current_order, NoOrder):
+                return self.current_order
+
+            #self.current_order = self.build_order_commander.order(observations)
+            #if not isinstance(self.current_order, NoOrder):
                 #print("build order") # 43
                 #print(self.episode_details.episode_step())
-                return self.current_order
+            #    return self.current_order
 
             # wait for the former build order to be finished
-            if self.build_order_commander.build_is_finished(observations):
+            # if self.build_order_commander.build_is_finished(observations):
 
-                self.current_order = self.training_commander.order(observations)
-                if not isinstance(self.current_order, NoOrder):
-                    #print("train")
-                    return self.current_order
+            #   self.current_order = self.training_commander.order(observations)
+            #   if not isinstance(self.current_order, NoOrder):
+            #       return self.current_order
 
-                self.current_order = self.attack_commander.order(observations)
-                #print(self.current_order)
-                return self.current_order
+            #   self.current_order = self.attack_commander.order(observations)
+            #   return self.current_order
 
         #print(self.current_order)
 
@@ -77,6 +81,6 @@ class MultiGameCommander(Commander):
 
     def learn_on_last_episode_step(self, observations: Observations):
         print(self.episode_details.episode_step())
-        self.training_commander.learn_on_last_episode_step(observations)
+        #self.training_commander.learn_on_last_episode_step(observations)
         self.attack_commander.learn_on_last_episode_step(observations)
-        self.build_order_commander.learn_on_last_episode_step(observations)
+        #self.build_order_commander.learn_on_last_episode_step(observations)

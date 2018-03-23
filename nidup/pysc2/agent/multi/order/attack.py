@@ -9,6 +9,7 @@ from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 
 _PLAYER_ENEMY = 4
 
+
 class DumbAttack(SmartOrder):
 
     def __init__(self, location: Location, x: int , y: int):

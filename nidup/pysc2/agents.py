@@ -34,7 +34,7 @@ class MultiReinforcementAgent(BaseAgent):
             game_info = FinishedGameInformationDetails(
                 self.episode_details.episode_step(),
                 self.enemy_detector.race(),
-                self.commander.build_order_commander.current_build_orders().name()
+                "HardCoded"#self.commander.build_order_commander.current_build_orders().name()
             )
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
         self.episode_details.increment_episode_step()
