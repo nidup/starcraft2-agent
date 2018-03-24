@@ -126,8 +126,8 @@ class ActionQueueParameter:
 
 class TerranActions:
 
-    def attack_minimap(self, target) -> actions.FunctionCall:
-        return actions.FunctionCall(_ATTACK_MINIMAP, [_NOT_QUEUED, target])
+    def attack_minimap(self, target: [], queued: [] = _NOT_QUEUED) -> actions.FunctionCall:
+        return actions.FunctionCall(_ATTACK_MINIMAP, [queued, target])
 
     def build_barracks(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_BUILD_BARRACKS, [_NOT_QUEUED, target])

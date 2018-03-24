@@ -5,7 +5,6 @@ from nidup.pysc2.agent.multi.commander.attack import AttackCommander
 from nidup.pysc2.agent.multi.goal.common import Goal
 
 
-# TODO, learn after executing all orders? at the end of the game, not on this reward?
 class AttackQuadrantGoal(Goal):
 
     def __init__(self, attack_commander: AttackCommander):
@@ -15,8 +14,13 @@ class AttackQuadrantGoal(Goal):
         self.already_done = 0
 
     def order(self, observations: Observations) -> SmartOrder:
-        self.already_done = self.already_done + 1
-        self.current_order = self.attack_commander.order(observations)
+        if not self.current_order:
+            self.current_order = self.attack_commander.order(observations)
+        if not self.current_order.done(observations):
+            return self.current_order
+        else:
+            self.current_order = self.attack_commander.order(observations)
+            self.already_done = self.already_done + 1
         return self.current_order
 
     def done(self, observations: Observations) -> bool:

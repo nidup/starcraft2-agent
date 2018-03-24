@@ -6,7 +6,7 @@ from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.agent.information import Location, EnemyDetector, RaceNames
 from nidup.pysc2.agent.multi.order.common import NoOrder
-from nidup.pysc2.agent.multi.order.attack import QLearningAttack, QLearningAttackOffsetsProvider
+from nidup.pysc2.agent.multi.order.attack import QLearningAttack, QLearningAttackOffsetsProvider, SeekAndDestroyAttack
 from nidup.pysc2.wrapper.observations import Observations
 
 ACTION_DO_NOTHING = 'donothing'
@@ -43,7 +43,8 @@ class AttackActions:
     def order(self, action_id: str) -> Order:
         smart_action, x, y = self._split_action(action_id)
         if smart_action == ACTION_ATTACK:
-            return QLearningAttack(self.location, self.offsets_provider, int(x), int(y))
+            #return QLearningAttack(self.location, self.offsets_provider, int(x), int(y))
+            return SeekAndDestroyAttack(self.location, int(x), int(y))
         elif smart_action == ACTION_DO_NOTHING:
             return NoOrder()
         else:
@@ -85,6 +86,7 @@ class AttackStateBuilder:
         current_state = np.zeros(current_state_length)
         current_state[0] = observations.player().food_army()
 
+        # TODO: replace by more advanced minimap detector to mark only building areas
         hot_squares = MinimapEnemyHotSquaresBuilder().minimap_four_squares(observations, location)
         for i in range(0, hot_squares_length):
             current_state[i + base_state_items_length] = hot_squares[i]
