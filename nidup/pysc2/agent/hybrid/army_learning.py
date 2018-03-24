@@ -1,7 +1,8 @@
 
+import math
 import numpy as np
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.information import Location, BuildingCounter, MinimapEnemyHotSquaresBuilder, EnemyDetector, RaceNames
+from nidup.pysc2.agent.information import Location, BuildingCounter, EnemyDetector, RaceNames
 from nidup.pysc2.agent.hybrid.orders import BuildMarine, BuildMarauder, NoOrder, DumbAttack
 from nidup.pysc2.wrapper.observations import Observations
 
@@ -9,6 +10,7 @@ ACTION_DO_NOTHING = 'donothing'
 ACTION_BUILD_MARINE = 'buildmarine'
 ACTION_BUILD_MARAUDER = 'buildmarauder'
 ACTION_ATTACK = 'attack'
+_PLAYER_ENEMY = 4
 
 
 class SmartActions:
@@ -55,6 +57,23 @@ class SmartActions:
         if '_' in smart_action:
             smart_action, x, y = smart_action.split('_')
         return smart_action, x, y
+
+
+class MinimapEnemyHotSquaresBuilder:
+
+    # returns a 4 squares array (2x2), each square contains 1 when contains an enemy unit and 0 if not
+    def minimap_four_squares(self, observations: Observations, location: Location) -> []:
+        hot_squares = np.zeros(4)
+        enemy_y, enemy_x = (observations.minimap().player_relative() == _PLAYER_ENEMY).nonzero()
+        for i in range(0, len(enemy_y)):
+            y = int(math.ceil((enemy_y[i] + 1) / 32))
+            x = int(math.ceil((enemy_x[i] + 1) / 32))
+            hot_squares[((y - 1) * 2) + (x - 1)] = 1
+
+        if not location.command_center_is_top_left():
+            hot_squares = hot_squares[::-1]
+
+        return hot_squares
 
 
 class StateBuilder:

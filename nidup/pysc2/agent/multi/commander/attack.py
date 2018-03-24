@@ -1,15 +1,17 @@
 
+import math
 import numpy as np
 from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.information import Location, MinimapEnemyHotSquaresBuilder, EnemyDetector, RaceNames
+from nidup.pysc2.agent.information import Location, EnemyDetector, RaceNames
 from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.agent.multi.order.attack import QLearningAttack, QLearningAttackOffsetsProvider
 from nidup.pysc2.wrapper.observations import Observations
 
 ACTION_DO_NOTHING = 'donothing'
 ACTION_ATTACK = 'attack'
+_PLAYER_ENEMY = 4
 
 
 class AttackActions:
@@ -56,9 +58,26 @@ class AttackActions:
         return smart_action, x, y
 
 
+class MinimapEnemyHotSquaresBuilder:
+
+    # returns a 4 squares array (2x2), each square contains 1 when contains an enemy unit and 0 if not
+    def minimap_four_squares(self, observations: Observations, location: Location) -> []:
+        hot_squares = np.zeros(4)
+        enemy_y, enemy_x = (observations.minimap().player_relative() == _PLAYER_ENEMY).nonzero()
+        for i in range(0, len(enemy_y)):
+            y = int(math.ceil((enemy_y[i] + 1) / 32))
+            x = int(math.ceil((enemy_x[i] + 1) / 32))
+            hot_squares[((y - 1) * 2) + (x - 1)] = 1
+
+        if not location.command_center_is_top_left():
+            hot_squares = hot_squares[::-1]
+
+        return hot_squares
+
+
 class AttackStateBuilder:
 
-    def build_state(self, location: Location, observations: Observations, enemy_detector: EnemyDetector) -> []:
+    def build_state(self, location: Location, observations: Observations) -> []:
         base_state_items_length = 1
         hot_squares_length = 4
         current_state_length = base_state_items_length + hot_squares_length
@@ -103,8 +122,9 @@ class AttackCommander(Commander):
         if observations.last():
             return NoOrder()
 
+        # TODO, learn after a set of orders? cause it takes time to destroy building after an order
         if not self.previous_order or self.previous_order.done(observations):
-            current_state = AttackStateBuilder().build_state(self.location, observations, self.enemy_detector)
+            current_state = AttackStateBuilder().build_state(self.location, observations)
             killed_building_score = observations.score_cumulative().killed_value_units()
             if self.previous_action is not None:
                 reward = 0

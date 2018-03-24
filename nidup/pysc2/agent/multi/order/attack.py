@@ -93,7 +93,7 @@ class QLearningAttackOffsetsProvider:
 
     def save_learning_at_the_end_of_an_episode(self):
         if self.previous_action:
-            print("learn attack terminal")
+            print("learn attack terminal order")
             print(str(self.previous_state))
             print(self.previous_action)
             QLearningTableStorage().save(self.qlearn, self._qlearning_file_name())

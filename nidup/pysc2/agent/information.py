@@ -1,6 +1,4 @@
 
-import math
-import numpy as np
 from nidup.pysc2.wrapper.observations import Observations, ScreenFeatures, MinimapFeatures
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds, AllUnitTypeIdsPerRace
 
@@ -202,20 +200,3 @@ class EnemyDetector:
 
             if not self.race_detected():
                 self.enemy_race = RaceNames().terran()
-
-
-class MinimapEnemyHotSquaresBuilder:
-
-    # returns a 4 squares array (2x2), each square contains 1 when contains an enemy unit and 0 if not
-    def minimap_four_squares(self, observations: Observations, location: Location) -> []:
-        hot_squares = np.zeros(4)
-        enemy_y, enemy_x = (observations.minimap().player_relative() == _PLAYER_ENEMY).nonzero()
-        for i in range(0, len(enemy_y)):
-            y = int(math.ceil((enemy_y[i] + 1) / 32))
-            x = int(math.ceil((enemy_x[i] + 1) / 32))
-            hot_squares[((y - 1) * 2) + (x - 1)] = 1
-
-        if not location.command_center_is_top_left():
-            hot_squares = hot_squares[::-1]
-
-        return hot_squares
