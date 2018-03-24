@@ -110,16 +110,25 @@ class BuildingPositionsFromCommandCenter:
     def supply_depots(self) -> []:
         # some tweak to make it work on both start positions that seems not symetric
         return [
+            # row 1
             [-35, -20],
             [-35, -10],
             [-35, 0],
             [-35, 10],
             [-35, 20],
+            # row 2
             [-25, -30],
             [-15, -30],
             [-5, -30],
             [5, -35],
-            [15, -35]
+            [15, -35],
+            # row 3
+            [-25, 25],
+            [-15, 25],
+            [-5, 25],
+            [5, 25],
+            [15, 25],
+            [25, 25],
         ]
 
     # keeping space for techlab/reactor on each

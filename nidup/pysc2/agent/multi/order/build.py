@@ -236,7 +236,8 @@ class BuildStarport(SmartOrder):
 
 class BuildSupplyDepot(SmartOrder):
 
-    def __init__(self, location: Location, max_supplies: int = 10):
+    # could go up to 22 max!
+    def __init__(self, location: Location, max_supplies: int = 16):
         SmartOrder.__init__(self, location)
         self.step = 0
         self.max_supplies = max_supplies
@@ -261,7 +262,7 @@ class BuildSupplyDepot(SmartOrder):
     def _build_supply_depot(self, observations: Observations) -> actions.FunctionCall:
         cc_y, cc_x = self.location.command_center_first_position()
         supply_depot_count = BuildingCounter().supply_depots_count(observations)
-        if supply_depot_count < self.max_supplies and self.action_ids.build_supply_depot() in observations.available_actions():
+        if supply_depot_count < self.max_supplies and observations.player().food_cap() <= 200 and self.action_ids.build_supply_depot() in observations.available_actions():
             if cc_y.any():
                 current_count_to_difference_from_cc = BuildingPositionsFromCommandCenter().supply_depots()
                 target = self.location.transform_distance(

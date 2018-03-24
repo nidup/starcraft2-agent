@@ -63,7 +63,7 @@ class GoalCommander(Commander):
 
     def _extra_supply_depots(self, observations: Observations) -> Order:
         counter = BuildingCounter()
-        expectMore = 8 > counter.supply_depots_count(observations)
+        expectMore = counter.supply_depots_count(observations) <= 15
         supplyAlmostFull = observations.player().food_cap() - observations.player().food_used() <= 2
         if expectMore and supplyAlmostFull:
             return BuildSupplyDepot(self.location)

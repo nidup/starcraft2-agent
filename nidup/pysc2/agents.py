@@ -9,6 +9,8 @@ from nidup.pysc2.agent.smart.commander import QLearningCommander
 from nidup.pysc2.agent.hybrid.commander import HybridGameCommander
 from nidup.pysc2.agent.hybrid.orders import PrepareSCVControlGroupsOrder, BuildRefinery, FillRefineryOnceBuilt, BuildSCV
 from nidup.pysc2.agent.multi.commander.main import MultiGameCommander
+from nidup.pysc2.agent.multi.order.build import BuildSupplyDepot
+from nidup.pysc2.agent.multi.order.common import NoOrder
 
 
 # Generation 3 - expecting good win ratio against medium built-in AI
@@ -194,3 +196,33 @@ class SCVControlGroupsAgent(BaseAgent):
             self.order = PrepareSCVControlGroupsOrder(self.base_location)
         print(observations.control_groups())
         return self.order.execute(observations)
+
+
+class SupplyDepotsAgent(BaseAgent):
+
+    def __init__(self):
+        BaseAgent.__init__(self)
+        self.base_location = None
+        self.group_order = None
+        self.supply_depots_orders = None
+        self.supply_depot_order = None
+
+    def step(self, obs):
+        super(SupplyDepotsAgent, self).step(obs)
+        observations = Observations(obs)
+        if observations.first():
+            self.base_location = Location(observations)
+            self.group_order = PrepareSCVControlGroupsOrder(self.base_location)
+        if not self.group_order.done(observations):
+            return self.group_order.execute(observations)
+
+        if not self.supply_depots_orders:
+            self.supply_depots_orders = []
+            for i in range(0, 9):
+                self.supply_depots_orders.append(BuildSupplyDepot(self.base_location))
+            self.supply_depot_order = self.supply_depots_orders.pop(0)
+        if self.supply_depot_order.done(observations) and len(self.supply_depots_orders) > 0:
+            self.supply_depot_order = self.supply_depots_orders.pop(0)
+        if not self.supply_depot_order.done(observations):
+            return self.supply_depot_order.execute(observations)
+        return NoOrder().execute(observations)
