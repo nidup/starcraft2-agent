@@ -165,14 +165,57 @@ Here is the results after 800 episodes of training:
 ```
 Results on the 100 last games:
 race	total	win	draw	loss	win %	draw %	loss %
-zerg	34	26	1	7	76.47	2.94	20.59
-terran	36	16	6	14	44.44	16.67	38.89
-protoss	30	12	4	14	40.0	13.33	46.67
+zerg	35	29	2	4	82.86	5.71	11.43
+terran	36	17	8	11	47.22	22.22	30.56
+protoss	29	16	3	10	55.17	10.34	34.48
 ```
 
 We notice as expected, better results against each race that the agent is doing less draw games.
 
 Often, the draw games happened because of letting a single enemy's building somewhere even if already destroyed all others units.
 
-Diving into draw episodes
+Let's dive into draw episodes:
+
+```
+Average Results on the 1000 last games:
+result	total	last step	idle worker	kill struct	kill unit	score
+win	517	1897		372		3582		4993		7814
+draw	160	3582		6675		4588		7239		9395
+loss	323	1981		1672		158		2123		2056
+```
+
+We observe draw games share a similar set of characteristics with won games.
+
+Except, they finish in average on the very last episode step means the game is stopped by the server.
+
+We also note a huge amount of idle worker time which is explained by the fact that the agent collected all the minerals and don't know yet how to build a second base.
+
+In fact, the Worker Commander is responsible of it, as it tries to send idle worker back to a mineral field even if there is no more.
+
+As this commander has a higher priority than the attack commander, once all base 1 minerals collected, it does not let play the attack commander.
+
+As these games are not lost, we can suppose the agent is in a very good shape to win the game but does not do very final attacks.
+
+Variant & Evolution (Improved Worker Commander)
+-----------------------------------------------
+
+We add a condition in the SendIdleSCVToMineral order, to make it doable only if there is still mineral fields.
+
+Before the change:
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %	last step avg
+zerg	37	29	3	5	78.38	8.11	13.51	1843
+terran	30	14	5	11	46.67	16.67	36.67	2545
+protoss	33	14	7	12	42.42	21.21	36.36	2195
+
+Average Results on the 100 last games:
+result	total	last step	idle worker	kill struct	kill unit	score
+win	57	1876		307		3711		4961		7893
+draw	15	3598		6595		4823		9137		9352
+loss	28	2004		2016		289		2496		2134
+```
+
+After the change:
 

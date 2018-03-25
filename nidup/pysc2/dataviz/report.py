@@ -214,3 +214,62 @@ class LastGamesStatsPerRaceTable:
             'draw %': round(percentage_draw, 2),
             'loss %': round(percentage_loss, 2)
         }
+
+
+class GamesStatsPerResultTable:
+
+    def print(self, agent_name: str, number_games: int = 100):
+        print("\nAverage Results on the "+str(number_games)+" last games:")
+        print("result\ttotal\tlast step\tidle worker\tkill struct\tkill unit\tscore")
+        for result in ['win', 'draw', 'loss']:
+            row = self._game_stats_per_result(agent_name, number_games, result)
+            print(row['result']+"\t"+str(row['total'])+"\t"+str(row['last step avg'])+"\t\t"+str(row['idle worker avg'])+"\t\t"+str(row['kill struct avg'])+"\t\t"+str(row['kill unit avg'])+"\t\t"+str(row['score avg']))
+
+    def _game_stats_per_result(self, agent_name: str, number_games: int, result: str) -> []:
+        games = GameResultsTable(agent_name)
+        count_cumulated_last_step = 0
+        count_cumulated_idle_worker = 0
+        count_cumulated_kill_struct = 0
+        count_cumulated_kill_unit = 0
+        count_cumulated_score = 0
+        total_parsed_games = 0
+        total_games = len(games.table)
+        start_index = total_games - number_games
+        for index in range(total_games):
+            if index >= start_index and games.table.iloc[index][result] == 1:
+                total_parsed_games = total_parsed_games + 1
+                count_cumulated_last_step = count_cumulated_last_step + games.table.iloc[index]['last_episode_step']
+                count_cumulated_idle_worker = count_cumulated_idle_worker + games.table.iloc[index]['idle_worker_time']
+                count_cumulated_kill_struct = count_cumulated_kill_struct + games.table.iloc[index]['killed_value_structures']
+                count_cumulated_kill_unit = count_cumulated_kill_unit + games.table.iloc[index]['killed_value_units']
+                count_cumulated_score = count_cumulated_score + games.table.iloc[index]['score']
+
+        average_last_step = 0
+        if count_cumulated_last_step > 0:
+            average_last_step = count_cumulated_last_step / total_parsed_games
+
+        average_idle_worker = 0
+        if count_cumulated_idle_worker > 0:
+            average_idle_worker = count_cumulated_idle_worker / total_parsed_games
+
+        average_kill_struct = 0
+        if count_cumulated_kill_struct > 0:
+            average_kill_struct = count_cumulated_kill_struct / total_parsed_games
+
+        average_kill_unit = 0
+        if count_cumulated_kill_unit > 0:
+            average_kill_unit = count_cumulated_kill_unit / total_parsed_games
+
+        average_score = 0
+        if count_cumulated_score > 0:
+            average_score = count_cumulated_score / total_parsed_games
+
+        return {
+            'result': result,
+            'total': total_parsed_games,
+            'last step avg': round(average_last_step),
+            'idle worker avg': round(average_idle_worker),
+            'kill struct avg': round(average_kill_struct),
+            'kill unit avg': round(average_kill_unit),
+            'score avg': round(average_score)
+        }

@@ -41,22 +41,31 @@ class MultiGameCommander(Commander):
 
         if not self.current_order:
             self.current_order = self.worker_commander.order(observations)
+            print("no yet order")
+            print(self.current_order)
 
         elif observations.last():
+            print("very last order order")
             return NoOrder()
 
         elif self.current_order.done(observations):
 
             self.current_order = self.scout_commander.order(observations)
             if not isinstance(self.current_order, NoOrder):
+                print("scout order")
+                print(self.current_order)
                 return self.current_order
 
             self.current_order = self.worker_commander.order(observations)
             if not isinstance(self.current_order, NoOrder):
+                print("worker order")
+                print(self.current_order)
                 return self.current_order
 
             self.current_order = self.goal_commander.order(observations)
             if not isinstance(self.current_order, NoOrder):
+                print("goal order")
+                print(self.current_order)
                 return self.current_order
 
             #self.current_order = self.build_order_commander.order(observations)
@@ -75,7 +84,8 @@ class MultiGameCommander(Commander):
             #   self.current_order = self.attack_commander.order(observations)
             #   return self.current_order
 
-        #print(self.current_order)
+        print("continue main order")
+        print(self.current_order)
 
         return self.current_order
 

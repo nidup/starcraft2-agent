@@ -46,6 +46,8 @@ class WorkerCommander(Commander):
             return CenterCameraOnCommandCenter(self.base_location)
 
         if self.current_order:
+            print("worker current order")
+            print(self.current_order)
             return self.current_order
 
         return NoOrder()

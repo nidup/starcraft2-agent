@@ -3,11 +3,12 @@ from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.agent.information import BuildingCounter, EnemyDetector
 from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
-from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.wrapper.observations import Observations
+from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 from nidup.pysc2.agent.information import Location
-from nidup.pysc2.agent.multi.order.build import BuildSupplyDepot
 from nidup.pysc2.agent.multi.commander.attack import AttackCommander
+from nidup.pysc2.agent.multi.order.common import NoOrder
+from nidup.pysc2.agent.multi.order.build import BuildSupplyDepot
 from nidup.pysc2.agent.multi.goal.build import BuildOrdersGoalFactory
 from nidup.pysc2.agent.multi.goal.attack import AttackQuadrantGoal
 from nidup.pysc2.agent.multi.goal.train import TrainSquadGoalFactory
@@ -21,31 +22,40 @@ class GoalCommander(Commander):
         self.agent_name = agent_name
         self.enemy_detector = enemy_detector
         self.attack_commander = attack_commander
-        self.goals = None
+        self.goals = self._prepare_goals(self.location)
         self.current_goal = None
         self.current_order = None
+        self.constant_attack_mode = False
 
     def order(self, observations: Observations)-> Order:
         # don't start before to know the enemy's race
         if not self.enemy_detector.race_detected():
             return NoOrder()
-        if not self.current_goal:
-            self.goals = self._prepare_goals(self.location)
-            self.current_goal = self.goals.pop(0)
-            self.current_order = self.current_goal.order(observations)
-        if self.current_goal.done(observations):
-            self.current_goal = self.goals.pop(0)
-            self.current_order = self.current_goal.order(observations)
-            return self._extra_supply_depots(observations)
-        elif self.current_order and self.current_order.done(observations):
+
+        if not self.constant_attack_mode and self._move_to_constant_attack_mode(observations):
+            self.constant_attack_mode = True
+            self.goals = self._prepare_attack_only_goals()
+            self.current_goal = None
             self.current_order = None
-            return CenterCameraOnCommandCenter(self.location)
-        elif self.current_order and not self.current_order.done(observations):
+
+        if self.current_order and not self.current_order.done(observations):
             return self.current_order
-        elif not self.current_order:
+
+        if not self.current_goal:
+            self.current_goal = self.goals.pop(0)
+            self.current_order = CenterCameraOnCommandCenter(self.location)
+            return self.current_order
+
+        if self.current_goal.done(observations):
+            self.current_goal = None
+            self.current_order = self._extra_supply_depots(observations)
+            return self.current_order
+
+        if self.current_order.done(observations):
             self.current_order = self.current_goal.order(observations)
             return self.current_order
-        return NoOrder()
+
+        raise RuntimeError("this case should never happen!")
 
     def _prepare_goals(self, location: Location) -> []:
         goals = [BuildOrdersGoalFactory().build_3rax_1techlab_2reactors(location)]
@@ -55,17 +65,40 @@ class GoalCommander(Commander):
             goals = goals + [AttackQuadrantGoal(self.attack_commander)]
         return goals
 
+    def _prepare_attack_only_goals(self) -> []:
+        goals = []
+        for repeat in range(0, 1000):
+            goals = goals + [AttackQuadrantGoal(self.attack_commander)]
+        return goals
+
     def _goal_is_finished(self, observations: Observations) -> bool:
         return self.current_goal.done(observations)
 
     def _commander_name(self) -> str:
         return self.agent_name + "." + self.__class__.__name__
 
-    def _extra_supply_depots(self, observations: Observations) -> Order:
+    def _needs_extra_supply_depots(self, observations: Observations) -> bool:
         counter = BuildingCounter()
         expectMore = counter.supply_depots_count(observations) <= 15
         supplyAlmostFull = observations.player().food_cap() - observations.player().food_used() <= 2
-        if expectMore and supplyAlmostFull:
+        return expectMore and supplyAlmostFull
+
+    def _extra_supply_depots(self, observations: Observations) -> Order:
+        if self._needs_extra_supply_depots(observations):
             return BuildSupplyDepot(self.location)
         else:
             return NoOrder()
+
+    def _move_to_constant_attack_mode(self, observations: Observations):
+        return self._no_more_minerals_to_collect(observations) and self._not_much_minerals_to_spend(observations)
+
+    def _no_more_minerals_to_collect(self, observations: Observations) -> bool:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        unit_y, unit_x = (unit_type == unit_type_ids.neutral_mineral_field()).nonzero()
+        if unit_y.any():
+            return False
+        return True
+
+    def _not_much_minerals_to_spend(self, observations: Observations) -> bool:
+        return observations.player().minerals() <= 200

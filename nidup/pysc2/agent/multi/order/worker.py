@@ -101,9 +101,6 @@ class FillRefineryOnceBuilt(SmartOrder):
         self.refinery_index = refinery_index
         self.scv_groups = SCVControlGroups()
 
-    def doable(self, observations: Observations) -> bool:
-        return True
-
     def done(self, observations: Observations) -> bool:
         return self.step == 3
 
@@ -115,7 +112,6 @@ class FillRefineryOnceBuilt(SmartOrder):
         if self.step == 0:
             return self._select_refinery()
         elif self.step == 1 and self._selected_refinery_is_built(observations):
-            #print("refinery is built, select collectors" + str(self.refinery_index))
             return self._select_vespene_collectors()
         elif self.step == 2:
             return self._send_collectors_to_refinery(observations)
@@ -135,7 +131,6 @@ class FillRefineryOnceBuilt(SmartOrder):
             round(cc_y.mean()),
             difference_from_cc[1],
         )
-        #print("select refinery " + str(target[0]) + " " + str(target[1]))
         return self.actions.select_point(target)
 
     def _selected_refinery_is_built(self, observations: Observations) -> bool:
@@ -151,7 +146,6 @@ class FillRefineryOnceBuilt(SmartOrder):
 
     def _send_collectors_to_refinery(self, observations: Observations) -> actions.FunctionCall:
         self.step = self.step + 1
-        #print(observations.multi_select())
         return SCVCommonActions().send_selected_scv_group_to_refinery(self.location, observations, self.refinery_index)
 
 
@@ -161,14 +155,11 @@ class SendIdleSCVToMineral(SmartOrder):
         SmartOrder.__init__(self, base_location)
         self.step = 0
 
-    def doable(self, observations: Observations) -> bool:
-        return True
-
     def done(self, observations: Observations) -> bool:
         return self.step == 2
 
     def doable(self, observations: Observations) -> bool:
-        return observations.player().idle_worker_count() > 0
+        return observations.player().idle_worker_count() > 0 and self._still_minerals_to_collect(observations)
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
         self.step = self.step + 1
@@ -176,3 +167,11 @@ class SendIdleSCVToMineral(SmartOrder):
             return self.actions.select_idle_worker()
         elif self.step == 2:
             return SCVCommonActions().send_scv_to_mineral(observations)
+
+    def _still_minerals_to_collect(self, observations: Observations) -> bool:
+        unit_type = observations.screen().unit_type()
+        unit_y, unit_x = (unit_type == self.unit_type_ids.neutral_mineral_field()).nonzero()
+        if unit_y.any():
+            return True
+        print("no more mineral (il reste " +str(observations.player().minerals())+")")
+        return False

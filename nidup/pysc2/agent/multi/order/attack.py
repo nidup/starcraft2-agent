@@ -290,6 +290,7 @@ class SeekAndDestroyAttack(SmartOrder):
 
             if len(enemy_buildings_positions) == 0:
                 #print("No building here, attack the mid of the zone")
+                # TODO: attack near the center, not behind mineral to attack if enemy pass
                 target = self.location.transform_location(int(self.x), int(self.y))
             else:
                 #print("Attack just near the first building")
