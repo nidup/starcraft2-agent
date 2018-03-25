@@ -8,6 +8,7 @@ from nidup.pysc2.agent.information import Location, EnemyDetector, RaceNames
 from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.agent.multi.order.attack import QLearningAttack, QLearningAttackOffsetsProvider, SeekAndDestroyAttack
 from nidup.pysc2.wrapper.observations import Observations
+from nidup.pysc2.agent.multi.minimap.analyser import MinimapQuadrant, MinimapAnalyser
 
 ACTION_DO_NOTHING = 'donothing'
 ACTION_ATTACK = 'attack'
@@ -32,7 +33,7 @@ class AttackActions:
         del attack_actions[0]
 
         # keep only enemy's base 1 and base 2 quadrants (natural expansion)
-        #del attack_actions[1]
+        del attack_actions[1]
 
         # ['donothing', 'attack_15_47', 'attack_47_15', 'attack_47_47']
         self.actions = self.actions + attack_actions
@@ -70,6 +71,7 @@ class MinimapEnemyHotSquaresBuilder:
             x = int(math.ceil((enemy_x[i] + 1) / 32))
             hot_squares[((y - 1) * 2) + (x - 1)] = 1
 
+        # facilitate the learning
         if not location.command_center_is_top_left():
             hot_squares = hot_squares[::-1]
 
@@ -78,21 +80,22 @@ class MinimapEnemyHotSquaresBuilder:
 
 class AttackStateBuilder:
 
-    def build_state(self, location: Location, observations: Observations) -> []:
-        base_state_items_length = 1
+    def build_state(self, location: Location, observations: Observations, enemy_detector: EnemyDetector) -> []:
+        base_state_items_length = 2
         hot_squares_length = 4
         current_state_length = base_state_items_length + hot_squares_length
 
         current_state = np.zeros(current_state_length)
-        current_state[0] = observations.player().food_army()
+        current_state[0] = self._enemy_race_id(enemy_detector)
+        current_state[1] = self._simplified_army_size(observations)
 
-        # TODO: replace by more advanced minimap detector to mark only building areas
-        hot_squares = MinimapEnemyHotSquaresBuilder().minimap_four_squares(observations, location)
+        hot_squares = self._enemy_buildings_on_minimap_quadrants(location, observations)
         for i in range(0, hot_squares_length):
             current_state[i + base_state_items_length] = hot_squares[i]
 
         return current_state
 
+    # different learning per race
     def _enemy_race_id(self, enemy_detector: EnemyDetector) -> int:
         race = enemy_detector.race()
         name_to_id = {
@@ -102,6 +105,33 @@ class AttackStateBuilder:
             RaceNames().zerg(): 3,
         }
         return name_to_id[race]
+
+    # from 0 to 200 to 0 to 40 in order to accelerate the learning
+    def _simplified_army_size(self, observations: Observations):
+        food_army = observations.player().food_army()
+        army_size = 0
+        if food_army > 0:
+            army_size = food_army / 5
+            army_size = math.floor(army_size)
+        return army_size
+
+    # return [0, 1, 0, 0] with 1 when buildings is present, 0 if no (normalized to have the same value when playing
+    # top left or bottom right)
+    def _enemy_buildings_on_minimap_quadrants(self, location: Location, observations: Observations) -> []:
+        analyse = MinimapAnalyser().analyse(observations, location)
+        hot_squares = np.zeros(4)
+        if len(analyse.enemy_buildings_positions().positions(MinimapQuadrant(1))) > 0:
+            hot_squares[0] = 1
+        if len(analyse.enemy_buildings_positions().positions(MinimapQuadrant(2))) > 0:
+            hot_squares[1] = 1
+        if len(analyse.enemy_buildings_positions().positions(MinimapQuadrant(3))) > 0:
+            hot_squares[2] = 1
+        if len(analyse.enemy_buildings_positions().positions(MinimapQuadrant(4))) > 0:
+            hot_squares[3] = 1
+        if not location.command_center_is_top_left():
+            hot_squares = hot_squares[::-1]
+        #print(hot_squares)
+        return hot_squares
 
 
 class AttackCommander(Commander):
@@ -118,26 +148,25 @@ class AttackCommander(Commander):
         self.smart_actions = AttackActions(self.location, self.attack_offsets_provider)
         self.qlearn = QLearningTable(actions=list(range(len(self.smart_actions.all()))))
         QLearningTableStorage().load(self.qlearn, self._commander_name())
-        self.previous_killed_building_score = 0
+        #self.previous_killed_building_score = 0
 
     def order(self, observations: Observations)-> Order:
         if observations.last():
             return NoOrder()
 
-        # TODO, learn after a set of orders? cause it takes time to destroy building after an order
         if not self.previous_order or self.previous_order.done(observations):
-            current_state = AttackStateBuilder().build_state(self.location, observations)
-            killed_building_score = observations.score_cumulative().killed_value_units()
+            current_state = AttackStateBuilder().build_state(self.location, observations, self.enemy_detector)
+            #killed_building_score = observations.score_cumulative().killed_value_units()
             if self.previous_action is not None:
                 reward = 0
-                if killed_building_score > self.previous_killed_building_score:
-                    reward += 0.8
+                #if killed_building_score > self.previous_killed_building_score:
+                #    reward += 0.8
                 self.qlearn.learn(str(self.previous_state), self.previous_action, reward, str(current_state))
             rl_action = self.qlearn.choose_action(str(current_state))
             self.previous_state = current_state
             self.previous_action = rl_action
             self.previous_order = self.smart_actions.order(rl_action)
-            self.previous_killed_building_score = killed_building_score
+            #self.previous_killed_building_score = killed_building_score
 
         return self.previous_order
 
@@ -146,8 +175,7 @@ class AttackCommander(Commander):
             #print("learn attack terminal")
             #print(str(self.previous_state))
             #print(self.previous_action)
-            # TODO no terminal learning
-            #self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
+            self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
             QLearningTableStorage().save(self.qlearn, self._commander_name())
             self.previous_action = None
             self.previous_state = None

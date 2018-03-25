@@ -85,8 +85,8 @@ terran	30	1	4	25	3.33	13.33	83.33
 protoss	38	3	1	34	7.89	2.63	89.47
 ```
 
-Variant & Evolution (Time Matters)
-----------------------------------
+Variant & Evolution (Time Matters & Goal Oriented Agent)
+--------------------------------------------------------
 
 One major issue we observe it to try to learn from a not finished action or set of actions (aka order).
 
@@ -124,3 +124,55 @@ zerg	35	22	9	4	62.86	25.71	11.43
 terran	32	13	12	7	40.62	37.5	21.88
 protoss	33	11	16	6	33.33	48.48	18.18
 ```
+
+Variant & Evolution (Seek 'n' Destroy Attack Order)
+---------------------------------------------------
+
+We used several ways to attack inside a minimap quadrant.
+
+From a random attack in a set of 9 offsets, to trained on 4 squares heat map to chose one of the 9 offsets.
+
+We re-work here the Attack order to add a Seek 'n' Destroy implementation that drop the offset concept to attack just near a building when there is one.
+
+We don't attack the building in itself as it results into our army being destroyed during the building attack.
+
+After 800 episodes of training:
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	31	21	4	6	67.74	12.9	19.35
+terran	35	13	8	14	37.14	22.86	40.0
+protoss	34	7	6	21	20.59	17.65	61.76
+```
+
+Variant & Evolution (Improved Attack Commander)
+-----------------------------------------------
+
+We noticed that the way to learn which of the 4 minimap quadrants to attack is far to be optimal.
+
+We re-work the Attack commander, changing the attack quadrant state:
+ - add the enemy's race (noticing that in time, the agent become better against a race, then worst when improving against another race)
+ - change the quadrants heat map to mark as hot only when there are buildings and not all enemy units
+ - replace the army food info (0 to 200) by a simplified army size info (0 to 40) to accelerate the learning
+
+We also change the available attack actions, allowing to attack on 4 minimap quadrants (adding the player base 1).
+
+Finally, we change the reward to go back to a sparse reward on final result and not on destroyed enemies per order.
+
+Here is the results after 800 episodes of training:
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	34	26	1	7	76.47	2.94	20.59
+terran	36	16	6	14	44.44	16.67	38.89
+protoss	30	12	4	14	40.0	13.33	46.67
+```
+
+We notice as expected, better results against each race that the agent is doing less draw games.
+
+Often, the draw games happened because of letting a single enemy's building somewhere even if already destroyed all others units.
+
+Diving into draw episodes
+
