@@ -6,13 +6,28 @@ from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.agent.information import Location, EnemyDetector, RaceNames
 from nidup.pysc2.agent.multi.order.common import NoOrder
-from nidup.pysc2.agent.multi.order.attack import QLearningAttack, QLearningAttackOffsetsProvider, SeekAndDestroyAttack
+from nidup.pysc2.agent.multi.order.attack import QLearningAttack, QLearningAttackOffsetsProvider, SeekAndDestroyBuildingAttack
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.multi.minimap.analyser import MinimapQuadrant, MinimapAnalyser
 
 ACTION_DO_NOTHING = 'donothing'
 ACTION_ATTACK = 'attack'
 _PLAYER_ENEMY = 4
+
+
+class NormalizedMinimapTargetToMinimapQuadrant:
+
+    def quadrant(self, location: Location, minimap_target: []) -> MinimapQuadrant:
+        minimap_quadrant_index = None
+        if minimap_target == [47, 47]:
+            minimap_quadrant_index = 4 if location.base_top_left else 1
+        elif minimap_target == [15, 47]:
+            minimap_quadrant_index = 3 if location.base_top_left else 2
+        elif minimap_target == [47, 15]:
+            minimap_quadrant_index = 2 if location.base_top_left else 3
+        elif minimap_target == [15, 15]:
+            minimap_quadrant_index = 1 if location.base_top_left else 4
+        return MinimapQuadrant(minimap_quadrant_index)
 
 
 class AttackActions:
@@ -45,7 +60,8 @@ class AttackActions:
         smart_action, x, y = self._split_action(action_id)
         if smart_action == ACTION_ATTACK:
             #return QLearningAttack(self.location, self.offsets_provider, int(x), int(y))
-            return SeekAndDestroyAttack(self.location, int(x), int(y))
+            quadrant = NormalizedMinimapTargetToMinimapQuadrant().quadrant(self.location, [int(x), int(y)])
+            return SeekAndDestroyBuildingAttack(self.location, quadrant)
         elif smart_action == ACTION_DO_NOTHING:
             return NoOrder()
         else:

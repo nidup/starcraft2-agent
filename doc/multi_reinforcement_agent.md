@@ -286,3 +286,43 @@ loss	17	2125		1680		216		3124		2080
 However, digging into the logs, we still observe that in case of draw games, the agent seems in a strong position to win but does not manage to attack relevant minimap quadrants to win the game.
 
 As we use the same in game attack strategy which relies on visible buildings on the minimap, it may totally miss a single lost enemy unit or a single building not visible on minimap.
+
+We introduce another implementation for late game to roam quadrants in order to clean the map, first quadrant with buidings visible on the minimap then random quadrants.
+
+Keeping the same trained agent, we manage to make almost disappear the draw matches, at least on a significant amount of games:
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	35	34	0	1	97.14	0	2.86
+terran	30	16	0	14	53.33	0	46.67
+protoss	35	26	1	8	74.29	2.86	22.86
+
+Average Results on the 100 last games:
+result	total	last step	idle worker	kill struct	kill unit	score
+win	76	2045		624		4272		6034		8128
+draw	1	3599		8981		7150		8925		8090
+loss	23	2188		1311		572		3530		2169
+```
+
+We notice that for few draw games, they are due to single units, we enhance the implementation to clear buildings then single units.
+
+Keeping the same trained agent, we manage to make almost disappear the draw matches, at least on a significant amount of games:
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	43	34	0	9	79.07	0	20.93
+terran	31	25	0	6	80.65	0	19.35
+protoss	26	15	1	10	57.69	3.85	38.46
+
+Average Results on the 100 last games:
+result	total	last step	idle worker	kill struct	kill unit	score
+win	74	2090		720		4281		6158		8230
+draw	1	3599		3915		1350		11775		3835
+loss	25	1881		1551		72		1924		2454
+```
+
+We continue to see few of them against protoss, it may be explained by the use of [Dark Templar, permanently Cloaked unit](http://liquipedia.net/starcraft2/Dark_Templar_(Legacy_of_the_Void)).
+
+To eliminate this assumption, we need to find a way to better know the enemy's build orders.

@@ -10,7 +10,7 @@ from nidup.pysc2.agent.multi.commander.attack import AttackCommander
 from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.agent.multi.order.build import BuildSupplyDepot
 from nidup.pysc2.agent.multi.goal.build import BuildOrdersGoalFactory
-from nidup.pysc2.agent.multi.goal.attack import AttackQuadrantGoal, AttackRoamQuadrantGoal
+from nidup.pysc2.agent.multi.goal.attack import AttackQuadrantGoal, SeekAndDestroyQuadrantGoal
 from nidup.pysc2.agent.multi.goal.train import TrainSquadGoalFactory
 
 
@@ -68,7 +68,7 @@ class GoalCommander(Commander):
     def _prepare_attack_only_goals(self) -> []:
         goals = []
         for repeat in range(0, 1000):
-            goals = goals + [AttackRoamQuadrantGoal(self.attack_commander)]
+            goals = goals + [SeekAndDestroyQuadrantGoal(self.location)]
         return goals
 
     def _goal_is_finished(self, observations: Observations) -> bool:

@@ -62,6 +62,9 @@ class MinimapAllEnemies:
     def __init__(self, enemies: []):
         self.enemies = enemies
 
+    def all(self) -> []:
+        return self.enemies
+
     def __str__(self):
         view = ""
         for row in self.enemies:
@@ -81,7 +84,7 @@ class MinimapOnlyEnemiesBuildings:
         for row in only_building_string.split("\n"):
             line = []
             for cell in list(row):
-                line.append(cell)
+                line.append(int(cell))
             self.enemies.append(line)
         self.count_buildings = self._count(only_building_string)
 
@@ -121,7 +124,7 @@ class MinimapOnlyEnemiesMainBasesBuildings:
         for row in main_buildings_string.split("\n"):
             line = []
             for cell in list(row):
-                line.append(cell)
+                line.append(int(cell))
             self.enemies.append(line)
 
         self.count_buildings = 0
@@ -165,7 +168,7 @@ class MinimapEnemyBuildingsPositions:
         building_positions = []
         for line in range(0, 64):
             for column in range(0, 64):
-                if self.enemy_buildings.buildings()[line][column] == "1":
+                if self.enemy_buildings.buildings()[line][column] == 1:
                     if quadrant.code() == 1 and column < 32 and line < 32:
                         building_positions.append([column, line])
                     elif quadrant.code() == 2 and column >= 32 and line < 32:
@@ -182,6 +185,29 @@ class MinimapEnemyBuildingsPositions:
         return building_positions
 
 
+# Provides all enemy's positions on the designated minimap quadrant
+class MinimapAllEnemyPositions:
+
+    def __init__(self, all_enemies: MinimapAllEnemies):
+        self.enemies = all_enemies
+
+    # returns [[x1, y1], [x2, y2]]
+    def positions(self, quadrant: MinimapQuadrant) -> []:
+        positions = []
+        for line in range(0, 64):
+            for column in range(0, 64):
+                if self.enemies.all()[line][column] == 1:
+                    if quadrant.code() == 1 and column < 32 and line < 32:
+                        positions.append([column, line])
+                    elif quadrant.code() == 2 and column >= 32 and line < 32:
+                        positions.append([column, line])
+                    elif quadrant.code() == 3 and column < 32 and line >= 32:
+                        positions.append([column, line])
+                    elif quadrant.code() == 4 and column >= 32 and line >= 32:
+                        positions.append([column, line])
+        return positions
+
+
 # Analyse minimap providing several heat map views
 class MinimapEnemyAnalyse:
 
@@ -191,6 +217,7 @@ class MinimapEnemyAnalyse:
         self.all_buildings_view = MinimapOnlyEnemiesBuildings(self.all_enemies_view)
         self.main_buildings_view = MinimapOnlyEnemiesMainBasesBuildings(self.all_buildings_view)
         self.buildings_positions = MinimapEnemyBuildingsPositions(self.all_buildings_view)
+        self.all_positions = MinimapAllEnemyPositions(self.all_enemies_view)
 
     def _build_minimap(self, enemy_y: [], enemy_x: []) -> []:
         enemy_minimap = []
@@ -213,6 +240,9 @@ class MinimapEnemyAnalyse:
 
     def enemy_buildings_positions(self) -> MinimapEnemyBuildingsPositions:
         return self.buildings_positions
+
+    def all_enemy_positions(self) -> MinimapAllEnemyPositions:
+        return self.all_positions
 
 
 # Minimap is a 64x64 view of the game
