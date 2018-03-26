@@ -196,10 +196,14 @@ As this commander has a higher priority than the attack commander, once all base
 
 As these games are not lost, we can suppose the agent is in a very good shape to win the game but does not do very final attacks.
 
-Variant & Evolution (Improved Worker Commander)
------------------------------------------------
+Variant & Evolution (Improved Worker & Goal Commanders)
+-------------------------------------------------------
 
 We add a condition in the SendIdleSCVToMineral order, to make it doable only if there is still mineral fields.
+
+We also reduce the amount of orders allowing to center the camera on command center.
+
+We change the goal commander to allow him to switch to a attack only mode once there is no more mineral to collect.
 
 Before the change:
 
@@ -217,5 +221,68 @@ draw	15	3598		6595		4823		9137		9352
 loss	28	2004		2016		289		2496		2134
 ```
 
-After the change:
+After these changes, we observe just a bit less draw games:
 
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	37	34	2	1	91.89	5.41	2.7
+terran	34	14	9	11	41.18	26.47	32.35
+protoss	29	7	2	20	24.14	6.9	68.97
+
+Average Results on the 100 last games:
+result	total	last step	idle worker	kill struct	kill unit	score
+win	55	1914		412		3547		4965		7653
+draw	13	3599		5869		5129		8869		6953
+loss	32	2029		1864		295		2593		1899
+```
+
+We observe that in the late game, we spam a lot of attack orders but not queuing them which results to almost freeze the army.
+
+On other hand, when we queue attack order, it results into a very spread army that cross along a path of points to attack.
+
+We need to balance this phase more properly, during the early game, we attack a single point in a quadrant (and not 10 not queued):
+
+```
+Results on the 48 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	21	20	0	1	95.24	0	4.76
+terran	12	2	2	8	16.67	16.67	66.67
+protoss	15	8	2	5	53.33	13.33	33.33
+```
+
+Moving from 1 not queued to 3 queued building attack positions.
+ 
+When entering the late game with no more minerals, continue to regularly do attack quadrants.
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	32	27	1	4	84.38	3.12	12.5
+terran	27	9	6	12	33.33	22.22	44.44
+protoss	41	21	8	12	51.22	19.51	29.27
+```
+
+Once all these changes made, we re-train our agent from scratch on more than a thousand of games.
+
+![Image of MultiReinforcementAgent 6](MultiReinforcementAgent/goal_improved_worker_and_attack_commanders.png)
+
+We see here clear benefits, far less draw games and pretty solid results against Zerg & Terran, Protoss is still the more complex race to beat for our agent.
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	27	25	2	0	92.59	7.41	0
+terran	42	34	2	6	80.95	4.76	14.29
+protoss	31	17	3	11	54.84	9.68	35.48
+
+Average Results on the 100 last games:
+result	total	last step	idle worker	kill struct	kill unit	score
+win	76	1905		454		3886		5174		8106
+draw	7	3599		6430		6904		9889		9543
+loss	17	2125		1680		216		3124		2080
+```
+
+However, digging into the logs, we still observe that in case of draw games, the agent seems in a strong position to win but does not manage to attack relevant minimap quadrants to win the game.
+
+As we use the same in game attack strategy which relies on visible buildings on the minimap, it may totally miss a single lost enemy unit or a single building not visible on minimap.

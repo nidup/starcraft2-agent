@@ -238,12 +238,13 @@ class SeekAndDestroyAttack(SmartOrder):
         self.step = 0
         self.x = x
         self.y = y
+        self.queued_targets = []
 
     def doable(self, observations: Observations) -> bool:
         return True
 
     def done(self, observations: Observations) -> bool:
-        return self.step == 2
+        return self.step >= 2 and len(self.queued_targets) == 0
 
     def execute(self, observations: Observations) -> actions.FunctionCall:
         self.step = self.step + 1
@@ -259,6 +260,11 @@ class SeekAndDestroyAttack(SmartOrder):
         return self.actions.no_op()
 
     def attack_minimap(self, observations: Observations) -> actions.FunctionCall:
+        if len(self.queued_targets) > 0 and self.action_ids.attack_minimap() in observations.available_actions():
+            target = self.queued_targets.pop(0)
+            print("attack next target" + str(target))
+            return self.actions.attack_minimap(target, ActionQueueParameter().queued())
+
         do_it = True
         if not observations.single_select().empty() and observations.single_select().unit_type() == self.unit_type_ids.terran_scv():
             do_it = False
@@ -268,43 +274,80 @@ class SeekAndDestroyAttack(SmartOrder):
         if do_it and self.action_ids.attack_minimap() in observations.available_actions():
 
             minimap_target = [self.x, self.y]
+            minimap_quadrant = MinimapTargetToMinimapQuadrant().quadrant(self.location, minimap_target)
+            self.queued_targets = MinimapQuadrantBuildingsAttackPositions().attack_positions(minimap_quadrant, self.location, observations)
 
-            enemy_base = None
-            minimap_quadrant = None
-            if minimap_target == [47, 47]:
-                enemy_base = 1
-                minimap_quadrant = 4 if self.location.base_top_left else 1
-            elif minimap_target == [15, 47]:
-                enemy_base = 2
-                minimap_quadrant = 3 if self.location.base_top_left else 2
-            elif minimap_target == [47, 15]:
-                enemy_base = 3
-                minimap_quadrant = 2 if self.location.base_top_left else 3
-            elif minimap_target == [15, 15]:
-                enemy_base = 4
-                minimap_quadrant = 1 if self.location.base_top_left else 4
-            #print("attack enemy's B"+str(enemy_base) + " (quadrant"+str(minimap_quadrant)+")")
-
-            minimap_analyse = MinimapAnalyser().analyse(observations, self.location)
-            enemy_buildings_positions = minimap_analyse.enemy_buildings_positions().positions(MinimapQuadrant(minimap_quadrant))
-
-            if len(enemy_buildings_positions) == 0:
-                #print("No building here, attack the mid of the zone")
+            if len(self.queued_targets) == 0:
                 # TODO: attack near the center, not behind mineral to attack if enemy pass
+                print("no target, simple attack "+str([self.x, self.y]))
                 target = self.location.transform_location(int(self.x), int(self.y))
+                return self.actions.attack_minimap(target, ActionQueueParameter().not_queued())
             else:
-                #print("Attack just near the first building")
-                building_to_attack = enemy_buildings_positions[0]
-                # never attack directly the building to avoid to be attacked by enemy's without defending
-                just_next_to_the_building = [building_to_attack[0] - 1, building_to_attack[1]]
-                #print("always on a building? " + str(just_next_to_the_building in enemy_buildings_positions))
-                #print(enemy_buildings_positions)
-                #print(just_next_to_the_building)
-                target = just_next_to_the_building
-
-            #print(target)
-            #print(MinimapQuadrantEnemyDetector().hot_sections(observations, self.location, minimap_target))
-
-            return self.actions.attack_minimap(target, ActionQueueParameter().not_queued())
+                target = self.queued_targets.pop(0)
+                return self.actions.attack_minimap(target, ActionQueueParameter().not_queued())
 
         return self.actions.no_op()
+
+
+class MinimapQuadrantBuildingsAttackPositions:
+
+    def attack_positions(self, minimap_quadrant: MinimapQuadrant, location: Location, observations: Observations) -> []:
+        minimap_analyse = MinimapAnalyser().analyse(observations, location)
+        buildings_positions = minimap_analyse.enemy_buildings_positions().positions(minimap_quadrant)
+
+        print(buildings_positions)
+
+        filtered_buildings_positions = []
+        for idx in range(0, len(buildings_positions)):
+            # a building has in average 4 cells size
+            if idx % 4 == 0:
+                filtered_buildings_positions.append(buildings_positions[idx])
+
+        print(filtered_buildings_positions)
+
+        # keeping only the 3 first position
+        filtered_buildings_positions = filtered_buildings_positions[0:4]
+        print(filtered_buildings_positions)
+
+        # never attack directly the building to avoid to be attacked by enemy's without defending
+        next_to_buildings_positions = []
+        for building_position in filtered_buildings_positions:
+            next_to_the_building = [building_position[0] - 1, building_position[1]]
+            while next_to_the_building in buildings_positions:
+                print("in the list "+str(next_to_the_building) + " in " +str(buildings_positions))
+                next_to_the_building = [next_to_the_building[0] - 1, next_to_the_building[1]]
+            next_to_buildings_positions.append(next_to_the_building)
+
+        print(next_to_buildings_positions)
+
+        return next_to_buildings_positions
+
+
+class MinimapTargetToMinimapQuadrant:
+
+    def quadrant(self, location: Location, minimap_target: []) -> MinimapQuadrant:
+        minimap_quadrant_index = None
+        if minimap_target == [47, 47]:
+            minimap_quadrant_index = 4 if location.base_top_left else 1
+        elif minimap_target == [15, 47]:
+            minimap_quadrant_index = 3 if location.base_top_left else 2
+        elif minimap_target == [47, 15]:
+            minimap_quadrant_index = 2 if location.base_top_left else 3
+        elif minimap_target == [15, 15]:
+            minimap_quadrant_index = 1 if location.base_top_left else 4
+        return MinimapQuadrant(minimap_quadrant_index)
+
+
+class MinimapTargetToEnemyBaseNumber:
+
+    def base_number(self, minimap_target: []) -> int:
+        enemy_base = None
+        if minimap_target == [47, 47]:
+            enemy_base = 1
+        elif minimap_target == [15, 47]:
+            enemy_base = 2
+        elif minimap_target == [47, 15]:
+            enemy_base = 3
+        elif minimap_target == [15, 15]:
+            enemy_base = 4
+        return enemy_base
