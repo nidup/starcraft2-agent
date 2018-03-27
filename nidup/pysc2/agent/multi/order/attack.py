@@ -95,9 +95,6 @@ class QLearningAttackOffsetsProvider:
 
     def save_learning_at_the_end_of_an_episode(self):
         if self.previous_action:
-            print("learn attack terminal order")
-            print(str(self.previous_state))
-            print(self.previous_action)
             QLearningTableStorage().save(self.qlearn, self._qlearning_file_name())
 
     def _qlearning_file_name(self) -> str:
@@ -195,7 +192,6 @@ class MinimapQuadrantEnemyDetector:
                 hot_sections[2] = 1
             elif enemy_quadrant_x[i] >= minimap_x and enemy_quadrant_y[i] >= minimap_y:
                 hot_sections[3] = 1
-        #print(hot_sections)
 
         return hot_sections
 
@@ -203,12 +199,6 @@ class MinimapQuadrantEnemyDetector:
     def _normalize_enemy_in_target_quadrant(self, observations: Observations, location: Location, minimap_target: []):
         enemy_y, enemy_x = (observations.minimap().player_relative() == _PLAYER_ENEMY).nonzero()
         if enemy_y.any:
-
-            # print("state")
-            # print(minimap_target)
-            # print(enemy_x)
-            # print(enemy_y)
-
             minimap_x, minimap_y = minimap_target
             quadrant_enemy_x = []
             quadrant_enemy_y = []
@@ -224,9 +214,6 @@ class MinimapQuadrantEnemyDetector:
                 if in_x_section and in_y_section:
                     quadrant_enemy_x.append(normed_enemy_x)
                     quadrant_enemy_y.append(normed_enemy_y)
-
-            # print(quadrant_enemy_y)
-            # print(quadrant_enemy_x)
 
             return quadrant_enemy_y, quadrant_enemy_x
 
@@ -272,12 +259,7 @@ class SeekAndDestroyBuildingAttack(SmartOrder):
 
         if do_it and self.action_ids.attack_minimap() in observations.available_actions():
 
-            self.queued_targets = MinimapQuadrantBuildingsAttackPositions().attack_positions(
-                self.minimap_quadrant,
-                self.location,
-                observations
-            )
-
+            self.queued_targets = MinimapQuadrantBuildingsAttackPositions().attack_positions(self.minimap_quadrant, observations)
             if len(self.queued_targets) == 0:
                 target = MinimapQuadrantToMinimapTarget().target(self.minimap_quadrant)
                 print("all buildings: no target, simple attack in the quadrant "+str([target[0], target[1]]))
@@ -305,8 +287,8 @@ class MinimapQuadrantToMinimapTarget:
 
 class MinimapQuadrantBuildingsAttackPositions:
 
-    def attack_positions(self, minimap_quadrant: MinimapQuadrant, location: Location, observations: Observations) -> []:
-        minimap_analyse = MinimapAnalyser().analyse(observations, location)
+    def attack_positions(self, minimap_quadrant: MinimapQuadrant, observations: Observations) -> []:
+        minimap_analyse = MinimapAnalyser().analyse(observations)
         buildings_positions = minimap_analyse.enemy_buildings_positions().positions(minimap_quadrant)
 
         print(buildings_positions)
@@ -380,7 +362,6 @@ class SeekAndDestroyAllUnitsAttack(SmartOrder):
 
             self.queued_targets = MinimapQuadrantAllUnitsAttackPositions().attack_positions(
                 self.minimap_quadrant,
-                self.location,
                 observations
             )
 
@@ -398,7 +379,7 @@ class SeekAndDestroyAllUnitsAttack(SmartOrder):
 
 class MinimapQuadrantAllUnitsAttackPositions:
 
-    def attack_positions(self, minimap_quadrant: MinimapQuadrant, location: Location, observations: Observations) -> []:
-        minimap_analyse = MinimapAnalyser().analyse(observations, location)
+    def attack_positions(self, minimap_quadrant: MinimapQuadrant, observations: Observations) -> []:
+        minimap_analyse = MinimapAnalyser().analyse(observations)
         all_positions = minimap_analyse.all_enemy_positions().positions(minimap_quadrant)
         return all_positions

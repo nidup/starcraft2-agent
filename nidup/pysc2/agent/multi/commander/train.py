@@ -99,18 +99,12 @@ class TrainingCommander(Commander):
             self.previous_state = current_state
             self.previous_action = rl_action
             self.previous_order = self.smart_actions.order(rl_action)
-            #print(rl_action)
             self._update_last_played_step()
-
-        #print(self.previous_order)
 
         return self.previous_order
 
     def learn_on_last_episode_step(self, observations: Observations):
         if self.previous_action:
-            #print("learn train terminal")
-            #print(str(self.previous_state))
-            #print(self.previous_action)
             self.qlearn.learn(str(self.previous_state), self.previous_action, observations.reward(), 'terminal')
             QLearningTableStorage().save(self.qlearn, self._qlearning_name())
             self.previous_action = None

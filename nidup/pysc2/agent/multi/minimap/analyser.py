@@ -177,11 +177,6 @@ class MinimapEnemyBuildingsPositions:
                         building_positions.append([column, line])
                     elif quadrant.code() == 4 and column >= 32 and line >= 32:
                         building_positions.append([column, line])
-
-        #print(self.enemy_buildings.buildings())
-        #print(building_positions)
-        #exit(-1)
-
         return building_positions
 
 
@@ -248,10 +243,7 @@ class MinimapEnemyAnalyse:
 # Minimap is a 64x64 view of the game
 class MinimapAnalyser:
 
-    def analyse(self, observations: Observations, location: Location) -> MinimapEnemyAnalyse:
+    def analyse(self, observations: Observations) -> MinimapEnemyAnalyse:
         enemy_y, enemy_x = (observations.minimap().player_relative() == _PLAYER_ENEMY).nonzero()
-        #print(enemy_y)
-        #print(enemy_x)
         analyse = MinimapEnemyAnalyse(enemy_y, enemy_x)
-        #print(analyse.all_enemies())
         return analyse

@@ -31,7 +31,6 @@ class OrderedBuildOrder:
         elif self.current_order.done(observations):
             self._next_order()
         # TODO if not doable??
-        # print(self.current_order)
         return self.current_order
 
     def finished(self, observations: Observations) -> bool:

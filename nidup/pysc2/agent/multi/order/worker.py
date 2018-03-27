@@ -173,5 +173,5 @@ class SendIdleSCVToMineral(SmartOrder):
         unit_y, unit_x = (unit_type == self.unit_type_ids.neutral_mineral_field()).nonzero()
         if unit_y.any():
             return True
-        print("no more mineral (il reste " +str(observations.player().minerals())+")")
+        print("no more mineral (still " +str(observations.player().minerals())+")")
         return False

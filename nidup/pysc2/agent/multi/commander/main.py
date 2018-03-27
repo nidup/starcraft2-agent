@@ -35,43 +35,34 @@ class MultiGameCommander(Commander):
         #    self.training_commander.configure_build_orders(self.build_order_commander.current_build_orders())
 
         #if self.enemy_detector.race_detected():
-        #    print("race detected") #115
-        #    print(self.episode_details.episode_step())
+        #    print("race detected")
+        #    print(self.episode_details.episode_step()) # first race detected 115
         #    exit(2)
 
         if not self.current_order:
             self.current_order = self.worker_commander.order(observations)
-            #print("no yet order")
-            #print(self.current_order)
 
         elif observations.last():
-            #print("very last order order")
             return NoOrder()
 
         elif self.current_order.done(observations):
 
             self.current_order = self.scout_commander.order(observations)
             if not isinstance(self.current_order, NoOrder):
-                #print("scout order")
-                #print(self.current_order)
                 return self.current_order
 
             self.current_order = self.worker_commander.order(observations)
             if not isinstance(self.current_order, NoOrder):
-                #print("worker order")
-                #print(self.current_order)
                 return self.current_order
 
             self.current_order = self.goal_commander.order(observations)
             if not isinstance(self.current_order, NoOrder):
-                #print("goal order")
                 print(self.current_order)
                 return self.current_order
 
             #self.current_order = self.build_order_commander.order(observations)
             #if not isinstance(self.current_order, NoOrder):
-                #print("build order") # 43
-                #print(self.episode_details.episode_step())
+                #print(self.episode_details.episode_step()) # first build order 43
             #    return self.current_order
 
             # wait for the former build order to be finished
@@ -83,9 +74,6 @@ class MultiGameCommander(Commander):
 
             #   self.current_order = self.attack_commander.order(observations)
             #   return self.current_order
-
-        #print("continue main order")
-        #print(self.current_order)
 
         return self.current_order
 

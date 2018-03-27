@@ -156,7 +156,7 @@ We re-work the Attack commander, changing the attack quadrant state:
  - change the quadrants heat map to mark as hot only when there are buildings and not all enemy units
  - replace the army food info (0 to 200) by a simplified army size info (0 to 40) to accelerate the learning
 
-We also change the available attack actions, allowing to attack on 4 minimap quadrants (adding the player base 1).
+We also change the available attack actions, allowing it to only attack on 2 minimap quadrants (removing the enemy's base 3).
 
 Finally, we change the reward to go back to a sparse reward on final result and not on destroyed enemies per order.
 
@@ -326,3 +326,28 @@ loss	25	1881		1551		72		1924		2454
 We continue to see few of them against protoss, it may be explained by the use of [Dark Templar, permanently Cloaked unit](http://liquipedia.net/starcraft2/Dark_Templar_(Legacy_of_the_Void)).
 
 To eliminate this assumption, we need to find a way to better know the enemy's build orders.
+
+Variant & Evolution (4 Minimap Quadrant Attack Commander)
+---------------------------------------------------------
+
+After these changes, we change our agent to allow it to attack on the four minimap quadrants.
+
+![Image of MultiReinforcementAgent 7](MultiReinforcementAgent/goals_attack_4quadrants.png)
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	36	28	2	6	77.78	5.56	16.67
+terran	33	24	2	7	72.73	6.06	21.21
+protoss	31	21	0	10	67.74	0	32.26
+
+Average Results on the 100 last games:
+result	total	last step	idle worker	kill struct	kill unit	score
+win	73	2147		809		4317		5866		8980
+draw	4	3599		7015		5562		10981		7736
+loss	23	1954		2152		323		1900		2372
+```
+
+We observe that the agent destroy fery few enemy's building on lost game, means it does not manage to do an efficient push, maybe only destroying enemy's base 2.
+
+We need to confirm this assumption with a more detailed log system.
