@@ -2,8 +2,9 @@
 from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.wrapper.observations import Observations
-from nidup.pysc2.agent.information import Location, EpisodeDetails
-from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
+from nidup.pysc2.agent.multi.info.episode import EpisodeDetails
+from nidup.pysc2.agent.multi.info.player import Location
+from nidup.pysc2.agent.multi.order.camera import CenterCameraOnCommandCenter
 from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.agent.multi.order.worker import PrepareSCVControlGroupsOrder, FillRefineryOnceBuilt, SendIdleSCVToMineral
 from nidup.pysc2.agent.multi.order.train import BuildSCV

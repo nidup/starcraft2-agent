@@ -5,11 +5,12 @@ import numpy as np
 from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.information import Location, EnemyDetector, RaceNames
+from nidup.pysc2.agent.multi.info.enemy import EnemyRaceDetector, RaceNames
+from nidup.pysc2.agent.multi.info.player import Location
 from nidup.pysc2.agent.multi.order.common import NoOrder, SmartOrder
 from nidup.pysc2.agent.multi.order.attack import SeekAndDestroyBuildingAttack, SeekAndDestroyAllUnitsAttack
 from nidup.pysc2.wrapper.observations import Observations
-from nidup.pysc2.agent.multi.minimap.analyser import MinimapQuadrant, MinimapAnalyser
+from nidup.pysc2.agent.multi.info.minimap import MinimapQuadrant, MinimapAnalyser
 
 ACTION_DO_NOTHING = 'donothing'
 ACTION_ATTACK = 'attack'
@@ -71,7 +72,7 @@ class AttackActions:
 
 class AttackStateBuilder:
 
-    def build_state(self, location: Location, observations: Observations, enemy_detector: EnemyDetector) -> []:
+    def build_state(self, location: Location, observations: Observations, enemy_detector: EnemyRaceDetector) -> []:
         base_state_items_length = 2
         hot_squares_length = 4
         current_state_length = base_state_items_length + hot_squares_length
@@ -87,7 +88,7 @@ class AttackStateBuilder:
         return current_state
 
     # different learning per race
-    def _enemy_race_id(self, enemy_detector: EnemyDetector) -> int:
+    def _enemy_race_id(self, enemy_detector: EnemyRaceDetector) -> int:
         race = enemy_detector.race()
         name_to_id = {
             RaceNames().unknown(): 0,
@@ -127,7 +128,7 @@ class AttackStateBuilder:
 # commander acting in early and mid game, using QLearning approach to know which minimap quadrant it should attack
 class AttackCommander(Commander):
 
-    def __init__(self, location: Location, agent_name: str, enemy_detector: EnemyDetector):
+    def __init__(self, location: Location, agent_name: str, enemy_detector: EnemyRaceDetector):
         super(Commander, self).__init__()
         self.location = location
         self.agent_name = agent_name

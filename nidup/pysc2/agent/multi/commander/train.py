@@ -3,7 +3,9 @@ import numpy as np
 from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.information import Location, EnemyDetector, RaceNames, EpisodeDetails
+from nidup.pysc2.agent.multi.info.episode import EpisodeDetails
+from nidup.pysc2.agent.multi.info.enemy import EnemyRaceDetector, RaceNames
+from nidup.pysc2.agent.multi.info.player import Location
 from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.agent.multi.order.train import BuildMarine, BuildMarauder, BuildHellion, BuildMedivac
 from nidup.pysc2.wrapper.observations import Observations
@@ -42,7 +44,7 @@ class TrainActions:
 
 class TrainStateBuilder:
 
-    def build_state(self, observations: Observations, enemy_detector: EnemyDetector) -> []:
+    def build_state(self, observations: Observations, enemy_detector: EnemyRaceDetector) -> []:
         base_state_items_length = 2
         current_state = np.zeros(base_state_items_length)
         current_state[0] = self._enemy_race_id(enemy_detector)
@@ -50,7 +52,7 @@ class TrainStateBuilder:
 
         return current_state
 
-    def _enemy_race_id(self, enemy_detector: EnemyDetector) -> int:
+    def _enemy_race_id(self, enemy_detector: EnemyRaceDetector) -> int:
         race = enemy_detector.race()
         name_to_id = {
             RaceNames().unknown(): 0,
@@ -63,7 +65,7 @@ class TrainStateBuilder:
 
 class TrainingCommander(Commander):
 
-    def __init__(self, location: Location, agent_name: str, enemy_detector: EnemyDetector, episode_details: EpisodeDetails):
+    def __init__(self, location: Location, agent_name: str, enemy_detector: EnemyRaceDetector, episode_details: EpisodeDetails):
         super(Commander, self).__init__()
         self.location = location
         self.agent_name = agent_name

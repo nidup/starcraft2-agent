@@ -351,3 +351,45 @@ loss	23	1954		2152		323		1900		2372
 We observe that the agent destroy fery few enemy's building on lost game, means it does not manage to do an efficient push, maybe only destroying enemy's base 2.
 
 We need to confirm this assumption with a more detailed log system.
+
+Variant & Evolution (Training Squad QLearning)
+----------------------------------------------
+
+We did a first attempt based on re-enforcement learning of which single unit to train at a time.
+
+The learning is long and seemed not very relevant based on analysis of training on thousands of games.
+
+We prototyped another approach based on re-enforcement learning on the training of a kind of squad.
+
+In this prototype, a squad is a group of 10 units, that can be:
+ - 7 marines & 3 marauders
+ - 5 marines & 5 marauders
+ - 3 marines & 7 marauders
+ - 10 marines
+
+Then we train 1400 episodes based on the previous quadrant attack training.
+
+The squad training state contains only the enemy's race and the learning is rewarded on the final result of an episode.
+
+```
+Results on the 100 last games:
+race	total	win	draw	loss	win %	draw %	loss %
+zerg	39	29	1	9	74.36	2.56	23.08
+terran	31	21	0	10	67.74	0	32.26
+protoss	30	21	3	6	70.0	10.0	20.0
+```
+
+Here are the most trained squads per race:
+
+```
+race	total	7marines_3marauders	5marines_5marauders	3marines_7marauders	10marines
+zerg	16902	500	(3 %)		8568	(51 %)		675	(4 %)		7159	(42 %)
+protoss	15632	11705	(75 %)		1975	(13 %)		603	(4 %)		1349	(9 %)
+terran	12951	1450	(11 %)		3865	(30 %)		965	(7 %)		6671	(52 %)
+```
+
+Training more marauders than marines is poorly rated against any enemy's race.
+
+Even if training only marines seems a good option against terran & zerg, it's far less rated against protoss which can be explained by the fact that protoss are more robust units.
+
+Here the approach is simplist and does not try to evaluate different squads in time, evaluate against special enemy units or evaluate different size of squads.

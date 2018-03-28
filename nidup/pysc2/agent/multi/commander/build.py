@@ -3,11 +3,12 @@ import numpy as np
 from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.information import BuildingCounter, EnemyDetector, RaceNames
-from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
+from nidup.pysc2.agent.multi.info.enemy import EnemyRaceDetector, RaceNames
+from nidup.pysc2.agent.multi.info.player import BuildingCounter
+from nidup.pysc2.agent.multi.order.camera import CenterCameraOnCommandCenter
 from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.wrapper.observations import Observations
-from nidup.pysc2.agent.information import Location
+from nidup.pysc2.agent.multi.info.player import Location
 from nidup.pysc2.agent.multi.order.common import SmartOrder
 from nidup.pysc2.agent.multi.order.build import BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildTechLabBarrack, BuildReactorBarrack, BuildFactory, BuildStarport
 from nidup.pysc2.agent.multi.order.train import BuildMarine, BuildMarauder, BuildHellion, BuildMedivac
@@ -178,7 +179,7 @@ class BuildOrderFactory:
 
 class BuildOrderCommander(Commander):
 
-    def __init__(self, location: Location, agent_name: str, enemy_detector: EnemyDetector):
+    def __init__(self, location: Location, agent_name: str, enemy_detector: EnemyRaceDetector):
         Commander.__init__(self)
         self.location = location
         self.agent_name = agent_name
@@ -238,12 +239,12 @@ class BuildOrderCommander(Commander):
 
 class StateBuilder:
 
-    def build_state(self, enemy_detector: EnemyDetector) -> []:
+    def build_state(self, enemy_detector: EnemyRaceDetector) -> []:
         current_state = np.zeros(1)
         current_state[0] = self._enemy_race_id(enemy_detector)
         return current_state
 
-    def _enemy_race_id(self, enemy_detector: EnemyDetector) -> int:
+    def _enemy_race_id(self, enemy_detector: EnemyRaceDetector) -> int:
         race = enemy_detector.race()
         name_to_id = {
             RaceNames().unknown(): 0,
@@ -275,7 +276,7 @@ class BuildOrdersActions:
 
 class QLearningBuildOrdersSelector:
 
-    def __init__(self, commander_name: str, enemy_detector: EnemyDetector):
+    def __init__(self, commander_name: str, enemy_detector: EnemyRaceDetector):
         self.commander_name = commander_name
         self.enemy_detector = enemy_detector
         self.build_orders_actions = BuildOrdersActions()

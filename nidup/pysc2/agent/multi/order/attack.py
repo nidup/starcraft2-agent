@@ -3,11 +3,11 @@ import numpy as np
 import random
 from pysc2.lib import actions
 from nidup.pysc2.agent.multi.order.common import SmartOrder
-from nidup.pysc2.agent.information import Location
+from nidup.pysc2.agent.multi.info.player import Location
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.wrapper.actions import ActionQueueParameter
 from nidup.pysc2.learning.qlearning import QLearningTable, QLearningTableStorage
-from nidup.pysc2.agent.multi.minimap.analyser import MinimapAnalyser, MinimapQuadrant
+from nidup.pysc2.agent.multi.info.minimap import MinimapAnalyser, MinimapQuadrant
 
 _PLAYER_ENEMY = 4
 

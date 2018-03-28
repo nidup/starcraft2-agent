@@ -1,6 +1,5 @@
 
 import math
-from nidup.pysc2.agent.information import Location
 from nidup.pysc2.wrapper.observations import Observations
 
 _PLAYER_ENEMY = 4

@@ -1,6 +1,6 @@
 
 from nidup.pysc2.wrapper.observations import Observations
-from nidup.pysc2.agent.information import Location
+from nidup.pysc2.agent.hybrid.information import Location
 from nidup.pysc2.agent.hybrid.orders import SmartOrder, BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildTechLabBarrack, BuildReactorBarrack, ResearchCombatShield, ResearchConcussiveShells
 
 

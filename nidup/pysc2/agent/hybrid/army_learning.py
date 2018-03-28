@@ -2,7 +2,7 @@
 import math
 import numpy as np
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.information import Location, BuildingCounter, EnemyDetector, RaceNames
+from nidup.pysc2.agent.hybrid.information import Location, BuildingCounter, EnemyDetector, RaceNames
 from nidup.pysc2.agent.hybrid.orders import BuildMarine, BuildMarauder, NoOrder, DumbAttack
 from nidup.pysc2.wrapper.observations import Observations
 

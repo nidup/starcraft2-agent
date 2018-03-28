@@ -3,7 +3,7 @@ from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.multi.order.common import SmartOrder, NoOrder
 from nidup.pysc2.agent.multi.commander.attack import AttackCommander, LateGameAttackCommander
 from nidup.pysc2.agent.multi.goal.common import Goal
-from nidup.pysc2.agent.information import Location
+from nidup.pysc2.agent.multi.info.player import Location
 
 
 class AttackQuadrantGoal(Goal):

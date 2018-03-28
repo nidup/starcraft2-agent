@@ -2,8 +2,9 @@
 from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.agent.order import Order
 from nidup.pysc2.wrapper.observations import Observations
-from nidup.pysc2.agent.information import Location, EnemyDetector
-from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter, MoveCameraOnMinimapTarget
+from nidup.pysc2.agent.multi.info.enemy import EnemyRaceDetector
+from nidup.pysc2.agent.multi.info.player import Location
+from nidup.pysc2.agent.multi.order.camera import CenterCameraOnCommandCenter, MoveCameraOnMinimapTarget
 from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.agent.multi.order.scout import ScoutWithScv
 
@@ -12,7 +13,7 @@ _PLAYER_ENEMY = 4
 
 class ScoutCommander(Commander):
 
-    def __init__(self, location: Location, enemy_detector: EnemyDetector):
+    def __init__(self, location: Location, enemy_detector: EnemyRaceDetector):
         Commander.__init__(self)
         self.location = location
         self.enemy_detector = enemy_detector

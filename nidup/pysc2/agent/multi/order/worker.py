@@ -1,6 +1,6 @@
 
 from pysc2.lib import actions
-from nidup.pysc2.agent.information import Location, BuildingCounter
+from nidup.pysc2.agent.multi.info.player import Location, BuildingCounter
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.agent.multi.order.common import SmartOrder, SCVControlGroups, SCVCommonActions, BuildingPositionsFromCommandCenter
 

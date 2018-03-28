@@ -1,31 +1,33 @@
 
 from nidup.pysc2.agent.commander import Commander
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.information import BuildingCounter, EnemyDetector
-from nidup.pysc2.agent.scripted.camera import CenterCameraOnCommandCenter
+from nidup.pysc2.agent.multi.info.enemy import EnemyRaceDetector
+from nidup.pysc2.agent.multi.info.player import BuildingCounter
+from nidup.pysc2.agent.multi.order.camera import CenterCameraOnCommandCenter
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
-from nidup.pysc2.agent.information import Location
+from nidup.pysc2.agent.multi.info.player import Location
 from nidup.pysc2.agent.multi.commander.attack import AttackCommander
 from nidup.pysc2.agent.multi.order.common import NoOrder
 from nidup.pysc2.agent.multi.order.build import BuildSupplyDepot
 from nidup.pysc2.agent.multi.goal.build import BuildOrdersGoalFactory
 from nidup.pysc2.agent.multi.goal.attack import AttackQuadrantGoal, SeekAndDestroyQuadrantGoal
-from nidup.pysc2.agent.multi.goal.train import TrainSquadGoalFactory
+from nidup.pysc2.agent.multi.goal.train import TrainSquadGoalFactory, TrainSquadGoalProvider, TrainSquadGoal
 
 
 class GoalCommander(Commander):
 
-    def __init__(self, location: Location, agent_name: str, enemy_detector: EnemyDetector, attack_commander: AttackCommander):
+    def __init__(self, location: Location, agent_name: str, enemy_detector: EnemyRaceDetector):
         Commander.__init__(self)
         self.location = location
         self.agent_name = agent_name
         self.enemy_detector = enemy_detector
-        self.attack_commander = attack_commander
+        self.attack_commander = AttackCommander(location, agent_name, enemy_detector)
         self.goals = self._prepare_goals(self.location)
         self.current_goal = None
         self.current_order = None
         self.constant_attack_mode = False
+        self.train_squad_goal_provider = TrainSquadGoalProvider(location, agent_name, enemy_detector)
 
     def order(self, observations: Observations)-> Order:
         # don't start before to know the enemy's race
@@ -43,6 +45,10 @@ class GoalCommander(Commander):
 
         if not self.current_goal:
             self.current_goal = self.goals.pop(0)
+            # TODO hacky hack to replace harcoded goal on the fly
+            if isinstance(self.current_goal, TrainSquadGoal):
+                self.current_goal = self.train_squad_goal_provider.goal(observations)
+
             self.current_order = CenterCameraOnCommandCenter(self.location)
             return self.current_order
 
@@ -56,6 +62,10 @@ class GoalCommander(Commander):
             return self.current_order
 
         raise RuntimeError("this case should never happen!")
+
+    def learn_on_last_episode_step(self, observations: Observations):
+        self.attack_commander.learn_on_last_episode_step(observations)
+        self.train_squad_goal_provider.learn_on_last_episode_step(observations)
 
     def _prepare_goals(self, location: Location) -> []:
         goals = [BuildOrdersGoalFactory().build_3rax_1techlab_2reactors(location)]

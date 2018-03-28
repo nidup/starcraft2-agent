@@ -1,5 +1,5 @@
 
-from nidup.pysc2.agent.information import Location
+from nidup.pysc2.agent.multi.info.player import Location
 from nidup.pysc2.agent.multi.goal.common import OrderedGoal
 from nidup.pysc2.agent.multi.order.build import BuildSupplyDepot, BuildBarrack, BuildRefinery, BuildTechLabBarrack, BuildReactorBarrack, BuildFactory, BuildStarport
 from nidup.pysc2.agent.multi.order.research import ResearchCombatShield, ResearchConcussiveShells

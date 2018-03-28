@@ -2,7 +2,7 @@
 import random
 from pysc2.lib import actions
 from nidup.pysc2.agent.order import Order
-from nidup.pysc2.agent.information import Location
+from nidup.pysc2.agent.smart.information import Location
 from nidup.pysc2.wrapper.actions import TerranActions, TerranActionIds
 from nidup.pysc2.wrapper.observations import Observations
 from nidup.pysc2.wrapper.unit_types import UnitTypeIds
