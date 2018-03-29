@@ -1,5 +1,5 @@
 
-from nidup.pysc2.agent.multi.minimap.analyser import MinimapEnemyAnalyse, MinimapQuadrant
+from nidup.pysc2.agent.multi.info.minimap import MinimapEnemyAnalyse, MinimapQuadrant
 
 
 class BuildingExpectations:

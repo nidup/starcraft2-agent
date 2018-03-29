@@ -26,7 +26,8 @@ class MultiReinforcementAgent(BaseAgent):
     def __init__(self):
         super(MultiReinforcementAgent, self).__init__()
         self.commander = None
-        self.enemy_detector = None
+        self.enemy_race_detector = None
+        self.enemy_units_detector = None
         self.episode_details = None
 
     def step(self, obs):
@@ -34,19 +35,22 @@ class MultiReinforcementAgent(BaseAgent):
         observations = Observations(obs)
         if observations.first():
             base_location = multi.info.player.Location(observations)
-            self.enemy_detector = multi.info.enemy.EnemyRaceDetector()
+            self.enemy_race_detector = multi.info.enemy.EnemyRaceDetector()
+            self.enemy_units_detector = multi.info.enemy.EnemyUnitsDetector()
             self.episode_details = multi.info.episode.EpisodeDetails()
-            self.commander = MultiGameCommander(base_location, self.name(), self.enemy_detector, self.episode_details)
+            self.commander = MultiGameCommander(base_location, self.name(), self.enemy_race_detector, self.episode_details)
         elif observations.last():
             self.commander.learn_on_last_episode_step(observations)
             game_results = GameResultsTable(self.name())
             game_info = FinishedGameInformationDetails(
                 self.episode_details.episode_step(),
-                self.enemy_detector.race(),
-                "HardCoded"#self.commander.build_order_commander.current_build_orders().name()
+                self.enemy_race_detector.race(),
+                "HardCoded",#self.commander.build_order_commander.current_build_orders().name()
+                ", ".join(str(unit_id) for unit_id in self.enemy_units_detector.detected_units().all())
             )
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
         self.episode_details.increment_episode_step()
+        self.enemy_units_detector.detect_units(observations)
         return self.commander.order(observations).execute(observations)
 
     def name(self) -> str:
@@ -72,7 +76,7 @@ class HybridAttackReinforcementAgent(BaseAgent):
             self.commander = HybridGameCommander(base_location, self.name(), self.enemy_detector, self.episode_details)
         elif observations.last():
             game_results = GameResultsTable(self.name())
-            game_info = FinishedGameInformationDetails(0, self.enemy_detector.race(), "unknown")
+            game_info = FinishedGameInformationDetails(0, self.enemy_detector.race(), "unknown", "unknown")
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
         self.episode_details.increment_episode_step()
         return self.commander.order(observations).execute(observations)
@@ -95,7 +99,7 @@ class ReinforcementMarineAgent(BaseAgent):
             self.commander = QLearningCommander(self.name())
         elif observations.last():
             game_results = GameResultsTable(self.name())
-            game_info = FinishedGameInformationDetails(0, "unknown", "unknown")
+            game_info = FinishedGameInformationDetails(0, "unknown", "unknown", "unknown")
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
 
         return self.commander.order(observations).execute(observations)
@@ -118,7 +122,7 @@ class BuildOrderAgent(BaseAgent):
             self.commander = GameCommander(base_location)
         elif observations.last():
             game_results = GameResultsTable(self.name())
-            game_info = FinishedGameInformationDetails(0, "unknown", "unknown")
+            game_info = FinishedGameInformationDetails(0, "unknown", "unknown", "unknown")
             game_results.append(observations.reward(), observations.score_cumulative(), game_info)
         if self.debug:
             time.sleep(0.5)
