@@ -27,7 +27,7 @@ It has been slightly fine-tuned to be trained faster and win more games against 
 
 **Against [very-easy built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)**
 
-![Image of ReinforcementMarineAgent 3](doc/ReinforcementMarineAgent_enemyb1.png)
+![Image of ReinforcementMarineAgent 3](doc/ReinforcementMarineAgent/enemyb1.png)
 
 Hybrid Reinforcement Attack Agent (Machine Learning - Generation 2)
 -------------------------------------------------------------------
@@ -39,7 +39,7 @@ The build order and actions are enriched to train marines & marauders.
 
 **Against [easy built-in AI](https://github.com/deepmind/pysc2/blob/master/pysc2/env/sc2_env.py#L51)**
 
-![Image of HybridAttackReinforcementAgent 20](doc/HybridAttackReinforcementAgent_3_rax_rush-easy6.png)
+![Image of HybridAttackReinforcementAgent 20](doc/HybridAttackReinforcementAgent/3_rax_rush-easy6.png)
 
 ```
 Results on the 100 last games:
@@ -71,5 +71,5 @@ $ python3.6 generate_report.py --agent-name nidup.pysc2.agents.ReinforcementMari
 
 Query the game results:
 ```
-$ python3.6 generate_report.py --agent-name nidup.pysc2.agents.ReinforcementMarineAgent --filter win
+$ python3.6 query_results.py --agent-name nidup.pysc2.agents.ReinforcementMarineAgent --filter win
 ```

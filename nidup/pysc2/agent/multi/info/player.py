@@ -1,8 +1,6 @@
 
-import math
-import numpy as np
-from nidup.pysc2.wrapper.observations import Observations, ScreenFeatures, MinimapFeatures
-from nidup.pysc2.wrapper.unit_types import UnitTypeIds, AllUnitTypeIdsPerRace
+from nidup.pysc2.wrapper.observations import Observations
+from nidup.pysc2.wrapper.unit_types import UnitTypeIds
 
 # Parameters
 _PLAYER_SELF = 1
@@ -41,40 +39,13 @@ class Location:
         return [x, y]
 
     # return [y, x]
-    def locate_command_center(self, screen: ScreenFeatures):
-        unit_type = screen.unit_type()
-        unit_y, unit_x = (unit_type == self.unit_type_ids.terran_command_center()).nonzero()
-        if not unit_x.any():
-            unit_y, unit_x = (unit_type == self.unit_type_ids.terran_orbital_command()).nonzero()
-        return unit_y, unit_x
-
-    def command_center_is_visible(self, screen: ScreenFeatures) -> bool:
-        unit_y, unit_x = self.locate_command_center(screen)
-        if unit_y.any():
-            return True
-        else:
-            return False
-
-    # return [y, x]
     def base_location_on_minimap(self):
-        # TODO: should be computed during the init with current_visible_minimap_left_corner
         center_offset = 16 / 2
         if self.base_top_left:
             left_corner = [15, 9]
         else:
             left_corner = [39, 32]
         return [left_corner[0] + center_offset, left_corner[1] + center_offset]
-
-    # return [y, x]
-    def current_visible_minimap_left_corner(self, minimap: MinimapFeatures):
-        camera_x = None
-        camera_y = None
-        for ind_column, column in enumerate(minimap.camera()):
-            for ind_line, cell in enumerate(column):
-                if cell == 1 and not camera_x:
-                    camera_x = ind_line
-                    camera_y = ind_column
-        return camera_y, camera_x
 
     def other_unknown_bases_locations_on_minimap(self):
         locations = []
@@ -140,64 +111,9 @@ class BuildingCounter:
         factories_count = int(round(len(factories_y) / 137))
         return factories_count
 
-
-class RaceNames:
-
-    def unknown(self) -> str:
-        return "unknown"
-
-    def protoss(self) -> str:
-        return "protoss"
-
-    def terran(self) -> str:
-        return "terran"
-
-    def zerg(self) -> str:
-        return "zerg"
-
-
-class EnemyDetector:
-
-    def __init__(self):
-        self.enemy_race = RaceNames().unknown()
-
-    def race(self) -> str:
-        return self.enemy_race
-
-    def race_detected(self) -> bool:
-        return self.enemy_race != RaceNames().unknown()
-
-    def detect_race(self, observations: Observations):
-        enemy_y, enemy_x = (observations.screen().player_relative() == _PLAYER_ENEMY).nonzero()
-        if enemy_y.any():
-            unit_type = observations.screen().unit_type()
-            for unit_id in AllUnitTypeIdsPerRace().zerg():
-                unit_y, unit_x = (unit_type == unit_id).nonzero()
-                if unit_y.any():
-                    self.enemy_race = RaceNames().zerg()
-
-            unit_type = observations.screen().unit_type()
-            for unit_id in AllUnitTypeIdsPerRace().protoss():
-                unit_y, unit_x = (unit_type == unit_id).nonzero()
-                if unit_y.any():
-                    self.enemy_race = RaceNames().protoss()
-
-            if not self.race_detected():
-                self.enemy_race = RaceNames().terran()
-
-
-class MinimapEnemyHotSquaresBuilder:
-
-    # returns a 4 squares array (2x2), each square contains 1 when contains an enemy unit and 0 if not
-    def minimap_four_squares(self, observations: Observations, location: Location) -> []:
-        hot_squares = np.zeros(4)
-        enemy_y, enemy_x = (observations.minimap().player_relative() == _PLAYER_ENEMY).nonzero()
-        for i in range(0, len(enemy_y)):
-            y = int(math.ceil((enemy_y[i] + 1) / 32))
-            x = int(math.ceil((enemy_x[i] + 1) / 32))
-            hot_squares[((y - 1) * 2) + (x - 1)] = 1
-
-        if not location.command_center_is_top_left():
-            hot_squares = hot_squares[::-1]
-
-        return hot_squares
+    def starports_count(self, observations: Observations) -> int:
+        unit_type = observations.screen().unit_type()
+        unit_type_ids = UnitTypeIds()
+        starports_y, starports_x = (unit_type == unit_type_ids.terran_starport()).nonzero()
+        starports_count = int(round(len(starports_y) / 137))
+        return starports_count

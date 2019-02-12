@@ -52,16 +52,16 @@ Playing against the default built-in AI (very-easy difficulty).
 
 Attacking 4 quadrants:
 
-![Image of ReinforcementMarineAgent 1](ReinforcementMarineAgent_4quadrants.png)
+![Image of ReinforcementMarineAgent 1](ReinforcementMarineAgent/4quadrants.png)
 
 Attacking 3 quadrants (not player's base quadrant):
 
-![Image of ReinforcementMarineAgent 2](ReinforcementMarineAgent_excludingplayerbase.png)
+![Image of ReinforcementMarineAgent 2](ReinforcementMarineAgent/excludingplayerbase.png)
 
 Attacking only enemy quadrant:
 
-![Image of ReinforcementMarineAgent 3](ReinforcementMarineAgent_enemyb1.png)
+![Image of ReinforcementMarineAgent 3](ReinforcementMarineAgent/enemyb1.png)
 
 Attacking only enemy base 1 and base 2 quadrants:
 
-![Image of ReinforcementMarineAgent 4](ReinforcementMarineAgent_enemyb1andb2.png)
+![Image of ReinforcementMarineAgent 4](ReinforcementMarineAgent/enemyb1andb2.png)

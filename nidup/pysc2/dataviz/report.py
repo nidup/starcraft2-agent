@@ -4,6 +4,7 @@ import matplotlib as mpl
 mpl.use('Agg') # https://stackoverflow.com/questions/4931376/generating-matplotlib-graphs-without-a-running-x-server
 import matplotlib.pyplot as plt
 import os
+from nidup.pysc2.agent.multi.commander.build import BuildOrdersActions
 
 
 class GameResultChart:
@@ -92,6 +93,53 @@ class GameResultChartPerEnemyRace:
         return path
 
 
+class BuildOrdersChartPerEnemyRace:
+
+    def draw(self, agent_name: str, enemy_race: str) -> str:
+
+        if not agent_name == "nidup.pysc2.agents.MultiReinforcementAgent":
+            print("Agent "+agent_name+" is not supported by this report")
+
+        games = GameResultsTable(agent_name)
+
+        cumulated_percentage_per_build_order = {}
+        count_cumulated_per_build_order = {}
+        build_orders_codes = BuildOrdersActions().all()
+        for build_order_code in build_orders_codes:
+            cumulated_percentage_per_build_order[build_order_code] = []
+            count_cumulated_per_build_order[build_order_code] = 0
+
+        total_parsed_games = 0
+        for index in range(len(games.table)):
+            if games.table.iloc[index]['enemy_race'] == enemy_race:
+                total_parsed_games = total_parsed_games + 1
+                build_order = games.table.iloc[index]['build_order']
+                count_cumulated_per_build_order[build_order] = count_cumulated_per_build_order[build_order] + 1
+                for each_build_order_code in build_orders_codes:
+                    cumulated_percentage_per_build_order[each_build_order_code].append(count_cumulated_per_build_order[each_build_order_code] / total_parsed_games * 100)
+
+        lines = []
+        for build_order_code in build_orders_codes:
+            line, = plt.plot(cumulated_percentage_per_build_order[build_order_code], label=build_order_code)
+            lines.append(line)
+
+        plt.title('Build orders against '+enemy_race)
+        plt.xlabel('number of games')
+        plt.ylabel('percentage of games')
+        plt.legend(handles=lines)
+        filepath = self._file_path(agent_name, enemy_race)
+        plt.savefig(filepath)
+        plt.gcf().clear()
+
+        return filepath
+
+    def _file_path(self, agent_name: str, enemy_race: str) -> str:
+        root_folder = 'data'
+        filename = agent_name + '_build_orders_' + enemy_race + '.png'
+        path = os.path.join(root_folder, filename)
+        return path
+
+
 class ScoreDetailsChart:
 
     def draw(self, agent_name: str) -> str:
@@ -165,4 +213,63 @@ class LastGamesStatsPerRaceTable:
             'win %': round(percentage_win, 2),
             'draw %': round(percentage_draw, 2),
             'loss %': round(percentage_loss, 2)
+        }
+
+
+class GamesStatsPerResultTable:
+
+    def print(self, agent_name: str, number_games: int = 100):
+        print("\nAverage Results on the "+str(number_games)+" last games:")
+        print("result\ttotal\tlast step\tidle worker\tkill struct\tkill unit\tscore")
+        for result in ['win', 'draw', 'loss']:
+            row = self._game_stats_per_result(agent_name, number_games, result)
+            print(row['result']+"\t"+str(row['total'])+"\t"+str(row['last step avg'])+"\t\t"+str(row['idle worker avg'])+"\t\t"+str(row['kill struct avg'])+"\t\t"+str(row['kill unit avg'])+"\t\t"+str(row['score avg']))
+
+    def _game_stats_per_result(self, agent_name: str, number_games: int, result: str) -> []:
+        games = GameResultsTable(agent_name)
+        count_cumulated_last_step = 0
+        count_cumulated_idle_worker = 0
+        count_cumulated_kill_struct = 0
+        count_cumulated_kill_unit = 0
+        count_cumulated_score = 0
+        total_parsed_games = 0
+        total_games = len(games.table)
+        start_index = total_games - number_games
+        for index in range(total_games):
+            if index >= start_index and games.table.iloc[index][result] == 1:
+                total_parsed_games = total_parsed_games + 1
+                count_cumulated_last_step = count_cumulated_last_step + games.table.iloc[index]['last_episode_step']
+                count_cumulated_idle_worker = count_cumulated_idle_worker + games.table.iloc[index]['idle_worker_time']
+                count_cumulated_kill_struct = count_cumulated_kill_struct + games.table.iloc[index]['killed_value_structures']
+                count_cumulated_kill_unit = count_cumulated_kill_unit + games.table.iloc[index]['killed_value_units']
+                count_cumulated_score = count_cumulated_score + games.table.iloc[index]['score']
+
+        average_last_step = 0
+        if count_cumulated_last_step > 0:
+            average_last_step = count_cumulated_last_step / total_parsed_games
+
+        average_idle_worker = 0
+        if count_cumulated_idle_worker > 0:
+            average_idle_worker = count_cumulated_idle_worker / total_parsed_games
+
+        average_kill_struct = 0
+        if count_cumulated_kill_struct > 0:
+            average_kill_struct = count_cumulated_kill_struct / total_parsed_games
+
+        average_kill_unit = 0
+        if count_cumulated_kill_unit > 0:
+            average_kill_unit = count_cumulated_kill_unit / total_parsed_games
+
+        average_score = 0
+        if count_cumulated_score > 0:
+            average_score = count_cumulated_score / total_parsed_games
+
+        return {
+            'result': result,
+            'total': total_parsed_games,
+            'last step avg': round(average_last_step),
+            'idle worker avg': round(average_idle_worker),
+            'kill struct avg': round(average_kill_struct),
+            'kill unit avg': round(average_kill_unit),
+            'score avg': round(average_score)
         }

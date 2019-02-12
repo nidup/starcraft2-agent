@@ -247,6 +247,9 @@ class UnitTypeIds:
     def terran_supply_depot(self) -> int:
         return _TERRAN_SUPPLYDEPOT
 
+    def terran_starport(self) -> int:
+        return _TERRAN_STARPORT
+
 
 class AllUnitTypeIdsPerRace:
 

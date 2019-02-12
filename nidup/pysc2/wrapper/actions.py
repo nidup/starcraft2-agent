@@ -9,6 +9,7 @@ _BUILD_TECHLAB_BARRACKS = actions.FUNCTIONS.Build_TechLab_screen.id
 _BUILD_REACTOR_BARRACKS = actions.FUNCTIONS.Build_Reactor_screen.id
 _BUILD_REFINERY = actions.FUNCTIONS.Build_Refinery_screen.id
 _BUILD_FACTORY = actions.FUNCTIONS.Build_Factory_screen.id
+_BUILD_STARPORT = actions.FUNCTIONS.Build_Starport_screen.id
 _HARVEST_GATHER = actions.FUNCTIONS.Harvest_Gather_screen.id
 _MORPH_ORBITAL_COMMAND = actions.FUNCTIONS.Morph_OrbitalCommand_quick.id
 _MOVE_MINIMAP = actions.FUNCTIONS.Move_minimap.id
@@ -26,7 +27,9 @@ _SELECT_RECT = actions.FUNCTIONS.select_rect.id
 _SELECT_CONTROL_GROUP = actions.FUNCTIONS.select_control_group.id
 _TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
 _TRAIN_MARAUDER = actions.FUNCTIONS.Train_Marauder_quick.id
+_TRAIN_MEDIVAC = actions.FUNCTIONS.Train_Medivac_quick.id
 _TRAIN_SCV = actions.FUNCTIONS.Train_SCV_quick.id
+_TRAIN_HELLION = actions.FUNCTIONS.Train_Hellion_quick.id
 
 
 _NOT_QUEUED = [0]
@@ -47,6 +50,9 @@ class TerranActionIds:
 
     def build_refinery(self) -> int:
         return _BUILD_REFINERY
+
+    def build_starport(self) -> int:
+        return _BUILD_STARPORT
 
     def build_supply_depot(self) -> int:
         return _BUILD_SUPPLYDEPOT
@@ -93,20 +99,35 @@ class TerranActionIds:
     def select_unit(self) -> int:
         return _SELECT_UNIT
 
+    def train_hellion(self) -> int:
+        return _TRAIN_HELLION
+
     def train_marine(self) -> int:
         return _TRAIN_MARINE
 
     def train_marauder(self) -> int:
         return _TRAIN_MARAUDER
 
+    def train_medivac(self) -> int:
+        return _TRAIN_MEDIVAC
+
     def train_scv(self) -> int:
         return _TRAIN_SCV
 
 
+class ActionQueueParameter:
+
+    def queued(self) -> []:
+        return _QUEUED
+
+    def not_queued(self) -> []:
+        return _NOT_QUEUED
+
+
 class TerranActions:
 
-    def attack_minimap(self, target) -> actions.FunctionCall:
-        return actions.FunctionCall(_ATTACK_MINIMAP, [_NOT_QUEUED, target])
+    def attack_minimap(self, target: [], queued: [] = _NOT_QUEUED) -> actions.FunctionCall:
+        return actions.FunctionCall(_ATTACK_MINIMAP, [queued, target])
 
     def build_barracks(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_BUILD_BARRACKS, [_NOT_QUEUED, target])
@@ -120,6 +141,9 @@ class TerranActions:
     def build_supply_depot(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_BUILD_SUPPLYDEPOT, [_NOT_QUEUED, target])
 
+    def build_starport(self, target) -> actions.FunctionCall:
+        return actions.FunctionCall(_BUILD_STARPORT, [_NOT_QUEUED, target])
+
     def build_techlab_barracks(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_BUILD_TECHLAB_BARRACKS, [_NOT_QUEUED, target])
 
@@ -132,8 +156,8 @@ class TerranActions:
     def move_camera(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_MOVE_CAMERA, [target])
 
-    def move_minimap(self, target) -> actions.FunctionCall:
-        return actions.FunctionCall(_MOVE_MINIMAP, [_NOT_QUEUED, target])
+    def move_minimap(self, target: [], queued: [] = _NOT_QUEUED) -> actions.FunctionCall:
+        return actions.FunctionCall(_MOVE_MINIMAP, [queued, target])
 
     def move_screen(self, target) -> actions.FunctionCall:
         return actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, target])
@@ -188,6 +212,9 @@ class TerranActions:
     def select_all_units(self, unit_index):
         return actions.FunctionCall(_SELECT_UNIT, [[1], [unit_index]])
 
+    def train_hellion(self) -> actions.FunctionCall:
+        return actions.FunctionCall(_TRAIN_HELLION, [_QUEUED])
+
     def train_marine(self) -> actions.FunctionCall:
         return actions.FunctionCall(_TRAIN_MARINE, [_QUEUED])
 
@@ -196,3 +223,6 @@ class TerranActions:
 
     def train_scv(self) -> actions.FunctionCall:
         return actions.FunctionCall(_TRAIN_SCV, [_NOT_QUEUED])
+
+    def train_medivac(self) -> int:
+        return actions.FunctionCall(_TRAIN_MEDIVAC, [_NOT_QUEUED])
